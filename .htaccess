@@ -1,0 +1,22 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /toko_kopi/
+
+    # Block dotfiles and sensitive config/bootstrap files from web access.
+    RewriteRule "(^|/)\.(?!well-known/)" - [F,L,NC]
+    RewriteRule "^(?:composer\.(?:json|lock)|README\.md|phpunit\.xml|\.env(?:\..*)?)$" - [F,L,NC]
+
+    # Block direct web access to non-public application directories.
+    RewriteRule ^(?:app|database|storage)(?:/|$) - [F,L,NC]
+
+    # Serve files and directories that actually exist as-is.
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Route all other requests through the public web root.
+    RewriteCond %{REQUEST_URI} !^/toko_kopi/public/ [NC]
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+DirectoryIndex public/index.php index.php

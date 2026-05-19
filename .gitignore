@@ -1,0 +1,18 @@
+# ── Secrets ──────────────────────────────────────────────────
+.env
+
+# ── Runtime / generated ──────────────────────────────────────
+/storage/logs/
+/storage/cache/
+/uploads/
+*.log
+
+# ── IDE / OS ─────────────────────────────────────────────────
+.idea/
+.vscode/
+*.DS_Store
+Thumbs.db
+
+# ── Composer (jika ditambahkan nanti) ────────────────────────
+/vendor/
+composer.lock
