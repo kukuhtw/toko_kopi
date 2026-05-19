@@ -1,0 +1,65 @@
+{
+    "example-plugin": {
+        "active": true
+    },
+    "example-skill-plugin": {
+        "active": false
+    },
+    "midtrans-payment": {
+        "active": true
+    },
+    "xendit-payment": {
+        "active": false
+    },
+    "gemini-llm": {
+        "active": true
+    },
+    "instagram-dm": {
+        "active": true
+    },
+    "fonnte-whatsapp": {
+        "active": true
+    },
+    "vonage-whatsapp": {
+        "active": true
+    },
+    "twilio-whatsapp": {
+        "active": true
+    },
+    "baileys-whatsapp": {
+        "active": true
+    },
+    "messagebird-whatsapp": {
+        "active": true
+    },
+    "notifikasi-admin": {
+        "active": true
+    },
+    "themes": {
+        "active": true
+    },
+    "anthropic-llm": {
+        "active": true
+    },
+    "openrouter-llm": {
+        "active": true
+    },
+    "rekomendasi-promo": {
+        "active": true
+    },
+    "upselling": {
+        "active": true
+    },
+    "telegram-channel": {
+        "active": true
+    },
+    "discord-channel": {
+        "active": true
+    },
+    "cms-berita": {
+        "active": true
+    },
+    "loyalty-point": {
+        "active": true
+    }
+}
