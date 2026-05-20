@@ -74,7 +74,9 @@ class ChatbotEngine
         $language = $this->branchModel->getLanguage($branchId);
         $timezone = $this->branchModel->getTimezone($branchId);
         $nowLocal = (new \DateTime('now', new \DateTimeZone($timezone)))->format('Y-m-d H:i:s');
-        $customer = $this->customerModel->findOrCreate($channel, $customerIdentifier);
+        $customer = $channel === 'web'
+            ? $this->customerModel->resolveWebCustomer($customerIdentifier)
+            : $this->customerModel->findOrCreate($channel, $customerIdentifier);
 
         $sessionKey   = $this->buildSessionKey($channel, $branchId, $customerIdentifier);
         $conversation = $this->convModel->getOrCreate($branchId, $customer['id'], $channel, $sessionKey);

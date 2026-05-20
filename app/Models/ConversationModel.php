@@ -7,6 +7,9 @@ namespace App\Models;
 class ConversationModel extends BaseModel
 {
     protected string $table = 'conversations';
+    private const OUT_OF_SCOPE_WINDOW_SECONDS = 180;
+    private const OUT_OF_SCOPE_THRESHOLD = 5;
+    private const SUSPEND_SECONDS = 600;
 
     public function getOrCreate(int $branchId, int $customerId, string $channel, string $sessionKey): array
     {
@@ -24,6 +27,12 @@ class ConversationModel extends BaseModel
                 'state'       => 'idle',
             ]);
             $conv = $this->find($id);
+        } elseif ((int)($conv['customer_id'] ?? 0) !== $customerId && $customerId > 0) {
+            $this->update((int)$conv['id'], [
+                'customer_id' => $customerId,
+                'last_activity' => date('Y-m-d H:i:s'),
+            ]);
+            $conv = $this->find((int)$conv['id']);
         }
 
         return $conv;
@@ -43,6 +52,65 @@ class ConversationModel extends BaseModel
         $conv = $this->find($convId);
         if (!$conv || empty($conv['context_data'])) return [];
         return json_decode($conv['context_data'], true) ?? [];
+    }
+
+    public function getActiveSuspension(int $convId, ?array $contextData = null): ?array
+    {
+        $contextData = $this->normalizeModerationContext($contextData ?? $this->getContext($convId));
+        $moderation = (array)($contextData['moderation'] ?? []);
+        $until = (string)($moderation['suspended_until'] ?? '');
+        $untilTs = $until !== '' ? strtotime($until) : false;
+        if ($untilTs === false) {
+            return null;
+        }
+
+        if ($untilTs <= time()) {
+            unset($contextData['moderation']['suspended_until'], $contextData['moderation']['suspend_reason']);
+            $this->updateState($convId, 'idle', $contextData);
+            return null;
+        }
+
+        return [
+            'until' => $until,
+            'reason' => (string)($moderation['suspend_reason'] ?? 'too_many_out_of_scope'),
+            'remaining_seconds' => max(0, $untilTs - time()),
+            'context' => $contextData,
+        ];
+    }
+
+    public function registerOutOfScopeStrike(int $convId, array $contextData): array
+    {
+        $contextData = $this->normalizeModerationContext($contextData);
+        $now = date('Y-m-d H:i:s');
+        $hits = (array)($contextData['moderation']['out_of_scope_hits'] ?? []);
+        $hits[] = $now;
+        $hits = $this->pruneRecentTimestamps($hits, self::OUT_OF_SCOPE_WINDOW_SECONDS);
+        $contextData['moderation']['out_of_scope_hits'] = $hits;
+        $contextData['moderation']['last_out_of_scope_at'] = $now;
+
+        if (count($hits) < self::OUT_OF_SCOPE_THRESHOLD) {
+            return [
+                'triggered' => false,
+                'context' => $contextData,
+                'threshold' => self::OUT_OF_SCOPE_THRESHOLD,
+                'window_seconds' => self::OUT_OF_SCOPE_WINDOW_SECONDS,
+                'suspend_seconds' => self::SUSPEND_SECONDS,
+            ];
+        }
+
+        $suspendedUntil = date('Y-m-d H:i:s', time() + self::SUSPEND_SECONDS);
+        $contextData['moderation']['suspended_until'] = $suspendedUntil;
+        $contextData['moderation']['suspend_reason'] = 'too_many_out_of_scope';
+        $contextData['moderation']['last_suspended_at'] = $now;
+
+        return [
+            'triggered' => true,
+            'context' => $contextData,
+            'threshold' => self::OUT_OF_SCOPE_THRESHOLD,
+            'window_seconds' => self::OUT_OF_SCOPE_WINDOW_SECONDS,
+            'suspend_seconds' => self::SUSPEND_SECONDS,
+            'suspended_until' => $suspendedUntil,
+        ];
     }
 
     public function addMessage(int $convId, string $sender, string $message, string $intent = ''): int
@@ -278,5 +346,36 @@ class ConversationModel extends BaseModel
 
         $value = $decoded['selected_branch_id'] ?? null;
         return is_numeric($value) ? (int) $value : null;
+    }
+
+    private function normalizeModerationContext(array $contextData): array
+    {
+        $moderation = isset($contextData['moderation']) && is_array($contextData['moderation'])
+            ? $contextData['moderation']
+            : [];
+
+        $moderation['out_of_scope_hits'] = $this->pruneRecentTimestamps(
+            is_array($moderation['out_of_scope_hits'] ?? null) ? $moderation['out_of_scope_hits'] : [],
+            self::OUT_OF_SCOPE_WINDOW_SECONDS
+        );
+
+        $contextData['moderation'] = $moderation;
+        return $contextData;
+    }
+
+    private function pruneRecentTimestamps(array $timestamps, int $windowSeconds): array
+    {
+        $cutoff = time() - $windowSeconds;
+        $kept = [];
+
+        foreach ($timestamps as $timestamp) {
+            $ts = is_string($timestamp) ? strtotime($timestamp) : false;
+            if ($ts === false || $ts < $cutoff) {
+                continue;
+            }
+            $kept[] = date('Y-m-d H:i:s', $ts);
+        }
+
+        return array_values($kept);
     }
 }

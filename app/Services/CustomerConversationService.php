@@ -48,7 +48,9 @@ class CustomerConversationService
         $language = $this->branchModel->getLanguage($branchId);
         $timezone = $this->branchModel->getTimezone($branchId);
         $nowLocal = (new \DateTime('now', new \DateTimeZone($timezone)))->format('Y-m-d H:i:s');
-        $customer = $this->customerModel->findOrCreate($channel, $customerIdentifier);
+        $customer = $channel === 'web'
+            ? $this->customerModel->resolveWebCustomer($customerIdentifier)
+            : $this->customerModel->findOrCreate($channel, $customerIdentifier);
 
         $sessionKey = $this->buildSessionKey($channel, $branchId, $customerIdentifier);
         $conversation = $this->convModel->getOrCreate($branchId, $customer['id'], $channel, $sessionKey);
@@ -56,6 +58,25 @@ class CustomerConversationService
         $convCtx = $this->convModel->getContext($convId);
         $cart = $this->cartModel->getOrCreate($sessionKey, $branchId, (int)$customer['id']);
         $cartItems = $this->cartModel->getItems((int)$cart['id']);
+
+        $activeSuspension = $this->convModel->getActiveSuspension($convId, $convCtx);
+        if ($activeSuspension !== null) {
+            $reply = $this->buildSuspendedReply($language, (string)$activeSuspension['until']);
+            $this->convModel->addMessage($convId, 'customer', $message, 'suspended');
+            $this->convModel->addMessage($convId, 'bot', $reply, 'suspended');
+
+            return [
+                'reply_message' => $reply,
+                'intent' => 'suspended',
+                'cart_state' => ['cart' => $cart, 'items' => $cartItems],
+                'action_result' => [
+                    'suspended_until' => $activeSuspension['until'],
+                    'reason' => $activeSuspension['reason'],
+                ],
+                'conversation' => ['id' => $convId, 'state' => 'suspended'],
+                'detector' => $this->detectorMeta,
+            ];
+        }
 
         if (method_exists($this->detector, 'setLoggingContext')) {
             $this->detector->setLoggingContext($branchId, $convId);
@@ -70,6 +91,37 @@ class CustomerConversationService
         }
 
         HookManager::doAction('chat.intent_detected', $intent, $message, $branchId);
+
+        if ($intent === 'out_of_scope') {
+            $abuseResult = $this->convModel->registerOutOfScopeStrike($convId, $convCtx);
+            $convCtx = $abuseResult['context'];
+
+            if (!empty($abuseResult['triggered'])) {
+                $reply = $this->buildOutOfScopeSuspendReply(
+                    $language,
+                    (int)$abuseResult['threshold'],
+                    (int)$abuseResult['window_seconds'],
+                    (int)$abuseResult['suspend_seconds'],
+                    (string)$abuseResult['suspended_until']
+                );
+
+                $this->convModel->addMessage($convId, 'customer', $message, $intent);
+                $this->convModel->updateState($convId, 'suspended', $convCtx);
+                $this->convModel->addMessage($convId, 'bot', $reply, 'suspended');
+
+                return [
+                    'reply_message' => $reply,
+                    'intent' => 'suspended',
+                    'cart_state' => ['cart' => $cart, 'items' => $cartItems],
+                    'action_result' => [
+                        'suspended_until' => $abuseResult['suspended_until'],
+                        'reason' => 'too_many_out_of_scope',
+                    ],
+                    'conversation' => ['id' => $convId, 'state' => 'suspended'],
+                    'detector' => $this->detectorMeta,
+                ];
+            }
+        }
 
         $agentContext = [
             'channel' => $channel,
@@ -176,6 +228,28 @@ class CustomerConversationService
     private function errorResponse(string $msg): array
     {
         return ['reply_message' => $msg, 'intent' => 'error', 'cart_state' => null, 'action_result' => null];
+    }
+
+    private function buildSuspendedReply(string $language, string $until): string
+    {
+        return $language === 'id'
+            ? 'Chat kamu sedang disuspend sementara karena terlalu sering mengirim pesan di luar topik. Coba lagi setelah ' . $until . '.'
+            : 'Your chat is temporarily suspended because there were too many off-topic messages. Please try again after ' . $until . '.';
+    }
+
+    private function buildOutOfScopeSuspendReply(
+        string $language,
+        int $threshold,
+        int $windowSeconds,
+        int $suspendSeconds,
+        string $until
+    ): string {
+        $windowMinutes = max(1, (int)round($windowSeconds / 60));
+        $suspendMinutes = max(1, (int)round($suspendSeconds / 60));
+
+        return $language === 'id'
+            ? "Chat kamu disuspend sementara karena terdeteksi {$threshold} pesan out-of-scope dalam {$windowMinutes} menit terakhir. Silakan coba lagi sekitar {$suspendMinutes} menit lagi, setelah {$until}."
+            : "Your chat has been temporarily suspended after {$threshold} off-topic messages within the last {$windowMinutes} minutes. Please try again in about {$suspendMinutes} minutes, after {$until}.";
     }
 
     /**

@@ -24,6 +24,9 @@ class CartModel extends BaseModel
                 'expires_at'  => date('Y-m-d H:i:s', strtotime('+24 hours')),
             ]);
             $cart = $this->find($id);
+        } elseif ((int)($cart['customer_id'] ?? 0) !== $customerId && $customerId > 0) {
+            $this->query('UPDATE carts SET customer_id = ?, updated_at = NOW() WHERE id = ?', [$customerId, $cart['id']]);
+            $cart = $this->find((int)$cart['id']);
         }
 
         return $cart;
