@@ -302,6 +302,7 @@
         <div class="chat-mobile-actions">
           <button type="button" class="chat-mobile-toggle" onclick="openSidebar()" aria-label="Pilih cabang">☰</button>
         </div>
+        <a href="<?= BASE_URL ?>/customer/login.php" class="chat-home-link">Customer Portal</a>
         <a href="<?= BASE_URL ?>/index.php" class="chat-home-link">Home</a>
         <!-- User badge (muncul setelah login) -->
         <div class="user-badge" id="userBadge" style="display:none;margin-left:auto">

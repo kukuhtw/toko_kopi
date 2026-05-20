@@ -13,7 +13,7 @@ class NotifikasiAdminPlugin implements PluginInterface
     private const SLUG = 'notifikasi-admin';
 
     public function getName(): string    { return 'Notifikasi Admin'; }
-    public function getVersion(): string { return '1.0.0'; }
+    public function getVersion(): string { return '1.1.0'; }
     public function getAuthor(): string  { return 'KopiBot Team'; }
 
     public function register(): void
@@ -36,7 +36,7 @@ class NotifikasiAdminPlugin implements PluginInterface
         $total    = Currency::format((float)($order['total_amount'] ?? 0), $currency);
         $channel  = strtoupper((string)($order['channel'] ?? ''));
 
-        $emailTujuan = $this->getSetting($branchId, 'email_admin');
+        $emailTujuan = $this->getGlobalSetting('email_admin');
         if ($emailTujuan) {
             $subject = "[KopiBot] Order Baru: {$orderNum}";
             $body    = "Order baru masuk!\n\n"
@@ -104,26 +104,32 @@ class NotifikasiAdminPlugin implements PluginInterface
 
     public function tambahForm(array $sections, int $branchId): array
     {
-        $emailSaved  = htmlspecialchars((string)($this->getSetting($branchId, 'email_admin')      ?? ''));
-        $smtpHost    = htmlspecialchars((string)($this->getSetting($branchId, 'smtp_host')        ?? ''));
-        $smtpPort    = htmlspecialchars((string)($this->getSetting($branchId, 'smtp_port')        ?? '587'));
-        $smtpEnc     = $this->getSetting($branchId, 'smtp_encryption') ?? 'tls';
-        $smtpUser    = htmlspecialchars((string)($this->getSetting($branchId, 'smtp_user')        ?? ''));
-        $smtpPass    = htmlspecialchars((string)($this->getSetting($branchId, 'smtp_pass')        ?? ''));
-        $smtpFrom    = htmlspecialchars((string)($this->getSetting($branchId, 'smtp_from_email')  ?? ''));
-        $smtpName    = htmlspecialchars((string)($this->getSetting($branchId, 'smtp_from_name')   ?? 'KopiBot'));
+        $mailDriver  = $this->getGlobalSetting('mail_driver') ?? 'smtp';
+        $emailSaved  = htmlspecialchars((string)($this->getGlobalSetting('email_admin')      ?? ''));
+        $smtpHost    = htmlspecialchars((string)($this->getGlobalSetting('smtp_host')        ?? ''));
+        $smtpPort    = htmlspecialchars((string)($this->getGlobalSetting('smtp_port')        ?? '587'));
+        $smtpEnc     = $this->getGlobalSetting('smtp_encryption') ?? 'tls';
+        $smtpUser    = htmlspecialchars((string)($this->getGlobalSetting('smtp_user')        ?? ''));
+        $smtpPass    = htmlspecialchars((string)($this->getGlobalSetting('smtp_pass')        ?? ''));
+        $smtpFrom    = htmlspecialchars((string)($this->getGlobalSetting('smtp_from_email')  ?? ''));
+        $smtpName    = htmlspecialchars((string)($this->getGlobalSetting('smtp_from_name')   ?? 'KopiBot'));
+        $keBaseUrl   = htmlspecialchars((string)($this->getGlobalSetting('ke_base_url')      ?? 'https://smtp-app.kirim.email'));
+        $keDomain    = htmlspecialchars((string)($this->getGlobalSetting('ke_domain')        ?? ''));
+        $keUser      = htmlspecialchars((string)($this->getGlobalSetting('ke_username')      ?? ''));
+        $keToken     = htmlspecialchars((string)($this->getGlobalSetting('ke_token')         ?? ''));
+        $keFrom      = htmlspecialchars((string)($this->getGlobalSetting('ke_from_email')    ?? ''));
+        $keFromName  = htmlspecialchars((string)($this->getGlobalSetting('ke_from_name')     ?? 'KopiBot'));
 
         ob_start();
         ?>
         <div class="card" style="margin-top:16px">
           <div class="card-title">🔔 Notifikasi Admin</div>
           <p style="font-size:.875rem;color:var(--text-light);margin-bottom:14px">
-            Notifikasi in-app selalu aktif. Konfigurasi SMTP untuk mengaktifkan notifikasi email setiap ada order baru.
+            Notifikasi in-app selalu aktif. Seluruh konfigurasi email plugin ini bersifat global untuk semua cabang.
           </p>
           <form method="POST">
             <?= Csrf::field() ?>
-            <input type="hidden" name="action"      value="save_plugin_settings">
-            <input type="hidden" name="branch_id"   value="<?= (int)$branchId ?>">
+            <input type="hidden" name="action"      value="save_global_plugin_settings">
             <input type="hidden" name="plugin_slug" value="<?= self::SLUG ?>">
 
             <div class="form-group" style="max-width:420px">
@@ -134,7 +140,67 @@ class NotifikasiAdminPlugin implements PluginInterface
             </div>
 
             <hr style="margin:20px 0;border-color:var(--border)">
-            <p style="font-weight:600;margin-bottom:14px">Konfigurasi SMTP</p>
+            <div class="form-group" style="max-width:320px">
+              <label class="form-label" for="na_mail_driver">Driver Email</label>
+              <select id="na_mail_driver" name="mail_driver" class="form-control">
+                <option value="smtp" <?= $mailDriver === 'smtp' ? 'selected' : '' ?>>SMTP manual</option>
+                <option value="kirim_email" <?= $mailDriver === 'kirim_email' ? 'selected' : '' ?>>KIRIM.EMAIL API</option>
+                <option value="mail" <?= $mailDriver === 'mail' ? 'selected' : '' ?>>PHP mail() fallback</option>
+              </select>
+              <small style="color:var(--text-light)">
+                KIRIM.EMAIL memakai Basic Auth dan endpoint API transactional.
+              </small>
+            </div>
+
+            <hr style="margin:20px 0;border-color:var(--border)">
+            <p style="font-weight:600;margin-bottom:14px">Konfigurasi KIRIM.EMAIL</p>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:720px">
+              <div class="form-group">
+                <label class="form-label" for="na_ke_base_url">Base URL</label>
+                <input type="url" id="na_ke_base_url" name="ke_base_url" class="form-control"
+                       value="<?= $keBaseUrl ?>" placeholder="https://smtp-app.kirim.email">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="na_ke_domain">Sending Domain</label>
+                <input type="text" id="na_ke_domain" name="ke_domain" class="form-control"
+                       value="<?= $keDomain ?>" placeholder="example.com">
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:720px">
+              <div class="form-group">
+                <label class="form-label" for="na_ke_username">Username</label>
+                <input type="text" id="na_ke_username" name="ke_username" class="form-control"
+                       value="<?= $keUser ?>" placeholder="username dashboard">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="na_ke_token">API Key / Token</label>
+                <input type="password" id="na_ke_token" name="ke_token" class="form-control"
+                       value="<?= $keToken ?>" placeholder="token dari dashboard">
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:720px">
+              <div class="form-group">
+                <label class="form-label" for="na_ke_from">Email Pengirim</label>
+                <input type="email" id="na_ke_from" name="ke_from_email" class="form-control"
+                       value="<?= $keFrom ?>" placeholder="noreply@example.com">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="na_ke_from_name">Nama Pengirim</label>
+                <input type="text" id="na_ke_from_name" name="ke_from_name" class="form-control"
+                       value="<?= $keFromName ?>" placeholder="KopiBot">
+              </div>
+            </div>
+
+            <small style="display:block;color:var(--text-light);margin-bottom:18px">
+              Sesuai dokumentasi KIRIM.EMAIL, gunakan Basic Auth dengan username + API key dari dashboard.
+              Base URL default adalah <code>https://smtp-app.kirim.email</code>.
+            </small>
+
+            <hr style="margin:20px 0;border-color:var(--border)">
+            <p style="font-weight:600;margin-bottom:14px">Konfigurasi SMTP Manual</p>
 
             <div style="display:grid;grid-template-columns:1fr 140px;gap:12px;max-width:560px">
               <div class="form-group">
@@ -200,19 +266,36 @@ class NotifikasiAdminPlugin implements PluginInterface
 
     private function sendEmail(int $branchId, string $to, string $subject, string $body): bool
     {
-        $smtpHost = $this->getSetting($branchId, 'smtp_host');
+        $mailDriver = $this->getGlobalSetting('mail_driver') ?? 'smtp';
+        $smtpHost = $this->getGlobalSetting('smtp_host');
+
+        if ($mailDriver === 'kirim_email') {
+            require_once __DIR__ . '/KirimEmailMailer.php';
+            return KirimEmailMailer::send([
+                'base_url'   => $this->getGlobalSetting('ke_base_url')   ?? 'https://smtp-app.kirim.email',
+                'domain'     => $this->getGlobalSetting('ke_domain')     ?? '',
+                'username'   => $this->getGlobalSetting('ke_username')   ?? '',
+                'token'      => $this->getGlobalSetting('ke_token')      ?? '',
+                'from_email' => $this->getGlobalSetting('ke_from_email') ?? '',
+                'from_name'  => $this->getGlobalSetting('ke_from_name')  ?? 'KopiBot',
+            ], $to, $subject, $body);
+        }
 
         if ($smtpHost) {
             require_once __DIR__ . '/SmtpMailer.php';
             return SmtpMailer::send([
                 'smtp_host'       => $smtpHost,
-                'smtp_port'       => $this->getSetting($branchId, 'smtp_port')        ?? '587',
-                'smtp_encryption' => $this->getSetting($branchId, 'smtp_encryption')  ?? 'tls',
-                'smtp_user'       => $this->getSetting($branchId, 'smtp_user')        ?? '',
-                'smtp_pass'       => $this->getSetting($branchId, 'smtp_pass')        ?? '',
-                'smtp_from_email' => $this->getSetting($branchId, 'smtp_from_email')  ?? '',
-                'smtp_from_name'  => $this->getSetting($branchId, 'smtp_from_name')   ?? 'KopiBot',
+                'smtp_port'       => $this->getGlobalSetting('smtp_port')        ?? '587',
+                'smtp_encryption' => $this->getGlobalSetting('smtp_encryption')  ?? 'tls',
+                'smtp_user'       => $this->getGlobalSetting('smtp_user')        ?? '',
+                'smtp_pass'       => $this->getGlobalSetting('smtp_pass')        ?? '',
+                'smtp_from_email' => $this->getGlobalSetting('smtp_from_email')  ?? '',
+                'smtp_from_name'  => $this->getGlobalSetting('smtp_from_name')   ?? 'KopiBot',
             ], $to, $subject, $body);
+        }
+
+        if ($mailDriver !== 'mail' && $mailDriver !== 'smtp') {
+            return false;
         }
 
         // Fallback ke mail() jika SMTP belum dikonfigurasi
@@ -220,6 +303,22 @@ class NotifikasiAdminPlugin implements PluginInterface
     }
 
     // ── Helpers ─────────────────────────────────────────────────
+
+    private function getGlobalSetting(string $key): ?string
+    {
+        $stmt = Database::getInstance()->prepare(
+            'SELECT setting_val FROM app_settings
+             WHERE setting_key = ? LIMIT 1'
+        );
+        $stmt->execute([$this->buildGlobalKey($key)]);
+        $row = $stmt->fetch();
+        return $row ? (string)$row['setting_val'] : null;
+    }
+
+    private function buildGlobalKey(string $key): string
+    {
+        return 'plugin_' . str_replace('-', '_', self::SLUG) . '_' . $key;
+    }
 
     private function getSetting(int $branchId, string $key): ?string
     {

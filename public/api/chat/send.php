@@ -37,20 +37,13 @@ if (!$isRegisterPing && strlen($message) > 1000) {
 
 // Use session_id as web customer identifier
 $customerIdentifier = $sessionId ?: session_id();
-
-// Update customer name/email if provided
-if ($customerName !== '') {
-    $customerModel = new \App\Models\CustomerModel();
-    $customer      = $customerModel->findOrCreate('web', $customerIdentifier);
-    $updateData = ['name' => Sanitize::string($customerName)];
-    if ($customerEmail && filter_var($customerEmail, FILTER_VALIDATE_EMAIL)) {
-        $updateData['email'] = $customerEmail;
-    }
-    if ($customerWhatsapp !== '') {
-        $updateData['whatsapp'] = $customerWhatsapp;
-    }
-    $customerModel->updateInfo($customer['id'], $updateData);
-}
+$customerModel = new \App\Models\CustomerModel();
+$customerModel->resolveWebCustomer(
+    $customerIdentifier,
+    Sanitize::string($customerName),
+    $customerEmail,
+    $customerWhatsapp
+);
 
 // Return early for register ping — nothing to process through chatbot
 if ($isRegisterPing) {

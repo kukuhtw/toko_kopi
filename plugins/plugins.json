@@ -61,5 +61,8 @@
     },
     "loyalty-point": {
         "active": true
+    },
+    "customer-crm": {
+        "active": true
     }
 }

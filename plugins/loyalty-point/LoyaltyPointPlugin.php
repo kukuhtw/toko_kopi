@@ -41,6 +41,7 @@ class LoyaltyPointPlugin implements PluginInterface
         HookManager::addFilter('order.before_create', [$this, 'attachOrderRedemptionData'], 10);
         HookManager::addFilter('chat.after_ai', [$this, 'appendPointsHint'], 18);
         HookManager::addFilter('settings.sections', [$this, 'addSettingsSection'], 18);
+        HookManager::addFilter('super.settings.sections', [$this, 'addSuperSettingsSection'], 18);
         HookManager::addFilter('skills.registered', [$this, 'registerSkill'], 18);
         HookManager::addFilter('intent.patterns', [$this, 'registerIntentPatterns'], 18);
         HookManager::addFilter('dashboard.branch_widgets', [$this, 'addBranchWidget'], 18);
@@ -102,6 +103,7 @@ class LoyaltyPointPlugin implements PluginInterface
 
     public function addSettingsSection(array $sections, int $branchId): array
     {
+        $scope = $this->getSettingsScope();
         $enabled       = $this->getSetting($branchId, 'enabled', '1') !== '0';
         $pointsPerUnit = $this->getSetting($branchId, 'points_per_unit', '1');
         $spendAmount   = $this->getSetting($branchId, 'spend_amount', '10000');
@@ -120,6 +122,11 @@ class LoyaltyPointPlugin implements PluginInterface
             Beri poin otomatis ke customer saat order selesai. Customer juga bisa cek saldo poin langsung dari chatbot.
           </p>
 
+          <?php if ($scope === 'global'): ?>
+            <div style="margin-bottom:14px;padding:12px 14px;background:var(--bg-light,#faf9f7);border-radius:8px;color:var(--text-light)">
+              Pengaturan loyalty saat ini bersifat global untuk semua cabang. Ubah dari halaman Super Admin Settings jika ingin mengganti program loyalty.
+            </div>
+          <?php else: ?>
           <form method="POST">
             <?= Csrf::field() ?>
             <input type="hidden" name="action" value="save_plugin_settings">
@@ -176,9 +183,13 @@ class LoyaltyPointPlugin implements PluginInterface
 
             <button type="submit" class="btn btn-primary">💾 Simpan Pengaturan Loyalty</button>
           </form>
+          <?php endif; ?>
 
           <div style="margin-top:16px;background:var(--bg-light,#faf9f7);border-radius:8px;padding:14px">
             <div style="font-weight:600;margin-bottom:10px">Ringkasan Program Saat Ini</div>
+            <div style="font-size:.8rem;color:var(--text-light);margin-bottom:12px">
+              Scope aktif: <strong><?= $scope === 'global' ? 'Global untuk semua cabang' : 'Per cabang' ?></strong>
+            </div>
             <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:12px">
               <div>
                 <div style="font-size:.78rem;color:var(--text-light)">Member Aktif</div>
@@ -208,6 +219,95 @@ class LoyaltyPointPlugin implements PluginInterface
               <div style="font-size:.85rem;color:var(--text-light)">Belum ada customer yang mengumpulkan poin.</div>
             <?php endif; ?>
           </div>
+        </div>
+        <?php
+
+        $sections[self::SLUG] = ob_get_clean();
+        return $sections;
+    }
+
+    public function addSuperSettingsSection(array $sections, int $branchId): array
+    {
+        $scope = $this->getSettingsScope();
+        $enabled = $this->getGlobalSetting('enabled', '1') !== '0';
+        $pointsPerUnit = $this->getGlobalSetting('points_per_unit', '1');
+        $spendAmount = $this->getGlobalSetting('spend_amount', '10000');
+        $requirePaid = $this->getGlobalSetting('require_paid', '0') === '1';
+        $redeemPointsUnit = $this->getGlobalSetting('redeem_points_unit', '10');
+        $redeemValueAmount = $this->getGlobalSetting('redeem_value_amount', '1000');
+        $minRedeemPoints = $this->getGlobalSetting('min_redeem_points', '10');
+
+        ob_start();
+        ?>
+        <div class="card" style="margin-top:16px">
+          <div class="card-title">Loyalty Point</div>
+          <p style="font-size:.875rem;color:var(--text-light);margin-bottom:14px">
+            Atur apakah program loyalty dipakai global untuk semua cabang atau dikelola masing-masing cabang.
+          </p>
+
+          <form method="POST">
+            <?= Csrf::field() ?>
+            <input type="hidden" name="action" value="save_global_plugin_settings">
+            <input type="hidden" name="plugin_slug" value="<?= self::SLUG ?>">
+
+            <div class="form-group" style="max-width:280px">
+              <label class="form-label" for="lp_settings_scope">Mode Pengaturan</label>
+              <select id="lp_settings_scope" name="settings_scope" class="form-control">
+                <option value="global" <?= $scope === 'global' ? 'selected' : '' ?>>Global untuk semua cabang</option>
+                <option value="branch" <?= $scope === 'branch' ? 'selected' : '' ?>>Diatur per cabang</option>
+              </select>
+              <small style="color:var(--text-light)">Jika pilih global, halaman cabang hanya menampilkan ringkasan dan memakai nilai dari sini.</small>
+            </div>
+
+            <div class="form-group">
+              <input type="hidden" name="enabled" value="0">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="checkbox" name="enabled" value="1" <?= $enabled ? 'checked' : '' ?>>
+                <span>Aktifkan loyalty point global</span>
+              </label>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group" style="max-width:220px">
+                <label class="form-label" for="lp_global_spend_amount">Belanja per Kelipatan</label>
+                <input type="number" id="lp_global_spend_amount" name="spend_amount" class="form-control"
+                       min="1" step="1000" value="<?= htmlspecialchars($spendAmount) ?>">
+              </div>
+              <div class="form-group" style="max-width:220px">
+                <label class="form-label" for="lp_global_points_per_unit">Poin Diberikan</label>
+                <input type="number" id="lp_global_points_per_unit" name="points_per_unit" class="form-control"
+                       min="1" step="1" value="<?= htmlspecialchars($pointsPerUnit) ?>">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group" style="max-width:220px">
+                <label class="form-label" for="lp_global_redeem_points_unit">Poin per Redeem</label>
+                <input type="number" id="lp_global_redeem_points_unit" name="redeem_points_unit" class="form-control"
+                       min="1" step="1" value="<?= htmlspecialchars($redeemPointsUnit) ?>">
+              </div>
+              <div class="form-group" style="max-width:220px">
+                <label class="form-label" for="lp_global_redeem_value_amount">Nilai Diskon</label>
+                <input type="number" id="lp_global_redeem_value_amount" name="redeem_value_amount" class="form-control"
+                       min="1" step="500" value="<?= htmlspecialchars($redeemValueAmount) ?>">
+              </div>
+              <div class="form-group" style="max-width:220px">
+                <label class="form-label" for="lp_global_min_redeem_points">Minimal Redeem Poin</label>
+                <input type="number" id="lp_global_min_redeem_points" name="min_redeem_points" class="form-control"
+                       min="1" step="1" value="<?= htmlspecialchars($minRedeemPoints) ?>">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <input type="hidden" name="require_paid" value="0">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="checkbox" name="require_paid" value="1" <?= $requirePaid ? 'checked' : '' ?>>
+                <span>Hanya berikan poin jika order sudah berstatus paid</span>
+              </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Simpan Scope & Pengaturan Global Loyalty</button>
+          </form>
         </div>
         <?php
 
@@ -462,6 +562,10 @@ class LoyaltyPointPlugin implements PluginInterface
 
     private function getSetting(int $branchId, string $key, string $default = ''): string
     {
+        if ($this->getSettingsScope() === 'global') {
+            return $this->getGlobalSetting($key, $default);
+        }
+
         try {
             $stmt = Database::getInstance()->prepare(
                 'SELECT setting_val
@@ -476,6 +580,35 @@ class LoyaltyPointPlugin implements PluginInterface
         } catch (\Throwable) {
             return $default;
         }
+    }
+
+    private function getSettingsScope(): string
+    {
+        $scope = $this->getGlobalSetting('settings_scope', 'branch');
+        return $scope === 'global' ? 'global' : 'branch';
+    }
+
+    private function getGlobalSetting(string $key, string $default = ''): string
+    {
+        try {
+            $stmt = Database::getInstance()->prepare(
+                'SELECT setting_val
+                 FROM app_settings
+                 WHERE setting_key = ?
+                 LIMIT 1'
+            );
+            $stmt->execute([$this->buildGlobalSettingKey($key)]);
+            $value = $stmt->fetchColumn();
+
+            return $value !== false && $value !== null ? (string)$value : $default;
+        } catch (\Throwable) {
+            return $default;
+        }
+    }
+
+    private function buildGlobalSettingKey(string $key): string
+    {
+        return 'plugin_' . str_replace('-', '_', self::SLUG) . '_' . $key;
     }
 
     private function getBranchCurrency(int $branchId): string

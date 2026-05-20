@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Config\Database;
+use App\Plugin\HookManager;
 
 class LoyaltyPointRepository
 {
@@ -84,19 +85,32 @@ class LoyaltyPointRepository
         $this->ensureSchema();
         $db = Database::getInstance();
 
-        $db->prepare(
-            'INSERT INTO loyalty_point_accounts (branch_id, customer_id, balance_points, lifetime_points)
-             VALUES (?, ?, ?, ?)
-             ON DUPLICATE KEY UPDATE
-                balance_points = balance_points + VALUES(balance_points),
-                lifetime_points = lifetime_points + VALUES(lifetime_points),
-                updated_at = CURRENT_TIMESTAMP'
-        )->execute([$branchId, $customerId, $points, $points]);
+        $db->beginTransaction();
 
-        $db->prepare(
-            'INSERT INTO loyalty_point_transactions (branch_id, customer_id, order_id, points, transaction_type, description)
-             VALUES (?, ?, ?, ?, "earn", ?)'
-        )->execute([$branchId, $customerId, $orderId, $points, $description]);
+        try {
+            $db->prepare(
+                'INSERT INTO loyalty_point_accounts (branch_id, customer_id, balance_points, lifetime_points)
+                 VALUES (?, ?, ?, ?)
+                 ON DUPLICATE KEY UPDATE
+                    balance_points = balance_points + VALUES(balance_points),
+                    lifetime_points = lifetime_points + VALUES(lifetime_points),
+                    updated_at = CURRENT_TIMESTAMP'
+            )->execute([$branchId, $customerId, $points, $points]);
+
+            $db->prepare(
+                'INSERT INTO loyalty_point_transactions (branch_id, customer_id, order_id, points, transaction_type, description)
+                 VALUES (?, ?, ?, ?, "earn", ?)'
+            )->execute([$branchId, $customerId, $orderId, $points, $description]);
+
+            $db->commit();
+        } catch (\Throwable $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            throw $e;
+        }
+
+        $this->emitPointsChanged($branchId, $customerId, $orderId, $points, 'earn', $description);
     }
 
     public function redeemPoints(int $branchId, int $customerId, int $orderId, int $points, string $description): void
@@ -108,18 +122,31 @@ class LoyaltyPointRepository
         $this->ensureSchema();
         $db = Database::getInstance();
 
-        $db->prepare(
-            'INSERT INTO loyalty_point_accounts (branch_id, customer_id, balance_points, lifetime_points)
-             VALUES (?, ?, 0, 0)
-             ON DUPLICATE KEY UPDATE
-                balance_points = GREATEST(0, balance_points - ?),
-                updated_at = CURRENT_TIMESTAMP'
-        )->execute([$branchId, $customerId, $points]);
+        $db->beginTransaction();
 
-        $db->prepare(
-            'INSERT INTO loyalty_point_transactions (branch_id, customer_id, order_id, points, transaction_type, description)
-             VALUES (?, ?, ?, ?, "redeem", ?)'
-        )->execute([$branchId, $customerId, $orderId, -$points, $description]);
+        try {
+            $db->prepare(
+                'INSERT INTO loyalty_point_accounts (branch_id, customer_id, balance_points, lifetime_points)
+                 VALUES (?, ?, 0, 0)
+                 ON DUPLICATE KEY UPDATE
+                    balance_points = GREATEST(0, balance_points - ?),
+                    updated_at = CURRENT_TIMESTAMP'
+            )->execute([$branchId, $customerId, $points]);
+
+            $db->prepare(
+                'INSERT INTO loyalty_point_transactions (branch_id, customer_id, order_id, points, transaction_type, description)
+                 VALUES (?, ?, ?, ?, "redeem", ?)'
+            )->execute([$branchId, $customerId, $orderId, -$points, $description]);
+
+            $db->commit();
+        } catch (\Throwable $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            throw $e;
+        }
+
+        $this->emitPointsChanged($branchId, $customerId, $orderId, -$points, 'redeem', $description);
     }
 
     public function refundRedeemedPoints(int $branchId, int $customerId, int $orderId, int $points, string $description): void
@@ -131,18 +158,31 @@ class LoyaltyPointRepository
         $this->ensureSchema();
         $db = Database::getInstance();
 
-        $db->prepare(
-            'INSERT INTO loyalty_point_accounts (branch_id, customer_id, balance_points, lifetime_points)
-             VALUES (?, ?, ?, 0)
-             ON DUPLICATE KEY UPDATE
-                balance_points = balance_points + VALUES(balance_points),
-                updated_at = CURRENT_TIMESTAMP'
-        )->execute([$branchId, $customerId, $points]);
+        $db->beginTransaction();
 
-        $db->prepare(
-            'INSERT INTO loyalty_point_transactions (branch_id, customer_id, order_id, points, transaction_type, description)
-             VALUES (?, ?, ?, ?, "refund", ?)'
-        )->execute([$branchId, $customerId, $orderId, $points, $description]);
+        try {
+            $db->prepare(
+                'INSERT INTO loyalty_point_accounts (branch_id, customer_id, balance_points, lifetime_points)
+                 VALUES (?, ?, ?, 0)
+                 ON DUPLICATE KEY UPDATE
+                    balance_points = balance_points + VALUES(balance_points),
+                    updated_at = CURRENT_TIMESTAMP'
+            )->execute([$branchId, $customerId, $points]);
+
+            $db->prepare(
+                'INSERT INTO loyalty_point_transactions (branch_id, customer_id, order_id, points, transaction_type, description)
+                 VALUES (?, ?, ?, ?, "refund", ?)'
+            )->execute([$branchId, $customerId, $orderId, $points, $description]);
+
+            $db->commit();
+        } catch (\Throwable $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            throw $e;
+        }
+
+        $this->emitPointsChanged($branchId, $customerId, $orderId, $points, 'refund', $description);
     }
 
     public function getBalance(int $branchId, int $customerId): array
@@ -287,15 +327,30 @@ class LoyaltyPointRepository
                 lpa.balance_points,
                 lpa.lifetime_points,
                 lpa.updated_at,
-                MAX(lpt.created_at) AS last_transaction_at
+                MAX(lpt.created_at) AS last_transaction_at,
+                MAX(o.created_at) AS last_order_at,
+                MAX(cnl.created_at) AS last_notification_at
              FROM loyalty_point_accounts lpa
              JOIN customers c ON c.id = lpa.customer_id
              LEFT JOIN loyalty_point_transactions lpt
                 ON lpt.branch_id = lpa.branch_id
                AND lpt.customer_id = lpa.customer_id
+             LEFT JOIN orders o
+                ON o.branch_id = lpa.branch_id
+               AND o.customer_id = lpa.customer_id
+             LEFT JOIN crm_notification_logs cnl
+                ON cnl.branch_id = lpa.branch_id
+               AND cnl.customer_id = lpa.customer_id
              WHERE ' . implode(' AND ', $where) . '
              GROUP BY lpa.customer_id, c.name, c.identifier, c.whatsapp, c.email, lpa.balance_points, lpa.lifetime_points, lpa.updated_at
-             ORDER BY lpa.balance_points DESC, lpa.updated_at DESC
+             ORDER BY
+                GREATEST(
+                    COALESCE(MAX(cnl.created_at), "1000-01-01 00:00:00"),
+                    COALESCE(MAX(o.created_at), "1000-01-01 00:00:00"),
+                    COALESCE(MAX(lpt.created_at), "1000-01-01 00:00:00"),
+                    COALESCE(lpa.updated_at, "1000-01-01 00:00:00")
+                ) DESC,
+                c.id DESC
              LIMIT ? OFFSET ?'
         );
         $stmt->execute($params);
@@ -399,5 +454,27 @@ class LoyaltyPointRepository
         }
 
         Database::getInstance()->exec('ALTER TABLE ' . $table . ' ADD COLUMN ' . $column . ' ' . $definition);
+    }
+
+    private function emitPointsChanged(
+        int $branchId,
+        int $customerId,
+        int $orderId,
+        int $pointsDelta,
+        string $transactionType,
+        string $description
+    ): void {
+        $balance = $this->getBalance($branchId, $customerId);
+
+        HookManager::doAction('loyalty.points_changed', [
+            'branch_id' => $branchId,
+            'customer_id' => $customerId,
+            'order_id' => $orderId,
+            'points_delta' => $pointsDelta,
+            'transaction_type' => $transactionType,
+            'description' => $description,
+            'balance_points' => (int)($balance['balance_points'] ?? 0),
+            'lifetime_points' => (int)($balance['lifetime_points'] ?? 0),
+        ]);
     }
 }

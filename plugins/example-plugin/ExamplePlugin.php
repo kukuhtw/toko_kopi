@@ -22,8 +22,6 @@ class ExamplePlugin implements PluginInterface
         // Filter: modifikasi total harga keranjang
         HookManager::addFilter('cart.total', [$this, 'onCartTotal']);
 
-        // Filter: tambah item ke menu sidebar dashboard cabang
-        HookManager::addFilter('dashboard.nav_items', [$this, 'addNavItem']);
     }
 
     public function onOrderCreated(array $order): void

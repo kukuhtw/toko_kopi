@@ -1,7 +1,7 @@
 # KopiBot - AI Chatbot Order System
 
 > ## AI Agent Coffee Shop Commerce Platform
-> Platform AI untuk otomatisasi order, customer service, loyalty customer, dan manajemen multi cabang coffee shop.
+> Platform AI untuk otomatisasi order, customer service, loyalty customer, Customer CRM, Customer Portal, dan manajemen multi cabang coffee shop.
 >
 > ### Features
 > - AI Chatbot Order Menu
@@ -10,7 +10,8 @@
 > - AI Upselling & Promo Recommendation
 > - Order via Website & Chat Apps
 > - Variant Product & Topping Support
-> - Loyalty Point and Redeem Point
+> - Loyalty Point, Redeem Point, and Customer CRM
+> - Customer Self-Service Dashboard
 > - Multi Currency, Tax, and Timezone
 >
 > ### Tech Stack
@@ -35,7 +36,7 @@
 >
 > Copyright 2026 Kukuh TW. All rights reserved.
 
-Sistem chatbot pemesanan kopi berbasis PHP 8 native, tanpa framework besar, dengan satu codebase untuk multi-cabang, multi-channel, multi-bahasa, promo engine, loyalty point, dan plugin system.
+Sistem chatbot pemesanan kopi berbasis PHP 8 native, tanpa framework besar, dengan satu codebase untuk multi-cabang, multi-channel, multi-bahasa, promo engine, loyalty point, Customer CRM, Customer Portal, dan plugin system.
 
 ---
 
@@ -53,7 +54,9 @@ Sistem chatbot pemesanan kopi berbasis PHP 8 native, tanpa framework besar, deng
 | **Promo Engine** | Diskon persen, nominal, promo code, jadwal promo, min order, dan rekomendasi promo |
 | **Payment Gateway** | Midtrans dan Xendit via plugin |
 | **Menu Management** | Upload CSV, variant size/price, topping, dan override per cabang |
-| **Dashboard** | Super admin lintas cabang, branch admin per cabang, histori loyalty customer |
+| **Dashboard** | Super admin lintas cabang, branch admin per cabang, Customer CRM, histori loyalty customer, dan Customer Portal self-service |
+| **Customer CRM** | Normalisasi identitas customer berbasis email/WhatsApp, notifikasi loyalty, dan log CRM per cabang |
+| **Customer Portal** | Login customer ringan via kontak + nomor order untuk cek order history, loyalty, profile, dan repeat order |
 | **Dokumentasi HTML** | README dan docs Markdown tersedia juga sebagai halaman HTML |
 | **Export CSV** | Export order, menu, promo, dan data dashboard terkait |
 
@@ -117,6 +120,11 @@ LLM API key tidak diisi di `.env`, tetapi dikelola lewat dashboard Super Admin.
 | `http://localhost/toko_kopi/public/login.php` | Login admin |
 | `http://localhost/toko_kopi/public/chat.php` | Chat demo |
 | `http://localhost/toko_kopi/public/order.php?branch={slug}` | Halaman order per cabang |
+| `http://localhost/toko_kopi/public/customer/login.php` | Login Customer Portal |
+| `http://localhost/toko_kopi/public/customer/` | Overview Customer Portal |
+| `http://localhost/toko_kopi/public/customer/orders.php` | Riwayat order customer |
+| `http://localhost/toko_kopi/public/customer/loyalty.php` | Dashboard loyalty customer |
+| `http://localhost/toko_kopi/public/customer/profile.php` | Profil dan preferensi customer |
 
 ---
 
@@ -148,11 +156,17 @@ toko_kopi/
 |   |-- seed.sql
 |   `-- add_loyalty_point_plugin.sql
 |-- plugins/
+|   |-- customer-crm/
 |   |-- loyalty-point/
 |   |-- midtrans-payment/
 |   |-- xendit-payment/
 |   |-- telegram-channel/
 |   |-- discord-channel/
+|   |-- fonnte-whatsapp/
+|   |-- twilio-whatsapp/
+|   |-- vonage-whatsapp/
+|   |-- baileys-whatsapp/
+|   |-- messagebird-whatsapp/
 |   |-- upselling/
 |   |-- rekomendasi-promo/
 |   |-- cms-berita/
@@ -164,6 +178,7 @@ toko_kopi/
 |   |-- order.php
 |   |-- docs/
 |   |-- api/
+|   |-- customer/
 |   `-- dashboard/
 |-- docs/
 |   |-- instalasi.md
@@ -259,15 +274,21 @@ Referensi:
 ### Plugin yang Sudah Tersedia
 
 - `loyalty-point` - loyalty earn/redeem dan dashboard loyalty
+- `customer-crm` - normalisasi identitas customer, log CRM, dan notifikasi loyalty ke customer
 - `midtrans-payment` - payment gateway Midtrans
 - `xendit-payment` - payment gateway Xendit
 - `telegram-channel` - channel Telegram
 - `discord-channel` - channel Discord
+- `fonnte-whatsapp`, `twilio-whatsapp`, `vonage-whatsapp`, `baileys-whatsapp`, `messagebird-whatsapp` - adapter WhatsApp berbasis plugin
 - `upselling` - upsell recommendation
 - `rekomendasi-promo` - promo recommendation
 - `cms-berita` - branch news/content
+- `notifikasi-admin` - helper notifikasi/admin mailer support
+- `themes` - pengelolaan tema/tampilan
 - `instagram-dm` - integrasi DM Instagram
 - `anthropic-llm`, `gemini-llm`, `openrouter-llm` - provider AI tambahan
+
+Plugin diaktifkan lewat [`plugins/plugins.json`](plugins/plugins.json). Pada state proyek saat ini, `loyalty-point` dan `customer-crm` aktif dan saling terhubung.
 
 ---
 
@@ -283,6 +304,8 @@ Fitur loyalty saat ini mendukung:
 - sinkronisasi diskon promo dan loyalty di cart
 - refund point otomatis saat order dibatalkan
 - dashboard branch untuk histori member loyalty dan mutasi poin per customer
+- operasi earn/redeem/refund dibungkus transaksi database agar saldo akun dan ledger tetap konsisten
+- mutasi loyalty memicu event `loyalty.points_changed` untuk plugin lain seperti `customer-crm`
 
 File utama:
 
@@ -290,6 +313,55 @@ File utama:
 - [`plugins/loyalty-point/LoyaltyPointRepository.php`](plugins/loyalty-point/LoyaltyPointRepository.php)
 - [`plugins/loyalty-point/LoyaltyPointSkill.php`](plugins/loyalty-point/LoyaltyPointSkill.php)
 - [`public/dashboard/branch/loyalty.php`](public/dashboard/branch/loyalty.php)
+
+---
+
+## Customer CRM
+
+Plugin `customer-crm` menambahkan lapisan Customer CRM yang fokus pada identitas dan komunikasi loyalty.
+
+Fitur utamanya:
+
+- normalisasi customer berbasis email dan WhatsApp
+- log notifikasi loyalty ke tabel plugin `crm_notification_logs`
+- dashboard branch CRM untuk melihat customer, loyalty, order terakhir, dan histori notifikasi
+- backfill satu kali dari histori `loyalty_point_transactions` agar CRM tetap punya jejak event lama
+- schema plugin terpisah di [`plugins/customer-crm/schema.sql`](plugins/customer-crm/schema.sql)
+
+File utama:
+
+- [`plugins/customer-crm/CustomerCrmPlugin.php`](plugins/customer-crm/CustomerCrmPlugin.php)
+- [`plugins/customer-crm/schema.sql`](plugins/customer-crm/schema.sql)
+- [`public/dashboard/branch/crm.php`](public/dashboard/branch/crm.php)
+
+---
+
+## Customer Portal
+
+Selain dashboard admin, proyek ini sekarang memiliki Customer Portal self-service.
+
+Alur login:
+
+- customer masuk lewat `email atau WhatsApp`
+- verifikasi ringan memakai `nomor order`
+- session customer dipisah dari session admin
+
+Halaman utama:
+
+- [`public/customer/login.php`](public/customer/login.php)
+- [`public/customer/index.php`](public/customer/index.php)
+- [`public/customer/orders.php`](public/customer/orders.php)
+- [`public/customer/loyalty.php`](public/customer/loyalty.php)
+- [`public/customer/profile.php`](public/customer/profile.php)
+- [`public/customer/order-detail.php`](public/customer/order-detail.php)
+
+Yang bisa dilakukan customer:
+
+- cek ringkasan order dan total belanja
+- cek saldo poin dan histori loyalty
+- lihat detail order lengkap
+- ulang order ke cabang asal dari halaman detail
+- akses dashboard customer langsung dari landing page, halaman chat, dan halaman order
 
 ---
 
@@ -317,7 +389,7 @@ Provider custom bisa ditambahkan lewat plugin.
 | `/api/cart/add.php` | POST | Tambah item ke cart |
 | `/api/cart/update.php` | POST | Update quantity item |
 | `/api/cart/clear.php` | POST | Kosongkan cart |
-| `/api/loyalty/status.php` | GET | Cek saldo loyalty customer |
+| `/api/loyalty/status.php` | POST | Cek saldo loyalty customer dan status redeem di cart |
 | `/api/loyalty/redeem.php` | POST | Pakai atau batalkan redeem point |
 | `/api/order/checkout.php` | POST | Buat order dari cart |
 | `/api/order/status.php` | GET | Cek status order |
@@ -346,6 +418,8 @@ checkout
 ```
 
 Di halaman order web, redeem point juga bisa dipakai langsung dari panel loyalty saat checkout.
+
+Portal customer juga dapat diakses langsung setelah checkout lewat tombol `Dashboard Customer`, dengan prefill kontak dan nomor order terakhir.
 
 ---
 
@@ -377,6 +451,7 @@ Dokumen Markdown sumber:
 - Form dashboard memakai CSRF token
 - RBAC untuk `super_admin` dan `branch_admin`
 - Branch admin hanya bisa akses data cabangnya
+- Customer portal hanya bisa membuka data yang cocok dengan sesi customer yang sudah diverifikasi
 - Credentials disimpan di `.env`
 
 ---

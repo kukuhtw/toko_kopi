@@ -19,6 +19,9 @@ $variantId  = isset($body['variant_id']) ? (int)$body['variant_id'] : null;
 $qty        = max(1, (int) ($body['quantity'] ?? 1));
 $notes      = Sanitize::string($body['notes'] ?? '');
 $sessionId  = $body['session_id'] ?? session_id();
+$customerName = Sanitize::string($body['customer_name'] ?? '');
+$customerEmail = trim((string)($body['customer_email'] ?? ''));
+$customerWhatsapp = preg_replace('/[^0-9+]/', '', (string)($body['customer_whatsapp'] ?? ''));
 
 if (!$branchId || !$menuItemId) Response::error('branch_id and menu_item_id required');
 
@@ -42,7 +45,7 @@ if ($variantId !== null && $variantId > 0) {
 
 // Resolve customer
 $customerModel = new CustomerModel();
-$customer      = $customerModel->findOrCreate('web', $sessionId);
+$customer      = $customerModel->resolveWebCustomer((string)$sessionId, $customerName, $customerEmail, $customerWhatsapp);
 
 $cartModel  = new CartModel();
 $sessionKey = hash('sha256', "web:{$branchId}:{$sessionId}");

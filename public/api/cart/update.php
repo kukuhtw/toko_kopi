@@ -17,16 +17,17 @@ $menuItemId = (int) ($body['menu_item_id'] ?? 0);
 $variantId  = isset($body['variant_id']) ? (int)$body['variant_id'] : null;
 $qty        = (int) ($body['quantity']     ?? 0);
 $sessionId  = $body['session_id'] ?? session_id();
+$customerName = trim((string)($body['customer_name'] ?? ''));
+$customerEmail = trim((string)($body['customer_email'] ?? ''));
+$customerWhatsapp = preg_replace('/[^0-9+]/', '', (string)($body['customer_whatsapp'] ?? ''));
 
 if (!$branchId || !$menuItemId) Response::error('branch_id and menu_item_id required');
 
 $customerModel = new CustomerModel();
-$customer      = $customerModel->findOrCreate('web', $sessionId);
+$customer      = $customerModel->resolveWebCustomer((string)$sessionId, $customerName, $customerEmail, $customerWhatsapp);
 $cartModel     = new CartModel();
 $sessionKey    = hash('sha256', "web:{$branchId}:{$sessionId}");
-$cart          = $cartModel->getBySession($sessionKey);
-
-if (!$cart) Response::error('Cart not found', 404);
+$cart          = $cartModel->getOrCreate($sessionKey, $branchId, (int)$customer['id']);
 
 $cartModel->updateItem($cart['id'], $menuItemId, $qty, $variantId > 0 ? $variantId : null);
 

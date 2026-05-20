@@ -15,13 +15,16 @@ $raw      = file_get_contents('php://input');
 $body     = json_decode($raw, true) ?? [];
 $branchId = (int)($body['branch_id'] ?? 0);
 $rawSess  = $body['session_id'] ?? session_id();
+$customerName = trim((string)($body['customer_name'] ?? ''));
+$customerEmail = trim((string)($body['customer_email'] ?? ''));
+$customerWhatsapp = preg_replace('/[^0-9+]/', '', (string)($body['customer_whatsapp'] ?? ''));
 
 if (!$branchId) {
     Response::error('branch_id is required');
 }
 
 $customerModel = new CustomerModel();
-$customer      = $customerModel->findOrCreate('web', (string)$rawSess);
+$customer      = $customerModel->resolveWebCustomer((string)$rawSess, $customerName, $customerEmail, $customerWhatsapp);
 $sessionKey    = hash('sha256', "web:{$branchId}:{$rawSess}");
 $cartModel     = new CartModel();
 $cart          = $cartModel->getOrCreate($sessionKey, $branchId, (int)$customer['id']);

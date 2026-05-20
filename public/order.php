@@ -242,7 +242,10 @@ $categories = array_values($catMap);
         <p><?= htmlspecialchars($branch['address'] ?? 'Indonesia') ?></p>
         <?php if ($branch['phone']): ?><p>📞 <?= htmlspecialchars($branch['phone']) ?></p><?php endif; ?>
       </div>
-      <a href="<?= BASE_URL ?>/index.php" class="home-link">← Home</a>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end">
+        <a href="<?= BASE_URL ?>/customer/login.php" class="home-link">👤 Customer Dashboard</a>
+        <a href="<?= BASE_URL ?>/index.php" class="home-link">← Home</a>
+      </div>
     </div>
   </div>
 
@@ -329,6 +332,10 @@ $categories = array_values($catMap);
     <p id="orderPaymentHint" style="color:var(--text-mid);margin-bottom:16px;display:none"></p>
     <a id="orderPaymentBtn" href="#" target="_blank" rel="noopener" class="btn btn-primary hidden" style="margin-bottom:12px">
       💳 <?= htmlspecialchars($t['pay_now']) ?>
+    </a>
+    <br>
+    <a id="orderCustomerDashboardBtn" href="<?= BASE_URL ?>/customer/login.php" class="btn btn-outline hidden" style="margin-bottom:12px">
+      👤 Customer Dashboard
     </a>
     <br>
     <a href="<?= BASE_URL ?>/order.php?branch=<?= $slug ?>" class="btn btn-primary"><?= htmlspecialchars($t['order_again']) ?></a>
@@ -904,6 +911,8 @@ async function syncCartToServer() {
         return false;
     }
 
+    const customerPayload = getCustomerIdentityPayload();
+
     await fetch(BASE_URL + '/api/cart/clear.php', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
@@ -921,6 +930,7 @@ async function syncCartToServer() {
                 quantity: item.qty,
                 notes: item.notes || '',
                 session_id: SESSION_ID,
+                ...customerPayload,
             }),
         });
         if (!res.ok) {
@@ -937,6 +947,7 @@ async function syncCartToServer() {
                 session_id: SESSION_ID,
                 action: 'apply',
                 points: loyaltyRedeemedPoints,
+                ...customerPayload,
             }),
         }).catch(() => null);
 
@@ -1029,6 +1040,27 @@ async function placeOrder() {
             const paymentUrl = typeof data?.data?.payment?.url === 'string' ? data.data.payment.url : '';
             const paymentBtn = document.getElementById('orderPaymentBtn');
             const paymentHint = document.getElementById('orderPaymentHint');
+            const customerDashboardBtn = document.getElementById('orderCustomerDashboardBtn');
+            const loginContact = email || wa;
+            const customerDashboardUrl = new URL(BASE_URL + '/customer/login.php', window.location.origin);
+            const recentCustomerLogin = {
+                contact: loginContact || '',
+                orderNumber: data?.data?.order_number || '',
+                name,
+                branchId: BRANCH_ID,
+                savedAt: new Date().toISOString(),
+            };
+            if (loginContact) {
+                customerDashboardUrl.searchParams.set('contact', loginContact);
+            }
+            if (data?.data?.order_number) {
+                customerDashboardUrl.searchParams.set('order_number', data.data.order_number);
+            }
+            try {
+                localStorage.setItem('customerPortalRecentLogin', JSON.stringify(recentCustomerLogin));
+            } catch (error) {
+                console.warn('Failed to save customer portal shortcut.', error);
+            }
 
             if (paymentRedirectTimer) {
                 clearTimeout(paymentRedirectTimer);
@@ -1038,6 +1070,9 @@ async function placeOrder() {
             document.getElementById('orderSuccessMsg').textContent = paymentUrl
                 ? `${TEXT.order_no} ${data.data.order_number}. ${TEXT.payment_ready}`
                 : `${TEXT.order_no} ${data.data.order_number}. ${TEXT.order_processing}`;
+
+            customerDashboardBtn.href = customerDashboardUrl.toString();
+            customerDashboardBtn.classList.remove('hidden');
 
             if (paymentUrl) {
                 paymentBtn.href = paymentUrl;
@@ -1087,10 +1122,11 @@ async function refreshLoyaltyStatus() {
     msg.textContent = '';
 
     try {
+        const customerPayload = getCustomerIdentityPayload();
         const res = await fetch(BASE_URL + '/api/loyalty/status.php', {
             method: 'POST',
             headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({branch_id: BRANCH_ID, session_id: SESSION_ID}),
+            body: JSON.stringify({branch_id: BRANCH_ID, session_id: SESSION_ID, ...customerPayload}),
         });
         const data = await res.json().catch(() => null);
         if (!data?.success) {
@@ -1141,11 +1177,12 @@ async function applyLoyaltyPoints() {
     try {
         const synced = await syncCartToServer();
         if (!synced) throw new Error('sync-failed');
+        const customerPayload = getCustomerIdentityPayload();
 
         const res = await fetch(BASE_URL + '/api/loyalty/redeem.php', {
             method: 'POST',
             headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({branch_id: BRANCH_ID, session_id: SESSION_ID, action: 'apply', points}),
+            body: JSON.stringify({branch_id: BRANCH_ID, session_id: SESSION_ID, action: 'apply', points, ...customerPayload}),
         });
         const data = await res.json().catch(() => null);
 
@@ -1171,10 +1208,11 @@ async function clearLoyaltyPoints() {
     if (!msg) return;
 
     try {
+        const customerPayload = getCustomerIdentityPayload();
         const res = await fetch(BASE_URL + '/api/loyalty/redeem.php', {
             method: 'POST',
             headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({branch_id: BRANCH_ID, session_id: SESSION_ID, action: 'clear'}),
+            body: JSON.stringify({branch_id: BRANCH_ID, session_id: SESSION_ID, action: 'clear', ...customerPayload}),
         });
         const data = await res.json().catch(() => null);
 
@@ -1193,6 +1231,14 @@ async function clearLoyaltyPoints() {
         msg.style.color = 'var(--danger,#e53e3e)';
         msg.textContent = TEXT.server_failed;
     }
+}
+
+function getCustomerIdentityPayload() {
+    return {
+        customer_name: document.getElementById('custName')?.value.trim() || '',
+        customer_email: document.getElementById('custEmail')?.value.trim() || '',
+        customer_whatsapp: document.getElementById('custWa')?.value.trim() || '',
+    };
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────

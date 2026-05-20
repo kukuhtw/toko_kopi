@@ -470,7 +470,7 @@ function docsBrandRemarkHtml(): string
 <section class="docs-brand-remark-wrap">
   <div class="docs-brand-remark">
     <div class="docs-brand-remark-kicker">&#9749; AI Agent Coffee Shop Commerce Platform</div>
-    <p>Platform AI untuk otomatisasi order, customer service, loyalty customer, dan manajemen multi cabang coffee shop.</p>
+    <p>Platform AI untuk otomatisasi order, customer service, loyalty customer, Customer CRM, Customer Portal, dan manajemen multi cabang coffee shop.</p>
     <div class="docs-brand-remark-grid">
       <div>
         <h3>&#128640; Features</h3>
@@ -481,6 +481,7 @@ function docsBrandRemarkHtml(): string
           <li>AI Upselling &amp; Promo Recommendation</li>
           <li>Order via Website &amp; Chat Apps</li>
           <li>Variant Product &amp; Topping Support</li>
+          <li>Loyalty Point, Customer CRM, dan Customer Portal</li>
           <li>Multi Currency, Tax &amp; Timezone</li>
           <li>AI Customer Interaction Automation</li>
         </ul>
@@ -985,7 +986,7 @@ function docsRenderIndexPage(): string
   <section class="docs-card docs-main">
     <div class="docs-kicker">Dokumentasi Developer</div>
     <h1>Dokumentasi HTML KopiBot AI</h1>
-    <p>Semua file di folder <code>/docs</code> sekarang punya versi HTML yang lebih nyaman dibaca di browser. Konten sumbernya tetap Markdown, jadi dokumentasi tetap satu sumber dan lebih mudah dirawat.</p>
+    <p>Semua file di folder <code>/docs</code> sekarang punya versi HTML yang lebih nyaman dibaca di browser. Konten sumbernya tetap Markdown, jadi dokumentasi tetap satu sumber dan lebih mudah dirawat, termasuk update terbaru untuk loyalty, Customer CRM, dan Customer Portal.</p>
     <div class="docs-listing">
       {$listing}
     </div>

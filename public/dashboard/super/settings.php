@@ -25,7 +25,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     Csrf::requireValid();
     $action = $_POST['action'] ?? 'update_settings';
 
-    if ($action === 'save_plugin_settings') {
+    if ($action === 'save_global_plugin_settings') {
+        $slug = preg_replace('/[^a-z0-9\-]/', '', strtolower((string)($_POST['plugin_slug'] ?? '')));
+
+        if ($slug !== '') {
+            $skipKeys = ['action', 'plugin_slug', 'branch_id', CSRF_TOKEN_NAME];
+            foreach ($_POST as $rawKey => $rawVal) {
+                if (in_array($rawKey, $skipKeys, true)) { continue; }
+                $key = preg_replace('/[^a-z0-9_]/', '', strtolower((string)$rawKey));
+                if ($key === '') { continue; }
+                $db->prepare(
+                    'INSERT INTO app_settings (setting_key, setting_val)
+                     VALUES (?, ?)
+                     ON DUPLICATE KEY UPDATE setting_val = VALUES(setting_val)'
+                )->execute(['plugin_' . str_replace('-', '_', $slug) . '_' . $key, (string)$rawVal]);
+            }
+            $message = 'Pengaturan plugin global disimpan.';
+        }
+    } elseif ($action === 'save_plugin_settings') {
         $slug = preg_replace('/[^a-z0-9\-]/', '', strtolower((string)($_POST['plugin_slug'] ?? '')));
         $selectedBranchId = (int)($_POST['branch_id'] ?? 0);
 
@@ -247,7 +264,7 @@ ob_start();
       </select>
       <button type="submit" class="btn btn-outline">Tampilkan</button>
     </div>
-    <small style="color:var(--text-light)">Pengaturan sensitif per cabang seperti payment gateway dan SMTP notifikasi dikelola dari sini.</small>
+    <small style="color:var(--text-light)">Beberapa plugin memakai pengaturan per cabang, sementara plugin lain bisa menampilkan pengaturan global di area yang sama.</small>
   </form>
 
   <?php

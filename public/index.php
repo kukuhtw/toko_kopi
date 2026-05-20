@@ -628,18 +628,21 @@ $branches    = $branchModel->getActive();
         <div style="font-size:2rem">🏪</div>
         <h3><?= htmlspecialchars($b['name']) ?></h3>
         <p>📍 <?= htmlspecialchars($b['address'] ?? $b['city'] ?? 'Indonesia') ?></p>
-        <div class="branch-card-btns">
+      <div class="branch-card-btns">
           <a href="<?= BASE_URL ?>/chat.php?branch=<?= $b['id'] ?>" class="btn btn-primary btn-sm">💬 Chat Demo</a>
           <a href="<?= BASE_URL ?>/order.php?branch=<?= htmlspecialchars($b['slug']) ?>" class="btn btn-outline btn-sm">🛒 Order</a>
+          <a href="<?= BASE_URL ?>/customer/login.php" class="btn btn-outline btn-sm">👤 Customer Dashboard</a>
         </div>
       </div>
       <?php endforeach; ?>
     </div>
     <p style="text-align:center;margin-top:28px;font-size:.85rem;color:var(--body-text-light)">
-      <span data-t-id="Order yang masuk bisa dipantau di"
-            data-t-en="Incoming orders can be monitored in the">Order yang masuk bisa dipantau di</span>
-      <a href="<?= BASE_URL ?>/login.php" style="color:var(--coffee-brown);font-weight:600" data-t-id="dashboard admin" data-t-en="admin dashboard">dashboard admin</a>.
-    </p>
+    <span data-t-id="Order yang masuk bisa dipantau di"
+          data-t-en="Incoming orders can be monitored in the">Order yang masuk bisa dipantau di</span>
+    <a href="<?= BASE_URL ?>/login.php" style="color:var(--coffee-brown);font-weight:600" data-t-id="dashboard admin" data-t-en="admin dashboard">dashboard admin</a>.
+    <span style="margin-left:6px">Customer juga bisa cek poin dan history di</span>
+    <a href="<?= BASE_URL ?>/customer/login.php" style="color:var(--coffee-brown);font-weight:600">dashboard customer</a>.
+  </p>
   </div>
 </section>
 
@@ -852,6 +855,8 @@ $branches    = $branchModel->getActive();
     <span data-t-id="Chatbot Pemesanan untuk Toko Kopi Indonesia" data-t-en="AI Order Chatbot for Coffee Shops">Chatbot Pemesanan untuk Toko Kopi Indonesia</span>
     &nbsp;·&nbsp;
     <a href="<?= BASE_URL ?>/login.php" style="color:rgba(255,255,255,.5)" data-t-id="Admin Login" data-t-en="Admin Login">Admin Login</a>
+    &nbsp;·&nbsp;
+    <a href="<?= BASE_URL ?>/customer/login.php" style="color:rgba(255,255,255,.5)">Customer Dashboard</a>
   </p>
 </footer>
 

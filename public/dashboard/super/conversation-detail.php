@@ -64,6 +64,10 @@ $context = [];
 if (!empty($conv['context_data'])) {
     $context = json_decode($conv['context_data'], true) ?? [];
 }
+$moderation = isset($context['moderation']) && is_array($context['moderation']) ? $context['moderation'] : [];
+$suspendedUntil = (string)($moderation['suspended_until'] ?? '');
+$lastSuspendedAt = (string)($moderation['last_suspended_at'] ?? '');
+$outOfScopeHits = is_array($moderation['out_of_scope_hits'] ?? null) ? count($moderation['out_of_scope_hits']) : 0;
 
 ob_start();
 ?>
@@ -89,6 +93,15 @@ ob_start();
         <tr><td style="color:var(--text-light);padding:4px 0">Email</td><td><?= htmlspecialchars($conv['customer_email']) ?></td></tr>
         <?php endif; ?>
         <tr><td style="color:var(--text-light);padding:4px 0">State</td><td><span class="badge badge-gray"><?= htmlspecialchars($conv['state']) ?></span></td></tr>
+        <?php if ($suspendedUntil !== ''): ?>
+        <tr><td style="color:var(--text-light);padding:4px 0">Suspend Sampai</td><td><?= htmlspecialchars($suspendedUntil) ?></td></tr>
+        <?php endif; ?>
+        <?php if ($lastSuspendedAt !== ''): ?>
+        <tr><td style="color:var(--text-light);padding:4px 0">Suspend Terakhir</td><td><?= htmlspecialchars($lastSuspendedAt) ?></td></tr>
+        <?php endif; ?>
+        <?php if ($outOfScopeHits > 0): ?>
+        <tr><td style="color:var(--text-light);padding:4px 0">Strike Out-of-Scope</td><td><?= $outOfScopeHits ?> / 5</td></tr>
+        <?php endif; ?>
         <tr><td style="color:var(--text-light);padding:4px 0">Total Pesan</td><td><?= count($messages) ?></td></tr>
         <tr><td style="color:var(--text-light);padding:4px 0">Aktif Terakhir</td><td style="font-size:.8rem"><?= date('d/m/Y H:i', strtotime($conv['last_activity'])) ?></td></tr>
         <?php if ($conv['ended_at']): ?>

@@ -72,6 +72,13 @@ ob_start();
         </thead>
         <tbody>
         <?php foreach ($members as $member): ?>
+          <?php
+          $lastActivity = $member['last_notification_at']
+              ?: $member['last_order_at']
+              ?: $member['last_transaction_at']
+              ?: $member['updated_at']
+              ?: null;
+          ?>
           <tr>
             <td>
               <strong><?= htmlspecialchars((string)($member['name'] ?: $member['identifier'])) ?></strong>
@@ -81,7 +88,7 @@ ob_start();
             <td><strong><?= number_format((int)($member['balance_points'] ?? 0)) ?></strong> poin</td>
             <td><?= number_format((int)($member['lifetime_points'] ?? 0)) ?> poin</td>
             <td style="font-size:.82rem">
-              <?= !empty($member['last_transaction_at']) ? date('d/m/Y H:i', strtotime((string)$member['last_transaction_at'])) : '-' ?>
+              <?= $lastActivity ? date('d/m/Y H:i', strtotime((string)$lastActivity)) : '-' ?>
             </td>
             <td>
               <a class="btn btn-xs btn-outline"

@@ -71,7 +71,15 @@ foreach ($required as $field) {
 }
 
 $customerModel = new CustomerModel();
-$customerId    = (int)$cart['customer_id'];
+$resolvedCustomer = $customerModel->resolveWebCustomer(
+    (string)$rawSession,
+    Sanitize::string((string)($body['name'] ?? '')),
+    (string)($body['email'] ?? ''),
+    (string)($body['whatsapp'] ?? '')
+);
+$customerId    = (int)($resolvedCustomer['id'] ?? $cart['customer_id'] ?? 0);
+$cartModel->getOrCreate($sessionKey, $branchId, $customerId);
+$cart = $cartModel->getBySession($sessionKey);
 $customer      = $customerModel->find($customerId);
 
 if (!$customer) {
