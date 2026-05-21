@@ -179,18 +179,6 @@ class ChatbotEngine
     {
         $intent = $context['intent'];
 
-        // Follow-up "detail" after showing order history
-        if (in_array($intent, ['out_of_scope', 'small_talk'])
-            && !empty($context['conv_context']['last_orders'])
-            && preg_match('/\bdetail\b/iu', $context['message'])) {
-            $context['intent'] = 'tanya_status_order';
-            $intent = 'tanya_status_order';
-        }
-
-        if ($intent === 'small_talk') {
-            return $this->runSkill(new SmallTalkSkill(), $context);
-        }
-
         // Jika customer mengirim order baru saat ada pending state, batalkan pending dan proses ulang.
         $pendingStates = [self::VARIANT_STATE, self::TOPPING_STATE, self::REMOVE_VARIANT_STATE, self::ITEM_NOTES_STATE];
         if ($intent === 'tambah_item' && in_array($context['conversation']['state'] ?? '', $pendingStates, true)) {
@@ -221,6 +209,18 @@ class ChatbotEngine
         $inCheckout = in_array($context['conversation']['state'], self::CHECKOUT_STATES);
         if ($inCheckout && !in_array($intent, self::CHECKOUT_ESCAPE_INTENTS)) {
             return $this->runSkill(new CheckoutSkill(), $context);
+        }
+
+        // Follow-up "detail" after showing order history
+        if (in_array($intent, ['out_of_scope', 'small_talk'])
+            && !empty($context['conv_context']['last_orders'])
+            && preg_match('/\bdetail\b/iu', $context['message'])) {
+            $context['intent'] = 'tanya_status_order';
+            $intent = 'tanya_status_order';
+        }
+
+        if ($intent === 'small_talk') {
+            return $this->runSkill(new SmallTalkSkill(), $context);
         }
 
         return $this->dispatchToSkill($context);

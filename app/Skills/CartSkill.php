@@ -711,11 +711,14 @@ class CartSkill implements SkillInterface
             }
         }
 
+        $requestedVariant = $this->normalizeVariantAnswer((string)$ctx['message'], (array)($ctx['entities'] ?? []));
         $variant = null;
         foreach ($pending['variants'] as $option) {
             $label = mb_strtolower((string)($option['label'] ?? ''), 'UTF-8');
             $slug = mb_strtolower((string)($option['slug'] ?? ''), 'UTF-8');
-            if (preg_match('/\b' . preg_quote($label, '/') . '\b/u', $lower) || preg_match('/\b' . preg_quote($slug, '/') . '\b/u', $lower)) {
+            if (($requestedVariant !== null && ($label === $requestedVariant || $slug === $requestedVariant))
+                || preg_match('/\b' . preg_quote($label, '/') . '\b/u', $lower)
+                || preg_match('/\b' . preg_quote($slug, '/') . '\b/u', $lower)) {
                 $variant = $option;
                 break;
             }
@@ -855,6 +858,34 @@ class CartSkill implements SkillInterface
         )));
 
         return empty($names) ? '' : 'Toppings: ' . implode(', ', $names);
+    }
+
+    private function normalizeVariantAnswer(string $message, array $entities = []): ?string
+    {
+        $entityCandidates = $entities['variant_candidates'] ?? [];
+        if (is_array($entityCandidates) && !empty($entityCandidates)) {
+            $first = strtolower(trim((string)$entityCandidates[0]));
+            if (in_array($first, ['small', 'medium', 'large'], true)) {
+                return $first;
+            }
+        }
+
+        $lower = mb_strtolower(trim($message), 'UTF-8');
+        $aliases = [
+            'small' => ['small', 'sm', 'kecil'],
+            'medium' => ['medium', 'md', 'sedang', 'regular', 'reguler'],
+            'large' => ['large', 'lg', 'besar'],
+        ];
+
+        foreach ($aliases as $canonical => $values) {
+            foreach ($values as $value) {
+                if (preg_match('/\b' . preg_quote($value, '/') . '\b/u', $lower) === 1) {
+                    return $canonical;
+                }
+            }
+        }
+
+        return null;
     }
 
     private function askForToppings(array $item, int $qty, ?array $variant, array $selectedToppings, array $ctx): array

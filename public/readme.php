@@ -30,6 +30,7 @@ $readmeHtml = preg_replace_callback('/<a\b([^>]*)href="([^"]+)"([^>]*)>(.*?)<\/a
 $remark = docsBrandRemarkHtml();
 $homeUrl = htmlspecialchars(BASE_URL . '/index.php', ENT_QUOTES, 'UTF-8');
 $docsUrl = htmlspecialchars(BASE_URL . '/docs/index.php', ENT_QUOTES, 'UTF-8');
+$githubUrl = 'https://github.com/kukuhtw/toko_kopi';
 
 $body = <<<HTML
 {$remark}
@@ -39,6 +40,7 @@ $body = <<<HTML
     <nav>
       <a class="is-active" href="readme.php">README Project</a>
       <a href="{$docsUrl}">Dokumentasi HTML</a>
+      <a href="{$githubUrl}" target="_blank" rel="noopener noreferrer">GitHub Repository</a>
       <a href="{$homeUrl}">Landing Page</a>
     </nav>
   </aside>

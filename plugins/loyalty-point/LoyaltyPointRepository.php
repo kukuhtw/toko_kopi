@@ -447,9 +447,16 @@ class LoyaltyPointRepository
 
     private function ensureColumn(string $table, string $column, string $definition): void
     {
-        $stmt = Database::getInstance()->prepare('SHOW COLUMNS FROM ' . $table . ' LIKE ?');
-        $stmt->execute([$column]);
-        if ($stmt->fetch()) {
+        $stmt = Database::getInstance()->prepare(
+            'SELECT 1
+             FROM information_schema.columns
+             WHERE table_schema = DATABASE()
+               AND table_name = ?
+               AND column_name = ?
+             LIMIT 1'
+        );
+        $stmt->execute([$table, $column]);
+        if ($stmt->fetchColumn()) {
             return;
         }
 

@@ -67,7 +67,7 @@ customerPortalRenderStart([
     'extra_styles' => <<<CSS
     .table-lite th, .table-lite td { padding:12px 10px; }
     @media (max-width: 740px) {
-      .table-wrap { overflow-x:auto; }
+      .table-lite th, .table-lite td { padding:10px 8px; }
     }
 CSS,
 ]);

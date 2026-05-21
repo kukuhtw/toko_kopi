@@ -36,6 +36,7 @@ class View
 <body>
 <button type="button" class="sidebar-edge-toggle" id="sidebarEdgeToggle" aria-label="Sembunyikan menu" onclick="window.toggleDashboardSidebar && window.toggleDashboardSidebar()"><-</button>
 <div class="page-wrapper">
+  <div class="sidebar-backdrop" id="dashboardSidebarBackdrop" aria-hidden="true"></div>
   <aside class="sidebar" id="dashboardSidebar">
     <div class="sidebar-logo-wrap">
       <div class="sidebar-logo"><?= $brandHtml ?></div>
@@ -64,11 +65,11 @@ class View
       <?= $topbarActions ?>
       <div class="topbar-user">
         <div class="avatar"><?= $initial ?></div>
-        <div>
+        <div class="topbar-user-meta">
           <div style="font-weight:600"><?= htmlspecialchars($user['name']) ?></div>
           <div style="font-size:.75rem;color:var(--text-light)"><?= htmlspecialchars(str_replace('_', ' ', $user['role'])) ?></div>
         </div>
-        <a href="<?= $baseUrl ?>/logout.php" class="btn btn-sm btn-outline" style="margin-left:8px">Logout</a>
+        <a href="<?= $baseUrl ?>/logout.php" class="btn btn-sm btn-outline topbar-logout">Logout</a>
       </div>
     </header>
     <main class="page-body">
@@ -82,6 +83,7 @@ class View
     var root = document.documentElement;
     var toggleBtn = document.getElementById('sidebarToggleBtn');
     var edgeBtn = document.getElementById('sidebarEdgeToggle');
+    var backdrop = document.getElementById('dashboardSidebarBackdrop');
     var storageKey = 'kopibot_sidebar_collapsed';
 
     function isMobile() {
@@ -153,6 +155,13 @@ class View
             updateToggleButton();
         }
     });
+
+    if (backdrop) {
+        backdrop.addEventListener('click', function () {
+            root.classList.remove('sidebar-mobile-open');
+            updateToggleButton();
+        });
+    }
 
     window.addEventListener('resize', function () {
         if (window.innerWidth > 768) {

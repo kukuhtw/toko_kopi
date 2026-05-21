@@ -82,23 +82,23 @@ ob_start();
 
 <!-- Daily Chart -->
 <div class="card" style="margin-bottom:20px">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+  <div class="chart-card-header">
     <div class="card-title" style="margin:0">📊 Order & Revenue Harian (<?= htmlspecialchars($currency) ?>)</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <div class="chart-toolbar">
       <div style="display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden">
         <button class="branch-seg-btn active" data-mode="orders"
                 style="border:none;padding:4px 12px;font-size:.8rem;cursor:pointer;background:none">Jumlah Order</button>
         <button class="branch-seg-btn" data-mode="revenue"
                 style="border:none;border-left:1px solid var(--border);padding:4px 12px;font-size:.8rem;cursor:pointer;background:none">Revenue</button>
       </div>
-      <div style="display:flex;gap:4px">
+      <div class="chart-toolbar-group">
         <button class="branch-period-btn active btn btn-xs btn-outline" data-days="30">30H</button>
         <button class="branch-period-btn btn btn-xs btn-outline" data-days="14">14H</button>
         <button class="branch-period-btn btn btn-xs btn-outline" data-days="7">7H</button>
       </div>
     </div>
   </div>
-  <div style="position:relative;height:260px">
+  <div class="chart-canvas-wrap chart-canvas-compact">
     <canvas id="branchDailyChart"></canvas>
   </div>
 </div>
@@ -110,7 +110,7 @@ foreach ($pluginWidgets as $widget) {
 }
 ?>
 
-<div style="display:grid;grid-template-columns:3fr 1fr;gap:20px">
+<div class="dashboard-grid-main-sidebar">
   <!-- Recent Orders -->
   <div class="card">
     <div class="card-title">📦 Order Terbaru</div>

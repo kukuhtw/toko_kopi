@@ -82,6 +82,9 @@ customerPortalRenderStart([
     @media (max-width: 900px) {
       .content-grid, .stat-grid { grid-template-columns:1fr; }
     }
+    @media (max-width: 640px) {
+      .content-grid { gap:16px; }
+    }
 CSS,
 ]);
 ?>

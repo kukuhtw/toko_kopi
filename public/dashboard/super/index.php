@@ -150,9 +150,9 @@ $chartLabels = array_map(fn($d) => date('d/m', strtotime($d)), $chartDays);
 
 <!-- Daily Chart -->
 <div class="card" style="margin-bottom:20px">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+  <div class="chart-card-header">
     <div class="card-title" style="margin:0">📊 Order & Revenue per Cabang</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <div class="chart-toolbar">
       <!-- Group toggle -->
       <div style="display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden">
         <button class="chart-seg-btn active" data-group="day"
@@ -168,19 +168,19 @@ $chartLabels = array_map(fn($d) => date('d/m', strtotime($d)), $chartDays);
                 style="border:none;border-left:1px solid var(--border);padding:4px 12px;font-size:.8rem;cursor:pointer;background:none">Revenue</button>
       </div>
       <!-- Period toggle (hidden in Per Cabang view via JS) -->
-      <div style="display:flex;gap:4px" id="periodBtns">
+      <div class="chart-toolbar-group" id="periodBtns">
         <button class="btn btn-xs btn-outline chart-period-btn active" data-days="30">30H</button>
         <button class="btn btn-xs btn-outline chart-period-btn" data-days="14">14H</button>
         <button class="btn btn-xs btn-outline chart-period-btn" data-days="7">7H</button>
       </div>
     </div>
   </div>
-  <div style="position:relative;height:300px">
+  <div class="chart-canvas-wrap">
     <canvas id="dailyOrderChart"></canvas>
   </div>
 </div>
 
-<div style="display:grid;grid-template-columns:2fr 1fr;gap:20px">
+<div class="dashboard-grid-main-aside">
   <!-- Recent Orders -->
   <div class="card">
     <div class="card-title">📦 Order Terbaru</div>

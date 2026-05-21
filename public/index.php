@@ -317,6 +317,7 @@ $branches    = $branchModel->getActive();
      data-t-en="Accept orders anytime via Website &amp; WhatsApp — no cashier needed, no monthly fees. The source code is offered under AGPL for open source usage and a commercial license for proprietary deployments.">Terima pesanan kapan saja lewat Website &amp; WhatsApp — tanpa jaga kasir, tanpa biaya bulanan. Source code tersedia dengan model lisensi AGPL untuk open source dan commercial license untuk deployment proprietary.</p>
   <div class="hero-btns">
     <a href="#demo" class="btn-gold"><span data-t-id="🚀 Coba Demo Gratis" data-t-en="🚀 Try Free Demo">🚀 Coba Demo Gratis</span></a>
+    <a href="https://github.com/kukuhtw/toko_kopi" class="btn-ghost" target="_blank" rel="noopener"><span data-t-id="🔗 Lihat GitHub" data-t-en="🔗 View GitHub">🔗 Lihat GitHub</span></a>
     <a href="#kontak" class="btn-ghost"><span data-t-id="💬 Tanya Harga" data-t-en="💬 Ask for Pricing">💬 Tanya Harga</span></a>
   </div>
   <div class="hero-stats">
@@ -701,6 +702,8 @@ $branches    = $branchModel->getActive();
         <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:18px">
           <a href="<?= BASE_URL ?>/docs/index.php" class="btn btn-primary btn-sm"
              data-t-id="Buka Semua Docs" data-t-en="Open All Docs">Buka Semua Docs</a>
+          <a href="https://github.com/kukuhtw/toko_kopi" class="btn btn-outline btn-sm" target="_blank" rel="noopener"
+             data-t-id="Buka GitHub Repo" data-t-en="Open GitHub Repo">Buka GitHub Repo</a>
           <a href="<?= BASE_URL ?>/docs/lisensi.php" class="btn btn-outline btn-sm"
              data-t-id="Baca Detail Lisensi" data-t-en="Read License Details">Baca Detail Lisensi</a>
         </div>

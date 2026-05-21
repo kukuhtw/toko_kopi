@@ -89,6 +89,7 @@ function customerDetailStatusBadgeClass(string $type, ?string $status): string
     .content-grid { display:grid; grid-template-columns:1.15fr .85fr; gap:20px; }
     .card-panel { background:#fff; border:1px solid var(--border); border-radius:20px; padding:20px; }
     .card-panel h2 { margin:0 0 14px; font-size:1.05rem; color:var(--coffee-dark); }
+    .table-wrap { width:100%; overflow-x:auto; }
     .table-lite { width:100%; border-collapse:collapse; }
     .table-lite th, .table-lite td { padding:10px 8px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
     .table-lite th { color:var(--text-light); font-size:.8rem; font-weight:600; }
@@ -112,6 +113,17 @@ function customerDetailStatusBadgeClass(string $type, ?string $status): string
     @media (max-width: 860px) {
       .content-grid, .mini-grid { grid-template-columns:1fr; }
     }
+    @media (max-width: 640px) {
+      .customer-shell { padding:16px 12px 32px; }
+      .detail-hero { padding:20px 16px; border-radius:20px; }
+      .detail-hero h1 { font-size:1.35rem; line-height:1.25; }
+      .hero-actions { width:100%; }
+      .hero-actions .btn { flex:1 1 100%; justify-content:center; }
+      .card-panel { padding:16px; border-radius:18px; }
+      .summary-row { font-size:.92rem; }
+      .summary-row.total { font-size:1rem; }
+      .table-lite th, .table-lite td { padding:10px 6px; font-size:.84rem; }
+    }
   </style>
 </head>
 <body>
@@ -130,34 +142,36 @@ function customerDetailStatusBadgeClass(string $type, ?string $status): string
   <div class="content-grid">
     <div class="card-panel">
       <h2>Item Pesanan</h2>
-      <table class="table-lite">
-        <thead>
-          <tr>
-            <th>Menu</th>
-            <th>Qty</th>
-            <th>Harga</th>
-            <th>Subtotal</th>
-          </tr>
-        </thead>
-        <tbody>
-          <?php foreach (($order['items'] ?? []) as $item): ?>
+      <div class="table-wrap">
+        <table class="table-lite">
+          <thead>
             <tr>
-              <td>
-                <strong><?= htmlspecialchars((string)$item['menu_name']) ?></strong>
-                <?php if (!empty($item['variant_label'])): ?>
-                  <div class="muted">Varian: <?= htmlspecialchars((string)$item['variant_label']) ?></div>
-                <?php endif; ?>
-                <?php if (!empty($item['notes'])): ?>
-                  <div class="muted">Catatan: <?= htmlspecialchars((string)$item['notes']) ?></div>
-                <?php endif; ?>
-              </td>
-              <td><?= (int)$item['quantity'] ?></td>
-              <td><?= customerCurrency((float)$item['unit_price']) ?></td>
-              <td><?= customerCurrency((float)$item['subtotal']) ?></td>
+              <th>Menu</th>
+              <th>Qty</th>
+              <th>Harga</th>
+              <th>Subtotal</th>
             </tr>
-          <?php endforeach; ?>
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            <?php foreach (($order['items'] ?? []) as $item): ?>
+              <tr>
+                <td>
+                  <strong><?= htmlspecialchars((string)$item['menu_name']) ?></strong>
+                  <?php if (!empty($item['variant_label'])): ?>
+                    <div class="muted">Varian: <?= htmlspecialchars((string)$item['variant_label']) ?></div>
+                  <?php endif; ?>
+                  <?php if (!empty($item['notes'])): ?>
+                    <div class="muted">Catatan: <?= htmlspecialchars((string)$item['notes']) ?></div>
+                  <?php endif; ?>
+                </td>
+                <td><?= (int)$item['quantity'] ?></td>
+                <td><?= customerCurrency((float)$item['unit_price']) ?></td>
+                <td><?= customerCurrency((float)$item['subtotal']) ?></td>
+              </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
 
       <div style="margin-top:16px">
         <div class="summary-row">

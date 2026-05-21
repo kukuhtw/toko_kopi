@@ -501,6 +501,7 @@ function docsBrandRemarkHtml(): string
         <p>X/Twitter: @kukuhtw</p>
         <p>Facebook: <a href="https://www.facebook.com/kukuhtw" target="_blank" rel="noopener">facebook.com/kukuhtw</a></p>
         <p>LinkedIn: <a href="https://linkedin.com/in/kukuhtw" target="_blank" rel="noopener">linkedin.com/in/kukuhtw</a></p>
+        <p>GitHub: <a href="https://github.com/kukuhtw/toko_kopi" target="_blank" rel="noopener">github.com/kukuhtw/toko_kopi</a></p>
         <p>&#127760; Demo: <a href="https://botlelang.com/toko_kopi" target="_blank" rel="noopener">botlelang.com/toko_kopi</a></p>
         <p>&copy; 2026 Kukuh TW. All rights reserved.</p>
       </div>
@@ -902,6 +903,7 @@ function docsPageShell(string $title, string $bodyClass, string $mainContent, st
     </div>
     <div class="docs-actions">
       <a class="docs-link-chip" href="{$docsHomeUrl}">Semua Dokumen</a>
+      <a class="docs-link-chip" href="https://github.com/kukuhtw/toko_kopi" target="_blank" rel="noopener noreferrer">GitHub Repo</a>
       <a class="docs-link-chip" href="{$homeUrl}">Kembali ke Landing Page</a>
     </div>
   </header>
@@ -980,6 +982,7 @@ function docsRenderIndexPage(): string
     <nav>
       <a class="is-active" href="index.php">Beranda Dokumentasi</a>
       <a href="../readme.php">README Project</a>
+      <a href="https://github.com/kukuhtw/toko_kopi" target="_blank" rel="noopener noreferrer">GitHub Repository</a>
       {docs_sidebar_links}
     </nav>
   </aside>
@@ -995,6 +998,7 @@ function docsRenderIndexPage(): string
     <h2>Isi Cepat</h2>
     <nav>
       <a href="../readme.php">README Project</a>
+      <a href="https://github.com/kukuhtw/toko_kopi" target="_blank" rel="noopener noreferrer">GitHub Repository</a>
       <a href="instalasi.php">Panduan Instalasi</a>
       <a href="lisensi.php">Lisensi AGPL + Commercial</a>
       <a href="plugin-system.php">Plugin System</a>

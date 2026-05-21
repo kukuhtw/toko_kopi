@@ -197,42 +197,44 @@ CSS,
       <div class="card-panel" id="orders">
         <h2>Riwayat Order</h2>
         <?php if (!empty($orders)): ?>
-          <table class="table-lite">
-            <thead>
-              <tr>
-                <th>Order</th>
-                <th>Cabang</th>
-                <th>Status</th>
-                <th>Total</th>
-                <th>Tanggal</th>
-              </tr>
-            </thead>
-            <tbody>
-              <?php foreach ($orders as $order): ?>
+          <div class="table-wrap">
+            <table class="table-lite">
+              <thead>
                 <tr>
-                  <td>
-                    <a href="<?= BASE_URL ?>/customer/order-detail.php?id=<?= (int)$order['id'] ?>" style="font-weight:700">
-                      <?= htmlspecialchars((string)$order['order_number']) ?>
-                    </a>
-                    <div class="muted"><?= htmlspecialchars((string)($order['notes'] ?: '-')) ?></div>
-                  </td>
-                  <td><?= htmlspecialchars((string)$order['branch_name']) ?></td>
-                  <td>
-                    <span class="status-badge <?= customerStatusBadgeClass('order', (string)$order['order_status']) ?>">
-                      <?= htmlspecialchars((string)$order['order_status']) ?>
-                    </span>
-                    <div style="margin-top:6px">
-                      <span class="status-badge <?= customerStatusBadgeClass('payment', (string)$order['payment_status']) ?>">
-                        <?= htmlspecialchars((string)$order['payment_status']) ?>
-                      </span>
-                    </div>
-                  </td>
-                  <td>Rp <?= number_format((float)$order['total_amount'], 0, ',', '.') ?></td>
-                  <td><?= date('d/m/Y H:i', strtotime((string)$order['created_at'])) ?></td>
+                  <th>Order</th>
+                  <th>Cabang</th>
+                  <th>Status</th>
+                  <th>Total</th>
+                  <th>Tanggal</th>
                 </tr>
-              <?php endforeach; ?>
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                <?php foreach ($orders as $order): ?>
+                  <tr>
+                    <td>
+                      <a href="<?= BASE_URL ?>/customer/order-detail.php?id=<?= (int)$order['id'] ?>" style="font-weight:700">
+                        <?= htmlspecialchars((string)$order['order_number']) ?>
+                      </a>
+                      <div class="muted"><?= htmlspecialchars((string)($order['notes'] ?: '-')) ?></div>
+                    </td>
+                    <td><?= htmlspecialchars((string)$order['branch_name']) ?></td>
+                    <td>
+                      <span class="status-badge <?= customerStatusBadgeClass('order', (string)$order['order_status']) ?>">
+                        <?= htmlspecialchars((string)$order['order_status']) ?>
+                      </span>
+                      <div style="margin-top:6px">
+                        <span class="status-badge <?= customerStatusBadgeClass('payment', (string)$order['payment_status']) ?>">
+                          <?= htmlspecialchars((string)$order['payment_status']) ?>
+                        </span>
+                      </div>
+                    </td>
+                    <td>Rp <?= number_format((float)$order['total_amount'], 0, ',', '.') ?></td>
+                    <td><?= date('d/m/Y H:i', strtotime((string)$order['created_at'])) ?></td>
+                  </tr>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
+          </div>
         <?php else: ?>
           <div class="muted">Belum ada histori order untuk customer ini.</div>
         <?php endif; ?>

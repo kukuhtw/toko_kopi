@@ -71,7 +71,7 @@ ob_start();
 <?php $exportUrl = BASE_URL . '/api/export/history-branch.php?' . http_build_query(['from' => $dateFrom, 'to' => $dateTo, 'status' => $status]); ?>
 <div class="section-header">
   <h2>History Transaksi</h2>
-  <div style="display:flex;align-items:center;gap:12px">
+  <div class="section-actions">
     <span style="color:var(--text-light);font-size:.9rem"><?= number_format($total) ?> transaksi</span>
     <a href="<?= htmlspecialchars($exportUrl) ?>" class="btn btn-outline" style="font-size:.85rem">&#8595; Export CSV</a>
   </div>
@@ -79,16 +79,16 @@ ob_start();
 
 <!-- Filter -->
 <div class="card" style="margin-bottom:16px">
-  <form method="GET" style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end">
-    <div class="form-group" style="margin:0;flex:1;min-width:140px">
+  <form method="GET" class="filter-grid">
+    <div class="form-group filter-grow" style="margin:0;min-width:140px">
       <label class="form-label">Dari Tanggal</label>
       <input type="date" name="from" class="form-control" value="<?= htmlspecialchars($dateFrom) ?>">
     </div>
-    <div class="form-group" style="margin:0;flex:1;min-width:140px">
+    <div class="form-group filter-grow" style="margin:0;min-width:140px">
       <label class="form-label">Sampai Tanggal</label>
       <input type="date" name="to" class="form-control" value="<?= htmlspecialchars($dateTo) ?>">
     </div>
-    <div class="form-group" style="margin:0;min-width:140px">
+    <div class="form-group filter-field" style="margin:0;min-width:140px">
       <label class="form-label">Status</label>
       <select name="status" class="form-control">
         <option value="completed" <?= $status==='completed' ? 'selected' : '' ?>>Completed</option>
@@ -96,8 +96,10 @@ ob_start();
         <option value="all"       <?= $status==='all'       ? 'selected' : '' ?>>Semua</option>
       </select>
     </div>
-    <button type="submit" class="btn btn-primary">Filter</button>
-    <a href="?from=<?= date('Y-m-01') ?>&to=<?= date('Y-m-d') ?>&status=completed" class="btn btn-outline">Reset</a>
+    <div class="button-row">
+      <button type="submit" class="btn btn-primary">Filter</button>
+      <a href="?from=<?= date('Y-m-01') ?>&to=<?= date('Y-m-d') ?>&status=completed" class="btn btn-outline">Reset</a>
+    </div>
   </form>
 </div>
 

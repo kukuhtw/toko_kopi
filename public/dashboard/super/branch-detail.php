@@ -121,7 +121,7 @@ $stats = $statsStmt->fetch();
 ob_start();
 ?>
 <div class="section-header">
-  <div style="display:flex;align-items:center;gap:12px">
+  <div class="section-actions">
     <a href="<?= BASE_URL ?>/dashboard/super/branches.php" class="btn btn-outline btn-sm">&larr; Kembali</a>
     <h2 style="margin:0"><?= htmlspecialchars($branch['name']) ?></h2>
     <span class="badge <?= $branch['is_active'] ? 'badge-green' : 'badge-gray' ?>"><?= $branch['is_active'] ? 'Aktif' : 'Nonaktif' ?></span>
@@ -132,7 +132,7 @@ ob_start();
 <?php if ($error):   ?><div class="alert alert-error"><?= htmlspecialchars($error) ?></div><?php endif; ?>
 
 <!-- Stats row -->
-<div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
+<div class="dashboard-grid-3" style="margin-bottom:24px">
   <div class="stat-card orange">
     <div class="stat-label">Total Pendapatan</div>
     <div class="stat-value" style="font-size:1.5rem"><?= Currency::format((float)$stats['total_revenue'], $currency) ?></div>
@@ -147,7 +147,7 @@ ob_start();
   </div>
 </div>
 
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+<div class="dashboard-grid-branch-detail">
 
   <!-- Branch Info -->
   <div class="card">

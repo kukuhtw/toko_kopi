@@ -122,7 +122,7 @@ ob_start();
 ?>
 <div class="section-header">
   <h2>Semua Order</h2>
-  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+  <div class="section-actions">
     <span style="color:var(--text-light);font-size:.9rem">
       <?= number_format($total) ?> <?= $hasFilter ? 'hasil filter' : 'total order' ?>
     </span>
@@ -133,15 +133,15 @@ ob_start();
 
 <!-- Filter Bar -->
 <form method="GET" class="card" style="margin-bottom:16px;padding:14px 16px">
-  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
-    <div style="flex:1;min-width:180px">
+  <div class="filter-grid">
+    <div class="filter-grow">
       <label for="sf_q" style="font-size:.8rem;color:var(--text-mid);display:block;margin-bottom:4px">Cari order / customer</label>
-      <input type="text" id="sf_q" name="q" class="form-control" style="padding:6px 10px"
+      <input type="text" id="sf_q" name="q" class="form-control compact-input"
              value="<?= htmlspecialchars($q) ?>" placeholder="No. order atau nama customer…">
     </div>
-    <div>
+    <div class="filter-field">
       <label for="sf_branch" style="font-size:.8rem;color:var(--text-mid);display:block;margin-bottom:4px">Cabang</label>
-      <select id="sf_branch" name="branch" class="form-control" style="padding:6px 8px">
+      <select id="sf_branch" name="branch" class="form-control compact-select">
         <option value="0">Semua Cabang</option>
         <?php foreach ($branches as $b): ?>
         <option value="<?= $b['id'] ?>" <?= $branchId === (int)$b['id'] ? 'selected' : '' ?>>
@@ -150,33 +150,33 @@ ob_start();
         <?php endforeach; ?>
       </select>
     </div>
-    <div>
+    <div class="filter-field">
       <label for="sf_status" style="font-size:.8rem;color:var(--text-mid);display:block;margin-bottom:4px">Status</label>
-      <select id="sf_status" name="status" class="form-control" style="padding:6px 8px">
+      <select id="sf_status" name="status" class="form-control compact-select">
         <option value="">Semua Status</option>
         <?php foreach (['pending' => 'Pending', 'processing' => 'Processing', 'completed' => 'Completed', 'cancelled' => 'Cancelled'] as $v => $l): ?>
         <option value="<?= $v ?>" <?= $status === $v ? 'selected' : '' ?>><?= $l ?></option>
         <?php endforeach; ?>
       </select>
     </div>
-    <div>
+    <div class="filter-field">
       <label for="sf_payment" style="font-size:.8rem;color:var(--text-mid);display:block;margin-bottom:4px">Pembayaran</label>
-      <select id="sf_payment" name="payment" class="form-control" style="padding:6px 8px">
+      <select id="sf_payment" name="payment" class="form-control compact-select">
         <option value="">Semua</option>
         <option value="paid"   <?= $payment === 'paid'   ? 'selected' : '' ?>>Paid</option>
         <option value="unpaid" <?= $payment === 'unpaid' ? 'selected' : '' ?>>Unpaid</option>
       </select>
     </div>
-    <div>
+    <div class="filter-field">
       <label for="sf_period" style="font-size:.8rem;color:var(--text-mid);display:block;margin-bottom:4px">Periode</label>
-      <select id="sf_period" name="period" class="form-control" style="padding:6px 8px">
+      <select id="sf_period" name="period" class="form-control compact-select">
         <option value="">Semua</option>
         <option value="today" <?= $period === 'today' ? 'selected' : '' ?>>Hari ini</option>
         <option value="7d"    <?= $period === '7d'    ? 'selected' : '' ?>>7 Hari</option>
         <option value="30d"   <?= $period === '30d'   ? 'selected' : '' ?>>30 Hari</option>
       </select>
     </div>
-    <div style="display:flex;gap:6px">
+    <div class="button-row">
       <button type="submit" class="btn btn-primary" style="padding:6px 16px">Filter</button>
       <?php if ($hasFilter): ?>
       <a href="?" class="btn btn-outline" style="padding:6px 12px">Reset</a>
