@@ -48,7 +48,7 @@ final class ConversationModeRouter
             return 'advisory';
         }
 
-        if (preg_match('/\b(alamat|lokasi|dimana|di mana|where|jam buka|jam operasional|buka jam|tutup jam|kontak|telepon|nomor cabang)\b/u', $message)) {
+        if (preg_match('/\b(alamat|lokasi|dimana|di mana|where|jam buka|jam operasional|buka jam|tutup jam|kontak|telepon|nomor cabang|cabang mana|branch mana|cabang ini|which branch|what branch)\b/u', $message)) {
             return 'advisory';
         }
 

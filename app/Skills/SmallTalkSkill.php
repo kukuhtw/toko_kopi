@@ -33,6 +33,8 @@ class SmallTalkSkill implements SkillInterface
     private static array $branchInfoKeywords  = [
         'alamat', 'lokasi', 'di mana', 'dimana', 'where', 'telepon', 'no hp',
         'jam buka', 'jam operasional', 'buka jam', 'tutup jam', 'kontak',
+        'cabang mana', 'branch mana', 'nomor cabang', 'cabang ini',
+        'saya di cabang mana', 'ini cabang mana', 'which branch', 'what branch',
     ];
 
     public function canHandle(string $intent): bool

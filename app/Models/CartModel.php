@@ -204,8 +204,16 @@ class CartModel extends BaseModel
             return self::$columnCache[$key];
         }
 
-        $stmt = $this->query('SHOW COLUMNS FROM ' . $this->table . ' LIKE ?', [$column]);
-        self::$columnCache[$key] = (bool) $stmt->fetch();
+        $stmt = $this->query(
+            'SELECT 1
+             FROM information_schema.columns
+             WHERE table_schema = DATABASE()
+               AND table_name = ?
+               AND column_name = ?
+             LIMIT 1',
+            [$this->table, $column]
+        );
+        self::$columnCache[$key] = (bool) $stmt->fetchColumn();
 
         return self::$columnCache[$key];
     }
