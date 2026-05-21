@@ -16,6 +16,7 @@ class ChatbotEngine
     private CartModel                $cartModel;
     private ConversationModel        $convModel;
     private IntentDetectorInterface  $detector;
+    private ChatEntityExtractor      $entityExtractor;
     private array $detectorMeta = ['type' => 'rule-based', 'provider' => 'none', 'model' => ''];
 
     /** @var SkillInterface[] */
@@ -47,6 +48,7 @@ class ChatbotEngine
         $this->cartModel     = new CartModel();
         $this->convModel     = new ConversationModel();
         $this->detector      = $detector ?? $this->loadDetector();
+        $this->entityExtractor = new ChatEntityExtractor();
 
         $rawSkills = HookManager::applyFilters('skills.registered', [
             ['skill' => new MenuSkill(),         'priority' => 10],
@@ -94,6 +96,7 @@ class ChatbotEngine
 
         // Filter: plugin bisa modifikasi pesan sebelum diproses AI/rule-based
         $message = (string) HookManager::applyFilters('chat.before_ai', $message, $branchId, $channel);
+        $entities = $this->entityExtractor->extract($message, $currency);
 
         $intent = $this->detector->detect($message, ['state' => $conversation['state']]);
         $intent = $this->applyFollowUpHeuristics($intent, $message, $convCtx);
@@ -120,6 +123,7 @@ class ChatbotEngine
             'cart'         => $cart,
             'intent'       => $intent,
             'message'      => $message,
+            'entities'     => $entities,
             'language'     => $language,
             'currency'         => $currency,
             'ppn_rate'         => $this->branchModel->getPpnRate($branchId),
@@ -167,6 +171,7 @@ class ChatbotEngine
             'action_result' => $result['action_result'] ?? null,
             'conversation'  => ['id' => $convId, 'state' => $newState],
             'detector'      => $this->detectorMeta,
+            'entities'      => $entities,
         ];
     }
 

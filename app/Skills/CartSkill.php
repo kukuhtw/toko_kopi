@@ -63,7 +63,7 @@ class CartSkill implements SkillInterface
         $lang     = $ctx['language'] ?? 'id';
         $currency = $ctx['currency'] ?? 'IDR';
 
-        $parsed = $this->detector->extractMultipleItems($ctx['message']);
+        $parsed = $this->extractParsedProducts($ctx);
         $parsed = $this->resolveReferencedItems($parsed, $ctx['conv_context'] ?? []);
 
         if (empty($parsed) || ($parsed[0]['item_query'] === '')) {
@@ -80,7 +80,7 @@ class CartSkill implements SkillInterface
             if ($query === '') { continue; }
 
             $normalizedQuery = $this->normalizeYoghurtQuery($query, (string)$ctx['message']);
-            $item = $this->findAvailableItem($normalizedQuery, $branchId);
+            $item = $this->findAvailableItem($normalizedQuery, $branchId, $parsedItem, $currency);
             if ($item === null) {
                 $failed[] = $query;
                 continue;
@@ -156,9 +156,18 @@ class CartSkill implements SkillInterface
         ];
     }
 
-    private function findAvailableItem(string $query, int $branchId): ?array
+    private function findAvailableItem(
+        string $query,
+        int $branchId,
+        array $parsedItem = [],
+        string $currency = 'IDR'
+    ): ?array
     {
         $matches = $this->menuModel->searchRelevantByName($query, $branchId, 5);
+        $pricedMatches = $this->filterMatchesByMentionedPrice($matches, $parsedItem, $currency);
+        if (!empty($pricedMatches)) {
+            $matches = $pricedMatches;
+        }
         foreach ($matches as $m) {
             if ((bool)$m['effective_available']) {
                 return $m;
@@ -179,7 +188,7 @@ class CartSkill implements SkillInterface
             return $this->handleUpdateAll($cart, $lang, $currency, $message, (float)($ctx['ppn_rate'] ?? 0));
         }
 
-        $parsed = $this->detector->extractMultipleItems($message);
+        $parsed = $this->extractParsedProducts($ctx);
 
         if (empty($parsed) || $parsed[0]['item_query'] === '') {
             return ['reply' => $this->t($lang, 'specify_item'), 'state' => 'idle', 'action_result' => null];
@@ -283,7 +292,12 @@ class CartSkill implements SkillInterface
         $cart = $ctx['cart'];
         $lang = $ctx['language'] ?? 'id';
 
+        $parsed = $this->extractParsedProducts($ctx);
+        $parsedFirst = $parsed[0] ?? ['item_query' => ''];
         $query   = preg_replace('/\b(hapus|remove|delete|cancel item|batalkan|take out|take off|get rid of|drop the)\b/ui', '', $ctx['message']);
+        if (trim($query) === '' && !empty($parsedFirst['item_query'])) {
+            $query = (string)$parsedFirst['item_query'];
+        }
         $query   = trim($query);
         $matches = $this->menuModel->searchByName($query, $ctx['branch_id']);
 
@@ -292,8 +306,7 @@ class CartSkill implements SkillInterface
         }
 
         $item    = $matches[0];
-        $parsed  = $this->detector->extractOrderIntent($ctx['message']);
-        $variant = $this->resolveVariant($item, $parsed['variant_label'] ?? null);
+        $variant = $this->resolveVariant($item, $parsedFirst['variant_label'] ?? null);
         $removed = $this->cartModel->removeItem($cart['id'], (int)$item['id'], $variant['id'] ?? null);
 
         $displayName = $variant ? "{$item['name']} - {$variant['label']}" : $item['name'];
@@ -1002,6 +1015,69 @@ class CartSkill implements SkillInterface
             'action_result' => ['notes_saved' => !$isSkip, 'notes' => $isSkip ? '' : $message],
             'conv_context'  => $convCtx,
         ];
+    }
+
+    private function extractParsedProducts(array $ctx): array
+    {
+        $entityProducts = $ctx['entities']['products'] ?? [];
+        if (!is_array($entityProducts) || empty($entityProducts)) {
+            return $this->detector->extractMultipleItems((string)($ctx['message'] ?? ''));
+        }
+
+        $parsed = [];
+        foreach ($entityProducts as $product) {
+            $query = trim((string)($product['name_candidate'] ?? ''));
+            if ($query === '') {
+                continue;
+            }
+
+            $parsed[] = [
+                'item_query' => $query,
+                'qty' => max(1, (int)($product['qty'] ?? 1)),
+                'variant_label' => $product['variant_label'] ?? null,
+                'mentioned_price' => $product['mentioned_price'] ?? null,
+                'mentioned_currency' => $product['mentioned_currency'] ?? null,
+            ];
+        }
+
+        return !empty($parsed)
+            ? $parsed
+            : $this->detector->extractMultipleItems((string)($ctx['message'] ?? ''));
+    }
+
+    private function filterMatchesByMentionedPrice(array $matches, array $parsedItem, string $currency): array
+    {
+        $mentionedPrice = $parsedItem['mentioned_price'] ?? null;
+        $mentionedCurrency = strtoupper((string)($parsedItem['mentioned_currency'] ?? ''));
+        if (!is_numeric($mentionedPrice)) {
+            return $matches;
+        }
+
+        if ($mentionedCurrency !== '' && Currency::code($mentionedCurrency) !== Currency::code($currency)) {
+            return $matches;
+        }
+
+        $amount = (float)$mentionedPrice;
+        $filtered = array_values(array_filter($matches, static function (array $item) use ($amount): bool {
+            $prices = [];
+            if (!empty($item['variants']) && is_array($item['variants'])) {
+                foreach ($item['variants'] as $variant) {
+                    $prices[] = (float)($variant['effective_price'] ?? 0);
+                }
+            } else {
+                $prices[] = (float)($item['effective_price'] ?? 0);
+            }
+
+            foreach ($prices as $price) {
+                if (abs($price - $amount) < 0.00001) {
+                    return true;
+                }
+            }
+
+            return false;
+        }));
+
+        return !empty($filtered) ? $filtered : $matches;
     }
 
     private function t(string $lang, string $key): string

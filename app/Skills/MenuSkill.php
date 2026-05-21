@@ -33,10 +33,14 @@ class MenuSkill implements SkillInterface
         $currency = $ctx['currency'] ?? 'IDR';
         $intent   = $ctx['intent'];
         $lower    = mb_strtolower($ctx['message'], 'UTF-8');
+        $entities = is_array($ctx['entities'] ?? null) ? $ctx['entities'] : [];
 
         // ── Item description / explain requests ───────────────────────────────
         if ($this->looksLikeDescriptionRequest($lower)) {
             $query = $this->extractDescriptionQuery($lower);
+            if ($query === '') {
+                $query = $this->extractFirstEntityProductQuery($entities);
+            }
             if ($query !== '') {
                 $items = $this->findDescribedItems($query, $branchId);
                 if (empty($items) && $this->ragResponder->isEnabled()) {
@@ -90,11 +94,33 @@ class MenuSkill implements SkillInterface
 
         // ── Price inquiry ──────────────────────────────────────────────────────
         if ($intent === 'tanya_harga') {
+            $budget = is_array($entities['budget'] ?? null) ? $entities['budget'] : null;
+            if ($budget !== null) {
+                $budgetItems = $this->findItemsByBudget($branchId, $budget, $this->extractBudgetQuery($lower));
+                if (!empty($budgetItems)) {
+                    return [
+                        'reply' => $this->buildBudgetView($budgetItems, $budget, $currency, $lang),
+                        'state' => 'idle',
+                        'action_result' => $budgetItems,
+                        'conv_context' => [
+                            'last_topic' => 'menu',
+                            'last_menu_items' => array_map(static fn(array $item): array => [
+                                'id' => (int)($item['id'] ?? 0),
+                                'name' => (string)($item['name'] ?? ''),
+                            ], $budgetItems),
+                        ],
+                    ];
+                }
+            }
+
             $query = trim(str_replace(
                 ['harga', 'berapa', 'price', 'cost', 'how much'],
                 '',
                 $lower
             ));
+            if ($query === '') {
+                $query = $this->extractFirstEntityProductQuery($entities);
+            }
             if (!empty($query)) {
                 $items = $this->menuModel->searchRelevantByName($query, $branchId, 5);
                 if (!empty($items)) {
@@ -168,7 +194,29 @@ class MenuSkill implements SkillInterface
             ];
         }
 
+        $budget = is_array($entities['budget'] ?? null) ? $entities['budget'] : null;
+        if ($budget !== null) {
+            $budgetItems = $this->findItemsByBudget($branchId, $budget, $this->extractBudgetQuery($lower));
+            if (!empty($budgetItems)) {
+                return [
+                    'reply' => $this->buildBudgetView($budgetItems, $budget, $currency, $lang),
+                    'state' => 'idle',
+                    'action_result' => $budgetItems,
+                    'conv_context' => [
+                        'last_topic' => 'menu',
+                        'last_menu_items' => array_map(static fn(array $item): array => [
+                            'id' => (int)($item['id'] ?? 0),
+                            'name' => (string)($item['name'] ?? ''),
+                        ], $budgetItems),
+                    ],
+                ];
+            }
+        }
+
         $itemQuery = $this->extractItemListQuery($lower);
+        if ($itemQuery === '') {
+            $itemQuery = $this->extractFirstEntityProductQuery($entities);
+        }
         if ($itemQuery !== '') {
             $items = $this->menuModel->searchRelevantByName($itemQuery, $branchId, 8);
             if (!empty($items)) {
@@ -298,6 +346,30 @@ class MenuSkill implements SkillInterface
         return implode("\n", $lines);
     }
 
+    private function buildBudgetView(array $items, array $budget, string $currency, string $lang): string
+    {
+        $amount = Currency::format((float)($budget['amount'] ?? 0), (string)($budget['currency'] ?? $currency));
+        $header = match ($budget['operator'] ?? 'lte') {
+            'gte' => $lang === 'en'
+                ? "Here are menu items from {$amount} and above:\n"
+                : "Ini menu mulai dari {$amount} ke atas:\n",
+            'approx' => $lang === 'en'
+                ? "Here are menu items around {$amount}:\n"
+                : "Ini menu di kisaran {$amount}:\n",
+            default => $lang === 'en'
+                ? "Here are menu items up to {$amount}:\n"
+                : "Ini menu sampai {$amount}:\n",
+        };
+
+        $lines = [$header];
+        foreach ($items as $item) {
+            $lines[] = "• {$item['name']} — " . $this->formatItemPrice($item, $currency);
+        }
+
+        $lines[] = "\n" . $this->t($lang, 'order_hint_generic');
+        return implode("\n", $lines);
+    }
+
     private function looksLikeDescriptionRequest(string $lower): bool
     {
         return (bool)preg_match(
@@ -324,6 +396,20 @@ class MenuSkill implements SkillInterface
             ' ',
             $lower
         );
+        $query = preg_replace('/[^\p{L}\p{N}\s-]/u', ' ', (string)$query);
+        $query = preg_replace('/\s+/u', ' ', (string)$query);
+        return trim((string)$query);
+    }
+
+    private function extractBudgetQuery(string $lower): string
+    {
+        $query = preg_replace(
+            '/\b(harga|berapa|price|cost|how much|di bawah|dibawah|under|below|less than|max|maks|termurah|murah|di atas|diatas|over|above|more than|min|minimal|at least|mulai dari|sekitar|around|about|kisaran|rp|idr|usd|sgd|aud|rupiah)\b/u',
+            ' ',
+            $lower
+        );
+        $query = preg_replace('/(?<![A-Za-z])(?:s\$|a\$|\$)\s*[0-9][0-9\.,]*/u', ' ', (string)$query);
+        $query = preg_replace('/\b[0-9]+(?:[\.\,][0-9]+)?\s*(?:rb|ribu|k)?\b/u', ' ', (string)$query);
         $query = preg_replace('/[^\p{L}\p{N}\s-]/u', ' ', (string)$query);
         $query = preg_replace('/\s+/u', ' ', (string)$query);
         return trim((string)$query);
@@ -400,6 +486,84 @@ class MenuSkill implements SkillInterface
         return $items;
     }
 
+    private function findItemsByBudget(int $branchId, array $budget, string $query = ''): array
+    {
+        $items = $this->menuModel->getMenuForBranch($branchId);
+        $filtered = [];
+
+        foreach ($items as $item) {
+            if (!$this->matchesBudget($item, $budget)) {
+                continue;
+            }
+            if ($query !== '' && !$this->matchesBudgetQuery($item, $query)) {
+                continue;
+            }
+            $filtered[] = $item;
+        }
+
+        usort($filtered, static function (array $a, array $b): int {
+            $left = (float)($a['effective_price'] ?? 0);
+            $right = (float)($b['effective_price'] ?? 0);
+            if ($left === $right) {
+                return strcmp((string)($a['name'] ?? ''), (string)($b['name'] ?? ''));
+            }
+            return $left <=> $right;
+        });
+
+        return array_slice($filtered, 0, 8);
+    }
+
+    private function matchesBudget(array $item, array $budget): bool
+    {
+        $prices = [];
+        if (!empty($item['variants']) && is_array($item['variants'])) {
+            foreach ($item['variants'] as $variant) {
+                $prices[] = (float)($variant['effective_price'] ?? 0);
+            }
+        } else {
+            $prices[] = (float)($item['effective_price'] ?? 0);
+        }
+
+        $amount = (float)($budget['amount'] ?? 0);
+        $operator = (string)($budget['operator'] ?? 'lte');
+        foreach ($prices as $price) {
+            if ($operator === 'gte' && $price >= $amount) {
+                return true;
+            }
+            if ($operator === 'approx' && abs($price - $amount) <= max(1000, $amount * 0.15)) {
+                return true;
+            }
+            if ($operator === 'lte' && $price <= $amount) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function matchesBudgetQuery(array $item, string $query): bool
+    {
+        $haystack = mb_strtolower(trim(implode(' ', [
+            (string)($item['name'] ?? ''),
+            (string)($item['category_name'] ?? ''),
+            (string)($item['description'] ?? ''),
+        ])), 'UTF-8');
+        if ($haystack === '') {
+            return false;
+        }
+
+        foreach (array_filter(explode(' ', $query)) as $token) {
+            if (mb_strlen($token, 'UTF-8') < 3) {
+                continue;
+            }
+            if (str_contains($haystack, $token)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private function findDirectMenuItem(string $lower, int $branchId): ?array
     {
         $query = $this->normalizeLookupQuery($lower);
@@ -425,6 +589,16 @@ class MenuSkill implements SkillInterface
         $text = preg_replace('/[^\p{L}\p{N}\s-]/u', ' ', (string)$text);
         $text = preg_replace('/\s+/u', ' ', (string)$text);
         return trim((string)$text);
+    }
+
+    private function extractFirstEntityProductQuery(array $entities): string
+    {
+        $products = $entities['products'] ?? [];
+        if (!is_array($products) || empty($products[0]['name_candidate'])) {
+            return '';
+        }
+
+        return trim((string)$products[0]['name_candidate']);
     }
 
     private function formatItemPrice(array $item, string $currency): string
