@@ -99,6 +99,7 @@ class ChatbotEngine
         $entities = $this->entityExtractor->extract($message, $currency);
 
         $intent = $this->detector->detect($message, ['state' => $conversation['state']]);
+        $intent = $this->normalizePendingStateIntent($intent, $message, (string)($conversation['state'] ?? 'idle'));
         $intent = $this->applyFollowUpHeuristics($intent, $message, $convCtx);
         $intent = $this->preferCheckoutEditIntent($intent, $message, $conversation['state']);
         $intent = $this->preferActiveCartIntent($intent, $message, $cartItems, $convCtx);
@@ -466,6 +467,39 @@ class ChatbotEngine
         }
 
         return $intent;
+    }
+
+    private function normalizePendingStateIntent(string $intent, string $message, string $state): string
+    {
+        $lower = mb_strtolower(trim($message), 'UTF-8');
+
+        if ($state === self::VARIANT_STATE && $this->looksLikeVariantAnswer($lower)) {
+            return 'tambah_item';
+        }
+
+        if ($state === self::TOPPING_STATE && $this->looksLikeToppingAnswer($lower)) {
+            return 'tambah_item';
+        }
+
+        if ($state === self::REMOVE_VARIANT_STATE && $this->looksLikeVariantAnswer($lower)) {
+            return 'hapus_item';
+        }
+
+        return $intent;
+    }
+
+    private function looksLikeVariantAnswer(string $lower): bool
+    {
+        return preg_match('/\b(small|medium|large|sm|md|lg|kecil|sedang|regular|reguler|besar)\b/u', $lower) === 1;
+    }
+
+    private function looksLikeToppingAnswer(string $lower): bool
+    {
+        if (preg_match('/\b(batal|cancel|tidak jadi|skip|lewati)\b/u', $lower) === 1) {
+            return false;
+        }
+
+        return preg_match('/\b(topping|boba|oreo|keju|coklat|chocolate|mangga|strawberry|vanilla|matcha|caramel)\b/u', $lower) === 1;
     }
 
     private function errorResponse(string $msg): array

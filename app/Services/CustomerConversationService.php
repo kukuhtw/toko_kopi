@@ -86,6 +86,7 @@ class CustomerConversationService
         $message = (string)HookManager::applyFilters('chat.before_ai', $message, $branchId, $channel);
 
         $intent = $this->detector->detect($message, ['state' => $conversation['state']]);
+        $intent = $this->normalizePendingStateIntent($intent, $message, (string)($conversation['state'] ?? 'idle'));
         if ($intent === 'out_of_scope' && \App\Skills\SmallTalkSkill::isSmallTalk($message)) {
             $intent = 'small_talk';
         }
@@ -223,6 +224,39 @@ class CustomerConversationService
             'checkout', 'konfirmasi_order' => 'checkout',
             default => 'general',
         };
+    }
+
+    private function normalizePendingStateIntent(string $intent, string $message, string $state): string
+    {
+        $lower = mb_strtolower(trim($message), 'UTF-8');
+
+        if ($state === 'awaiting_variant' && $this->looksLikeVariantAnswer($lower)) {
+            return 'tambah_item';
+        }
+
+        if ($state === 'awaiting_toppings' && $this->looksLikeToppingAnswer($lower)) {
+            return 'tambah_item';
+        }
+
+        if ($state === 'awaiting_remove_variant' && $this->looksLikeVariantAnswer($lower)) {
+            return 'hapus_item';
+        }
+
+        return $intent;
+    }
+
+    private function looksLikeVariantAnswer(string $lower): bool
+    {
+        return preg_match('/\b(small|medium|large|sm|md|lg|kecil|sedang|regular|reguler|besar)\b/u', $lower) === 1;
+    }
+
+    private function looksLikeToppingAnswer(string $lower): bool
+    {
+        if (preg_match('/\b(batal|cancel|tidak jadi|skip|lewati)\b/u', $lower) === 1) {
+            return false;
+        }
+
+        return preg_match('/\b(topping|boba|oreo|keju|coklat|chocolate|mangga|strawberry|vanilla|matcha|caramel)\b/u', $lower) === 1;
     }
 
     private function errorResponse(string $msg): array
