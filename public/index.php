@@ -13,6 +13,8 @@
  * - Variant Product & Topping Support
  * - Multi Currency, Tax & Timezone
  * - AI Customer Interaction Automation
+ * - Checkout Profile Auto-fill (localStorage)
+ * - Menu Templates: Coffee, Bakery, Fruit, Meat & Veggie
  *
  * 💻 Tech Stack:
  * PHP Native • MySQL • OpenAI • Anthropic
@@ -39,6 +41,7 @@
 declare(strict_types=1);
 require_once dirname(__DIR__) . '/app/Config/config.php';
 use App\Models\BranchModel;
+use App\Plugin\HookManager;
 $branchModel = new BranchModel();
 $branches    = $branchModel->getActive();
 ?>
@@ -49,6 +52,7 @@ $branches    = $branchModel->getActive();
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KopiBot AI — Chatbot Pemesanan untuk Toko Kopi</title>
   <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/app.css">
+  <?= HookManager::applyFilters('site.head_styles', '') ?>
   <style>
     :root { --gold:#c8922a; --body-text:#4a3020; --body-text-light:#6b4c35; }
     * { box-sizing:border-box; }
@@ -301,7 +305,7 @@ $branches    = $branchModel->getActive();
   <div class="nav-links">
     <a href="#fitur"><span data-t-id="Fitur" data-t-en="Features">Fitur</span></a>
     <a href="#demo">Demo</a>
-    <a href="#harga"><span data-t-id="Harga" data-t-en="Pricing">Harga</span></a>
+    <a href="#harga"><span data-t-id="Open Source" data-t-en="Open Source">Open Source</span></a>
     <a href="<?= BASE_URL ?>/docs/index.php"><span data-t-id="Docs" data-t-en="Docs">Docs</span></a>
     <a href="<?= BASE_URL ?>/readme.php"><span data-t-id="README" data-t-en="README">README</span></a>
     <a href="#kontak" class="btn btn-primary btn-sm"><span data-t-id="Hubungi Kami" data-t-en="Contact Us">Hubungi Kami</span></a>
@@ -313,12 +317,12 @@ $branches    = $branchModel->getActive();
 <section class="hero">
   <div class="hero-badge" data-t-id="☕ Siap Deploy · Multi-Cabang · Tanpa Biaya Langganan" data-t-en="☕ Ready to Deploy · Multi-Branch · No Monthly Fees">☕ Siap Deploy · Multi-Cabang · Tanpa Biaya Langganan</div>
   <h1 id="hero-h1">Chatbot Pemesanan Otomatis<br>untuk <span>Toko Kopi</span> Kamu</h1>
-  <p data-t-id="Terima pesanan kapan saja lewat Website &amp; WhatsApp — tanpa jaga kasir, tanpa biaya bulanan. Source code tersedia dengan model lisensi AGPL untuk open source dan commercial license untuk deployment proprietary."
-     data-t-en="Accept orders anytime via Website &amp; WhatsApp — no cashier needed, no monthly fees. The source code is offered under AGPL for open source usage and a commercial license for proprietary deployments.">Terima pesanan kapan saja lewat Website &amp; WhatsApp — tanpa jaga kasir, tanpa biaya bulanan. Source code tersedia dengan model lisensi AGPL untuk open source dan commercial license untuk deployment proprietary.</p>
+  <p data-t-id="Terima pesanan kapan saja lewat Website &amp; WhatsApp — tanpa jaga kasir, tanpa biaya bulanan. Dirilis sebagai open source di bawah GNU Affero General Public License v3.0 (AGPL-3.0)."
+     data-t-en="Accept orders anytime via Website &amp; WhatsApp — no cashier needed, no monthly fees. Released as open source under the GNU Affero General Public License v3.0 (AGPL-3.0).">Terima pesanan kapan saja lewat Website &amp; WhatsApp — tanpa jaga kasir, tanpa biaya bulanan. Dirilis sebagai open source di bawah GNU Affero General Public License v3.0 (AGPL-3.0).</p>
   <div class="hero-btns">
     <a href="#demo" class="btn-gold"><span data-t-id="🚀 Coba Demo Gratis" data-t-en="🚀 Try Free Demo">🚀 Coba Demo Gratis</span></a>
     <a href="https://github.com/kukuhtw/toko_kopi" class="btn-ghost" target="_blank" rel="noopener"><span data-t-id="🔗 Lihat GitHub" data-t-en="🔗 View GitHub">🔗 Lihat GitHub</span></a>
-    <a href="#kontak" class="btn-ghost"><span data-t-id="💬 Tanya Harga" data-t-en="💬 Ask for Pricing">💬 Tanya Harga</span></a>
+    <a href="#kontak" class="btn-ghost"><span data-t-id="💬 Hubungi Developer" data-t-en="💬 Contact Developer">💬 Hubungi Developer</span></a>
   </div>
   <div class="hero-stats">
     <div class="hero-stat"><strong>24/7</strong><span data-t-id="Buka terus, tanpa libur" data-t-en="Always open, never closed">Buka terus, tanpa libur</span></div>
@@ -344,6 +348,8 @@ $branches    = $branchModel->getActive();
           <li>Variant Product &amp; Topping Support</li>
           <li>Multi Currency, Tax &amp; Timezone</li>
           <li>AI Customer Interaction Automation</li>
+          <li>Checkout Profile Auto-fill (localStorage)</li>
+          <li>Menu Templates: Coffee, Bakery, Fruit, Meat &amp; Veggie</li>
         </ul>
       </div>
       <div class="hero-remark-card">
@@ -358,6 +364,7 @@ $branches    = $branchModel->getActive();
         <p>Kukuh TW</p>
         <p style="margin-top:10px">&#128231; <a href="mailto:kukuhtw@gmail.com">kukuhtw@gmail.com</a></p>
         <p>&#128241; <a href="https://wa.me/628129893706" target="_blank">wa.me/628129893706</a></p>
+        <p>&#128279; <a href="https://github.com/kukuhtw/toko_kopi" target="_blank" rel="noopener">github.com/kukuhtw/toko_kopi</a></p>
         <p>&#127760; <a href="https://botlelang.com/toko_kopi" target="_blank">botlelang.com/toko_kopi</a></p>
         <p style="margin-top:10px">&copy; 2026 Kukuh TW. All rights reserved.</p>
       </div>
@@ -486,6 +493,20 @@ $branches    = $branchModel->getActive();
         <div class="feature-desc"
              data-t-id="Gunakan OpenAI, Anthropic, atau rule-based gratis. Bisa diganti kapan saja tanpa mengubah kode bisnis."
              data-t-en="Use OpenAI, Anthropic, or free rule-based. Switch anytime without touching business logic.">Gunakan OpenAI, Anthropic, atau rule-based gratis. Bisa diganti kapan saja tanpa mengubah kode bisnis.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">👤</div>
+        <div class="feature-title" data-t-id="Checkout Lebih Cepat" data-t-en="Faster Checkout">Checkout Lebih Cepat</div>
+        <div class="feature-desc"
+             data-t-id="Nama, email, WhatsApp, dan alamat customer tersimpan di browser dan diisi otomatis saat checkout berikutnya — hanya metode delivery yang perlu dipilih ulang."
+             data-t-en="Customer name, email, WhatsApp, and address are saved in the browser and auto-filled on the next checkout — only the delivery method needs to be chosen again.">Nama, email, WhatsApp, dan alamat customer tersimpan di browser dan diisi otomatis saat checkout berikutnya — hanya metode delivery yang perlu dipilih ulang.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📦</div>
+        <div class="feature-title" data-t-id="Template Menu Siap Pakai" data-t-en="Ready-to-Use Menu Templates">Template Menu Siap Pakai</div>
+        <div class="feature-desc"
+             data-t-id="Plugin template seed data menu: Coffee Shop (132 item), Bakery (70 item), Toko Buah (60 item), Daging &amp; Sayuran (80 item). Harga IDR + override multi-currency per cabang otomatis."
+             data-t-en="Menu seed template plugins: Coffee Shop (132 items), Bakery (70 items), Fruit Store (60 items), Meat &amp; Veggie (80 items). IDR prices with automatic per-branch multi-currency overrides.">Plugin template seed data menu: Coffee Shop (132 item), Bakery (70 item), Toko Buah (60 item), Daging &amp; Sayuran (80 item). Harga IDR + override multi-currency per cabang otomatis.</div>
       </div>
     </div>
 
@@ -734,15 +755,15 @@ $branches    = $branchModel->getActive();
     <p class="section-label" data-t-id="Spesifikasi Teknis" data-t-en="Technical Specs">Spesifikasi Teknis</p>
     <h2 class="section-title" data-t-id="Dibangun di Atas Teknologi Terbuka" data-t-en="Built on Open Technology">Dibangun di Atas Teknologi Terbuka</h2>
     <p class="section-sub"
-       data-t-id="PHP 8 murni, tanpa framework besar — ringan, cepat, dan mudah dimodifikasi. Codebase ini memakai model dual license: AGPL untuk ekosistem terbuka dan commercial license untuk kebutuhan proprietary."
-       data-t-en="Pure PHP 8, no heavy framework — lightweight, fast, and easy to modify. This codebase uses a dual-license model: AGPL for open ecosystems and a commercial license for proprietary use.">PHP 8 murni, tanpa framework besar — ringan, cepat, dan mudah dimodifikasi. Codebase ini memakai model dual license: AGPL untuk ekosistem terbuka dan commercial license untuk kebutuhan proprietary.</p>
+       data-t-id="PHP 8 murni, tanpa framework besar — ringan, cepat, dan mudah dimodifikasi. Dirilis di bawah GNU Affero General Public License v3.0 (AGPL-3.0)."
+       data-t-en="Pure PHP 8, no heavy framework — lightweight, fast, and easy to modify. Released under the GNU Affero General Public License v3.0 (AGPL-3.0).">PHP 8 murni, tanpa framework besar — ringan, cepat, dan mudah dimodifikasi. Dirilis di bawah GNU Affero General Public License v3.0 (AGPL-3.0).</p>
     <div class="specs-grid">
       <div>
         <div class="spec-row"><span class="spec-label">Backend</span><span class="spec-value">PHP 8 (native, no framework)</span></div>
         <div class="spec-row"><span class="spec-label">Database</span><span class="spec-value">MySQL (PDO)</span></div>
         <div class="spec-row"><span class="spec-label">Server</span><span class="spec-value">Apache / Nginx (XAMPP ready)</span></div>
         <div class="spec-row"><span class="spec-label">AI / LLM</span><span class="spec-value">OpenAI, Anthropic, Rule-based</span></div>
-        <div class="spec-row"><span class="spec-label">Lisensi</span><span class="spec-value">AGPL-3.0 + Commercial License</span></div>
+        <div class="spec-row"><span class="spec-label">Lisensi</span><span class="spec-value">GNU AGPL v3.0</span></div>
         <div class="spec-row"><span class="spec-label">WhatsApp</span><span class="spec-value">Fonnte, Wablas, Meta Cloud API, Twilio, Baileys</span></div>
         <div class="spec-row"><span class="spec-label" data-t-id="Channel Bot" data-t-en="Bot Channels">Channel Bot</span><span class="spec-value">Web, WhatsApp, Telegram, Discord</span></div>
         <div class="spec-row"><span class="spec-label" data-t-id="Kapasitas Menu" data-t-en="Menu Capacity">Kapasitas Menu</span><span class="spec-value" data-t-id="Hingga 1.000 item" data-t-en="Up to 1,000 items">Hingga 1.000 item</span></div>
@@ -772,14 +793,14 @@ $branches    = $branchModel->getActive();
     <p class="section-label" data-t-id="Untuk Developer" data-t-en="For Developers">Untuk Developer</p>
     <h2 class="section-title" data-t-id="Disiapkan untuk Open Source dan Kontribusi" data-t-en="Prepared for Open Source Contribution">Disiapkan untuk Open Source dan Kontribusi</h2>
     <p class="section-sub"
-       data-t-id="KopiBot AI disiapkan sebagai codebase yang ramah kontribusi dengan dual license: AGPL untuk turunan open source, dan commercial license untuk implementasi proprietary atau white-label."
-       data-t-en="KopiBot AI is structured as a contribution-friendly codebase with dual licensing: AGPL for open source derivatives, and a commercial license for proprietary or white-label implementations.">KopiBot AI disiapkan sebagai codebase yang ramah kontribusi dengan dual license: AGPL untuk turunan open source, dan commercial license untuk implementasi proprietary atau white-label.</p>
+       data-t-id="KopiBot AI disiapkan sebagai codebase yang ramah kontribusi dan dirilis di bawah GNU Affero General Public License v3.0 — siap untuk di-fork, dimodifikasi, dan dikontribusikan kembali."
+       data-t-en="KopiBot AI is structured as a contribution-friendly codebase, released under the GNU Affero General Public License v3.0 — ready to be forked, modified, and contributed back.">KopiBot AI disiapkan sebagai codebase yang ramah kontribusi dan dirilis di bawah GNU Affero General Public License v3.0 — siap untuk di-fork, dimodifikasi, dan dikontribusikan kembali.</p>
     <div class="oss-panel">
       <div>
-        <div class="oss-note" data-t-id="Open + Commercial" data-t-en="Open + Commercial">Open + Commercial</div>
-        <h3 data-t-id="AGPL untuk komunitas, commercial license untuk kebutuhan tertutup." data-t-en="AGPL for the community, commercial licensing for closed deployments.">AGPL untuk komunitas, commercial license untuk kebutuhan tertutup.</h3>
-        <p data-t-id="Developer bisa audit, pakai, modifikasi, dan berkontribusi lewat jalur AGPL. Di saat yang sama, bisnis yang ingin white-label, SaaS proprietary, atau modifikasi core tertutup bisa memakai commercial license."
-           data-t-en="Developers can audit, use, modify, and contribute through the AGPL path. At the same time, businesses that need white-label, proprietary SaaS, or closed core modifications can use a commercial license.">Developer bisa audit, pakai, modifikasi, dan berkontribusi lewat jalur AGPL. Di saat yang sama, bisnis yang ingin white-label, SaaS proprietary, atau modifikasi core tertutup bisa memakai commercial license.</p>
+        <div class="oss-note" data-t-id="GNU AGPL v3.0" data-t-en="GNU AGPL v3.0">GNU AGPL v3.0</div>
+        <h3 data-t-id="Source code terbuka, kontribusi diterima, turunan tetap open source." data-t-en="Source code is open, contributions welcome, derivatives stay open source.">Source code terbuka, kontribusi diterima, turunan tetap open source.</h3>
+        <p data-t-id="Developer bisa audit, pakai, modifikasi, dan berkontribusi secara bebas. Setiap modifikasi yang didistribusikan atau dijalankan sebagai layanan jaringan wajib tetap terbuka di bawah AGPL-3.0 yang sama."
+           data-t-en="Developers can freely audit, use, modify, and contribute. Any modification that is distributed or run as a network service must remain open under the same AGPL-3.0.">Developer bisa audit, pakai, modifikasi, dan berkontribusi secara bebas. Setiap modifikasi yang didistribusikan atau dijalankan sebagai layanan jaringan wajib tetap terbuka di bawah AGPL-3.0 yang sama.</p>
         <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:18px">
           <a href="<?= BASE_URL ?>/docs/index.php" class="btn btn-primary btn-sm"
              data-t-id="Buka Semua Docs" data-t-en="Open All Docs">Buka Semua Docs</a>
@@ -791,122 +812,135 @@ $branches    = $branchModel->getActive();
       </div>
       <ul class="oss-list">
         <li>
-          <strong data-t-id="AGPL menjaga turunan tetap terbuka" data-t-en="AGPL keeps derivatives open">AGPL menjaga turunan tetap terbuka</strong>
-          <span data-t-id="Jika core dimodifikasi dan didistribusikan atau dijalankan sebagai layanan jaringan, kewajiban berbagi source code turunan tetap berlaku sesuai AGPL."
-                data-t-en="If the core is modified and distributed or run as a network service, the obligation to share derivative source code still applies under the AGPL.">Jika core dimodifikasi dan didistribusikan atau dijalankan sebagai layanan jaringan, kewajiban berbagi source code turunan tetap berlaku sesuai AGPL.</span>
+          <strong data-t-id="Copyleft kuat via jaringan" data-t-en="Strong copyleft via network">Copyleft kuat via jaringan</strong>
+          <span data-t-id="Tidak seperti GPL biasa, AGPL-3.0 mengharuskan source code dibagikan bahkan jika software hanya dijalankan sebagai layanan web — bukan hanya saat didistribusikan."
+                data-t-en="Unlike regular GPL, AGPL-3.0 requires source code to be shared even if the software is only run as a web service — not only when distributed.">Tidak seperti GPL biasa, AGPL-3.0 mengharuskan source code dibagikan bahkan jika software hanya dijalankan sebagai layanan web — bukan hanya saat didistribusikan.</span>
         </li>
         <li>
-          <strong data-t-id="Commercial license untuk deployment proprietary" data-t-en="Commercial licensing for proprietary deployment">Commercial license untuk deployment proprietary</strong>
-          <span data-t-id="Kalau bisnis tidak ingin membuka modifikasi core, ingin white-label, atau menjualnya sebagai solusi tertutup, jalur komersial adalah opsi yang tepat."
-                data-t-en="If a business does not want to open its core modifications, needs white-labeling, or wants to sell it as a closed solution, the commercial path is the right option.">Kalau bisnis tidak ingin membuka modifikasi core, ingin white-label, atau menjualnya sebagai solusi tertutup, jalur komersial adalah opsi yang tepat.</span>
+          <strong data-t-id="Atribusi dan lisensi tetap melekat" data-t-en="Attribution and license remain attached">Atribusi dan lisensi tetap melekat</strong>
+          <span data-t-id="Setiap distribusi atau deployment wajib menyertakan teks lisensi AGPL-3.0 dan atribusi kepada proyek asli."
+                data-t-en="Every distribution or deployment must include the AGPL-3.0 license text and attribution to the original project.">Setiap distribusi atau deployment wajib menyertakan teks lisensi AGPL-3.0 dan atribusi kepada proyek asli.</span>
         </li>
         <li>
-          <strong data-t-id="Plugin dan integrasi tetap perlu dilihat konteksnya" data-t-en="Plugins and integrations still depend on context">Plugin dan integrasi tetap perlu dilihat konteksnya</strong>
-          <span data-t-id="Modul yang berdiri sendiri lewat extension point publik bisa lebih fleksibel, tetapi bundling proprietary bersama core sebaiknya ditinjau dengan model lisensi komersial."
-                data-t-en="Modules that stand on their own through public extension points can be more flexible, but proprietary bundling with the core should be reviewed under a commercial licensing model.">Modul yang berdiri sendiri lewat extension point publik bisa lebih fleksibel, tetapi bundling proprietary bersama core sebaiknya ditinjau dengan model lisensi komersial.</span>
+          <strong data-t-id="Plugin via extension point publik lebih fleksibel" data-t-en="Plugins via public extension points are more flexible">Plugin via extension point publik lebih fleksibel</strong>
+          <span data-t-id="Modul yang berdiri sendiri melalui antarmuka plugin yang terdefinisi publik bisa lebih leluasa, selama tidak langsung memodifikasi atau menggabungkan core secara tertutup."
+                data-t-en="Modules that stand alone through defined public plugin interfaces can be more flexible, as long as they do not directly modify or privately bundle the core.">Modul yang berdiri sendiri melalui antarmuka plugin yang terdefinisi publik bisa lebih leluasa, selama tidak langsung memodifikasi atau menggabungkan core secara tertutup.</span>
         </li>
       </ul>
     </div>
   </div>
 </section>
 
-<!-- License Model -->
+<!-- License -->
 <section class="section bg-cream">
   <div class="section-inner">
-    <p class="section-label" data-t-id="Model Lisensi" data-t-en="License Model">Model Lisensi</p>
-    <h2 class="section-title" data-t-id="Pilih Jalur Lisensi yang Sesuai Dengan Cara Pakai Kamu" data-t-en="Choose the Licensing Path That Matches Your Usage">Pilih Jalur Lisensi yang Sesuai Dengan Cara Pakai Kamu</h2>
+    <p class="section-label" data-t-id="Lisensi" data-t-en="License">Lisensi</p>
+    <h2 class="section-title" data-t-id="GNU Affero General Public License v3.0" data-t-en="GNU Affero General Public License v3.0">GNU Affero General Public License v3.0</h2>
     <p class="section-sub"
-       data-t-id="Agar tidak abu-abu, KopiBot AI memisahkan jalur open source dan jalur komersial. Ringkasnya: pakai AGPL jika siap berbagi turunan, pilih commercial license jika ingin deployment proprietary."
-       data-t-en="To avoid ambiguity, KopiBot AI separates the open source path from the commercial path. In short: use AGPL if you are ready to share derivatives, choose a commercial license if you want a proprietary deployment.">Agar tidak abu-abu, KopiBot AI memisahkan jalur open source dan jalur komersial. Ringkasnya: pakai AGPL jika siap berbagi turunan, pilih commercial license jika ingin deployment proprietary.</p>
+       data-t-id="KopiBot AI dirilis di bawah GNU AGPL v3.0 — lisensi copyleft kuat yang menjamin source code tetap terbuka, termasuk ketika dijalankan sebagai layanan berbasis jaringan (SaaS)."
+       data-t-en="KopiBot AI is released under GNU AGPL v3.0 — a strong copyleft license that ensures the source code stays open, even when run as a network-based service (SaaS).">KopiBot AI dirilis di bawah GNU AGPL v3.0 — lisensi copyleft kuat yang menjamin source code tetap terbuka, termasuk ketika dijalankan sebagai layanan berbasis jaringan (SaaS).</p>
     <div class="license-grid">
       <div class="license-card">
-        <h3 data-t-id="AGPL-3.0" data-t-en="AGPL-3.0">AGPL-3.0</h3>
-        <p data-t-id="Cocok untuk fork komunitas, kontribusi open source, audit kode, dan deployment yang siap memenuhi kewajiban copyleft."
-           data-t-en="Best for community forks, open source contributions, code audits, and deployments that are comfortable meeting copyleft obligations.">Cocok untuk fork komunitas, kontribusi open source, audit kode, dan deployment yang siap memenuhi kewajiban copyleft.</p>
-        <ul>
-          <li data-t-id="Turunan core tetap terbuka" data-t-en="Core derivatives remain open">Turunan core tetap terbuka</li>
-          <li data-t-id="Berlaku juga untuk layanan lewat jaringan" data-t-en="Also applies to network-delivered services">Berlaku juga untuk layanan lewat jaringan</li>
-          <li data-t-id="Ideal untuk ekosistem komunitas" data-t-en="Ideal for community ecosystems">Ideal untuk ekosistem komunitas</li>
-        </ul>
+        <h3 data-t-id="Apa itu AGPL-3.0?" data-t-en="What is AGPL-3.0?">Apa itu AGPL-3.0?</h3>
+        <p data-t-id="GNU Affero General Public License versi 3 adalah lisensi open source copyleft yang diterbitkan oleh Free Software Foundation. Perbedaan utamanya dari GPL biasa: kewajiban berbagi source code berlaku juga untuk software yang dijalankan sebagai layanan melalui jaringan — tidak hanya saat didistribusikan."
+           data-t-en="The GNU Affero General Public License version 3 is a copyleft open source license published by the Free Software Foundation. Its key difference from the regular GPL: the obligation to share source code also applies to software run as a network service — not only when distributed.">GNU Affero General Public License versi 3 adalah lisensi open source copyleft yang diterbitkan oleh Free Software Foundation. Perbedaan utamanya dari GPL biasa: kewajiban berbagi source code berlaku juga untuk software yang dijalankan sebagai layanan melalui jaringan — tidak hanya saat didistribusikan.</p>
+        <div style="margin-top:14px">
+          <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noopener"
+             class="btn btn-outline btn-sm"
+             data-t-id="Baca Teks Lisensi Resmi" data-t-en="Read Official License Text">Baca Teks Lisensi Resmi</a>
+        </div>
       </div>
       <div class="license-card license-card-highlight">
-        <h3 data-t-id="Commercial License" data-t-en="Commercial License">Commercial License</h3>
-        <p data-t-id="Cocok untuk white-label, SaaS proprietary, bundling ke proyek klien, dan modifikasi core yang ingin tetap tertutup."
-           data-t-en="Best for white-labeling, proprietary SaaS, bundling into client projects, and closed core modifications.">Cocok untuk white-label, SaaS proprietary, bundling ke proyek klien, dan modifikasi core yang ingin tetap tertutup.</p>
+        <h3 data-t-id="&#9989; Kamu Boleh" data-t-en="&#9989; You May">&#9989; Kamu Boleh</h3>
+        <p data-t-id="Hak yang kamu punya dengan AGPL-3.0:" data-t-en="Rights you have under AGPL-3.0:">Hak yang kamu punya dengan AGPL-3.0:</p>
         <ul>
-          <li data-t-id="Tanpa kewajiban membuka source code turunan" data-t-en="No obligation to open derivative source code">Tanpa kewajiban membuka source code turunan</li>
-          <li data-t-id="Lebih aman untuk deployment bisnis" data-t-en="Safer for business deployments">Lebih aman untuk deployment bisnis</li>
-          <li data-t-id="Cocok untuk implementasi tertutup" data-t-en="Fits closed implementations">Cocok untuk implementasi tertutup</li>
+          <li data-t-id="Menggunakan untuk keperluan pribadi &amp; komersial" data-t-en="Use for personal &amp; commercial purposes">Menggunakan untuk keperluan pribadi &amp; komersial</li>
+          <li data-t-id="Memodifikasi source code sesuai kebutuhan" data-t-en="Modify the source code as needed">Memodifikasi source code sesuai kebutuhan</li>
+          <li data-t-id="Mendistribusikan ulang versi asli atau modifikasi" data-t-en="Redistribute the original or modified version">Mendistribusikan ulang versi asli atau modifikasi</li>
+          <li data-t-id="Menjalankan sebagai layanan web / SaaS" data-t-en="Run as a web service / SaaS">Menjalankan sebagai layanan web / SaaS</li>
+          <li data-t-id="Fork &amp; berkontribusi ke proyek turunan" data-t-en="Fork &amp; contribute to derivative projects">Fork &amp; berkontribusi ke proyek turunan</li>
         </ul>
       </div>
       <div class="license-card">
-        <h3 data-t-id="Perlu Kepastian?" data-t-en="Need Certainty?">Perlu Kepastian?</h3>
-        <p data-t-id="Kalau model penggunaanmu campuran atau plugin/proyekmu dibundel bersama core, baca dokumentasi lisensi atau hubungi langsung untuk jalur komersial yang tepat."
-           data-t-en="If your usage model is mixed or your plugin/project is bundled with the core, read the licensing docs or contact us directly for the right commercial path.">Kalau model penggunaanmu campuran atau plugin/proyekmu dibundel bersama core, baca dokumentasi lisensi atau hubungi langsung untuk jalur komersial yang tepat.</p>
-        <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:16px">
-          <a href="<?= BASE_URL ?>/docs/lisensi.php" class="btn btn-outline btn-sm"
-             data-t-id="Dokumentasi Lisensi" data-t-en="License Documentation">Dokumentasi Lisensi</a>
-          <a href="https://wa.me/628129893706?text=Halo%2C%20saya%20ingin%20tanya%20commercial%20license%20KopiBot%20AI" class="btn btn-primary btn-sm" target="_blank"
-             data-t-id="Tanya Lisensi Komersial" data-t-en="Ask About Commercial Licensing">Tanya Lisensi Komersial</a>
-        </div>
+        <h3 data-t-id="&#9888;&#65039; Kamu Wajib" data-t-en="&#9888;&#65039; You Must">&#9888;&#65039; Kamu Wajib</h3>
+        <p data-t-id="Kewajiban yang melekat saat menggunakan AGPL-3.0:" data-t-en="Obligations attached when using AGPL-3.0:">Kewajiban yang melekat saat menggunakan AGPL-3.0:</p>
+        <ul>
+          <li data-t-id="Menyertakan teks lisensi GNU AGPL v3.0" data-t-en="Include the GNU AGPL v3.0 license text">Menyertakan teks lisensi GNU AGPL v3.0</li>
+          <li data-t-id="Membuka source code modifikasi yang kamu buat" data-t-en="Open source any modifications you make">Membuka source code modifikasi yang kamu buat</li>
+          <li data-t-id="Mendistribusikan turunan di bawah AGPL-3.0 yang sama" data-t-en="Distribute derivatives under the same AGPL-3.0">Mendistribusikan turunan di bawah AGPL-3.0 yang sama</li>
+          <li data-t-id="Menyediakan source code jika dijalankan sebagai layanan jaringan" data-t-en="Provide source code if run as a network service">Menyediakan source code jika dijalankan sebagai layanan jaringan</li>
+          <li data-t-id="Mencantumkan atribusi kepada proyek asli" data-t-en="Retain attribution to the original project">Mencantumkan atribusi kepada proyek asli</li>
+        </ul>
       </div>
     </div>
+    <p style="margin-top:24px;font-size:.85rem;color:var(--body-text);text-align:center"
+       data-t-id="Butuh deployment proprietary, white-label, atau modifikasi core tertutup tanpa kewajiban AGPL? Hubungi developer untuk opsi commercial license."
+       data-t-en="Need a proprietary deployment, white-labeling, or closed-core modifications without AGPL obligations? Contact the developer for commercial licensing options.">Butuh deployment proprietary, white-label, atau modifikasi core tertutup tanpa kewajiban AGPL?
+      <a href="https://wa.me/628129893706?text=Halo%2C%20saya%20ingin%20tanya%20commercial%20license%20KopiBot%20AI"
+         target="_blank" style="color:var(--coffee-brown);font-weight:600"
+         data-t-id="Hubungi developer untuk opsi commercial license." data-t-en="Contact the developer for commercial licensing options.">Hubungi developer untuk opsi commercial license.</a>
+    </p>
   </div>
 </section>
 
-<!-- Pricing -->
+<!-- Open Source -->
 <section class="section" id="harga">
   <div class="section-inner">
-    <p class="section-label" data-t-id="Harga &amp; Paket" data-t-en="Pricing">Harga &amp; Paket</p>
-    <h2 class="section-title" data-t-id="Beli Sekali, Pakai Selamanya" data-t-en="Pay Once, Own It Forever">Beli Sekali, Pakai Selamanya</h2>
+    <p class="section-label" data-t-id="Open Source" data-t-en="Open Source">Open Source</p>
+    <h2 class="section-title" data-t-id="Gratis &amp; Open Source" data-t-en="Free &amp; Open Source">Gratis &amp; Open Source</h2>
     <p class="section-sub"
-       data-t-id="Tidak ada biaya langganan platform. Kamu hanya bayar hosting sendiri dan biaya API LLM sesuai pemakaian — transparan dan terkontrol."
-       data-t-en="No platform subscription fees. You only pay for your own hosting and LLM API usage — transparent and controlled.">Tidak ada biaya langganan platform. Kamu hanya bayar hosting sendiri dan biaya API LLM sesuai pemakaian — transparan dan terkontrol.</p>
+       data-t-id="Clone, self-host, dan pakai selamanya — tidak ada biaya lisensi, tidak ada subscription platform."
+       data-t-en="Clone, self-host, and use it forever — no license fees, no platform subscription.">Clone, self-host, dan pakai selamanya — tidak ada biaya lisensi, tidak ada subscription platform.</p>
     <div class="pricing-grid">
       <div class="pricing-card">
-        <div class="pricing-name">Starter</div>
-        <div class="pricing-price"><span data-t-id="Hubungi" data-t-en="Contact">Hubungi</span><br><small data-t-id="kami untuk harga" data-t-en="us for pricing">kami untuk harga</small></div>
-        <div class="pricing-desc" data-t-id="Cocok untuk 1 cabang yang ingin langsung aktif menerima pesanan." data-t-en="Ideal for 1 branch ready to start accepting orders right away.">Cocok untuk 1 cabang yang ingin langsung aktif menerima pesanan.</div>
+        <div class="feature-icon" style="font-size:2rem;margin-bottom:12px">&#128024;</div>
+        <div class="pricing-name" data-t-id="Gratis Sepenuhnya" data-t-en="Completely Free">Gratis Sepenuhnya</div>
+        <div class="pricing-desc"
+             data-t-id="Tidak ada biaya lisensi. Semua fitur dan plugin tersedia langsung dari repo GitHub."
+             data-t-en="No license fees. All features and plugins are available directly from the GitHub repo.">Tidak ada biaya lisensi. Semua fitur dan plugin tersedia langsung dari repo GitHub.</div>
         <ul class="pricing-list">
-          <li data-t-id="Chatbot Website + WhatsApp" data-t-en="Website + WhatsApp Chatbot">Chatbot Website + WhatsApp</li>
-          <li data-t-id="1 cabang &amp; 1 akun admin" data-t-en="1 branch &amp; 1 admin account">1 cabang &amp; 1 akun admin</li>
-          <li data-t-id="Menu, promo, dan manajemen order" data-t-en="Menu, promos, and order management">Menu, promo, dan manajemen order</li>
-          <li data-t-id="PPN, multi bahasa, zona waktu" data-t-en="VAT, multi language, timezone">PPN, multi bahasa, zona waktu</li>
-          <li data-t-id="Rule-based AI (tanpa biaya API)" data-t-en="Rule-based AI (no API cost)">Rule-based AI (tanpa biaya API)</li>
-          <li data-t-id="Setup &amp; konfigurasi awal" data-t-en="Initial setup &amp; configuration">Setup &amp; konfigurasi awal</li>
+          <li data-t-id="Source code 100% terbuka" data-t-en="100% open source code">Source code 100% terbuka</li>
+          <li data-t-id="Semua plugin termasuk" data-t-en="All plugins included">Semua plugin termasuk</li>
+          <li data-t-id="Dokumentasi lengkap" data-t-en="Complete documentation">Dokumentasi lengkap</li>
+          <li data-t-id="GNU AGPL v3.0" data-t-en="GNU AGPL v3.0">GNU AGPL v3.0</li>
+          <li data-t-id="Tidak ada fitur premium tersembunyi" data-t-en="No hidden premium features">Tidak ada fitur premium tersembunyi</li>
         </ul>
-        <a href="#kontak" class="btn btn-outline" style="width:100%;justify-content:center" data-t-id="Tanya Harga" data-t-en="Ask for Pricing">Tanya Harga</a>
+        <a href="https://github.com/kukuhtw/toko_kopi" target="_blank" rel="noopener"
+           class="btn btn-outline" style="width:100%;justify-content:center"
+           data-t-id="&#128279; Lihat GitHub" data-t-en="&#128279; View on GitHub">&#128279; Lihat GitHub</a>
       </div>
       <div class="pricing-card featured">
-        <div class="pricing-badge" data-t-id="Paling Populer" data-t-en="Most Popular">Paling Populer</div>
-        <div class="pricing-name" data-t-id="Multi Cabang" data-t-en="Multi Branch">Multi Cabang</div>
-        <div class="pricing-price"><span data-t-id="Hubungi" data-t-en="Contact">Hubungi</span><br><small data-t-id="kami untuk harga" data-t-en="us for pricing">kami untuk harga</small></div>
-        <div class="pricing-desc" data-t-id="Untuk bisnis dengan beberapa cabang atau yang berencana berkembang." data-t-en="For businesses with multiple branches or planning to expand.">Untuk bisnis dengan beberapa cabang atau yang berencana berkembang.</div>
+        <div class="pricing-badge" data-t-id="Self-Hosted" data-t-en="Self-Hosted">Self-Hosted</div>
+        <div class="feature-icon" style="font-size:2rem;margin-bottom:12px">&#127968;</div>
+        <div class="pricing-name" data-t-id="Kontrol Penuh" data-t-en="Full Control">Kontrol Penuh</div>
+        <div class="pricing-desc"
+             data-t-id="Kamu yang pegang kendali: server, database, dan data customer sepenuhnya milikmu."
+             data-t-en="You're in control: server, database, and customer data are entirely yours.">Kamu yang pegang kendali: server, database, dan data customer sepenuhnya milikmu.</div>
         <ul class="pricing-list">
-          <li data-t-id="Semua fitur Starter" data-t-en="All Starter features">Semua fitur Starter</li>
-          <li data-t-id="Cabang tidak terbatas" data-t-en="Unlimited branches">Cabang tidak terbatas</li>
-          <li data-t-id="Dashboard super admin" data-t-en="Super admin dashboard">Dashboard super admin</li>
-          <li data-t-id="Promo global + override per cabang" data-t-en="Global promos + per-branch override">Promo global + override per cabang</li>
-          <li data-t-id="Integrasi LLM (OpenAI / Anthropic)" data-t-en="LLM integration (OpenAI / Anthropic)">Integrasi LLM (OpenAI / Anthropic)</li>
-          <li data-t-id="Monitoring biaya API per cabang" data-t-en="API cost monitoring per branch">Monitoring biaya API per cabang</li>
-          <li data-t-id="Dukungan teknis 30 hari" data-t-en="30-day technical support">Dukungan teknis 30 hari</li>
+          <li data-t-id="Deploy di server sendiri" data-t-en="Deploy on your own server">Deploy di server sendiri</li>
+          <li data-t-id="Tidak ada data ke pihak ketiga" data-t-en="No data sent to third parties">Tidak ada data ke pihak ketiga</li>
+          <li data-t-id="PHP 8 + MySQL — ringan &amp; portabel" data-t-en="PHP 8 + MySQL — lightweight &amp; portable">PHP 8 + MySQL — ringan &amp; portabel</li>
+          <li data-t-id="XAMPP / VPS / shared hosting" data-t-en="XAMPP / VPS / shared hosting">XAMPP / VPS / shared hosting</li>
+          <li data-t-id="Multi cabang dalam satu instalasi" data-t-en="Multi-branch in one installation">Multi cabang dalam satu instalasi</li>
         </ul>
-        <a href="#kontak" class="btn btn-primary" style="width:100%;justify-content:center" data-t-id="Tanya Harga" data-t-en="Ask for Pricing">Tanya Harga</a>
+        <a href="<?= BASE_URL ?>/docs/index.php" class="btn btn-primary" style="width:100%;justify-content:center"
+           data-t-id="Baca Dokumentasi" data-t-en="Read Documentation">Baca Dokumentasi</a>
       </div>
       <div class="pricing-card">
-        <div class="pricing-name">Custom</div>
-        <div class="pricing-price"><span data-t-id="Diskusi" data-t-en="Discuss">Diskusi</span><br><small data-t-id="sesuai kebutuhan" data-t-en="based on your needs">sesuai kebutuhan</small></div>
-        <div class="pricing-desc" data-t-id="Pengembangan fitur atau integrasi khusus sesuai kebutuhan spesifik bisnis kamu." data-t-en="Custom feature development or integrations for your specific business needs.">Pengembangan fitur atau integrasi khusus sesuai kebutuhan spesifik bisnis kamu.</div>
+        <div class="feature-icon" style="font-size:2rem;margin-bottom:12px">&#128179;</div>
+        <div class="pricing-name" data-t-id="Biaya Transparan" data-t-en="Transparent Costs">Biaya Transparan</div>
+        <div class="pricing-desc"
+             data-t-id="Satu-satunya pengeluaran adalah hosting kamu sendiri dan API LLM sesuai pemakaian nyata."
+             data-t-en="The only costs are your own hosting and LLM API usage based on actual consumption.">Satu-satunya pengeluaran adalah hosting kamu sendiri dan API LLM sesuai pemakaian nyata.</div>
         <ul class="pricing-list">
-          <li data-t-id="Semua fitur Multi Cabang" data-t-en="All Multi Branch features">Semua fitur Multi Cabang</li>
-          <li data-t-id="Integrasi sistem POS / ERP" data-t-en="POS / ERP system integration">Integrasi sistem POS / ERP</li>
-          <li data-t-id="Custom flow &amp; branding" data-t-en="Custom flow &amp; branding">Custom flow &amp; branding</li>
-          <li data-t-id="Integrasi payment gateway" data-t-en="Payment gateway integration">Integrasi payment gateway</li>
-          <li data-t-id="Laporan &amp; analitik lanjutan" data-t-en="Advanced reports &amp; analytics">Laporan &amp; analitik lanjutan</li>
-          <li data-t-id="Dukungan teknis ongoing" data-t-en="Ongoing technical support">Dukungan teknis ongoing</li>
+          <li data-t-id="Hosting: sesuai provider pilihan" data-t-en="Hosting: your chosen provider">Hosting: sesuai provider pilihan</li>
+          <li data-t-id="OpenAI / Anthropic / OpenRouter" data-t-en="OpenAI / Anthropic / OpenRouter">OpenAI / Anthropic / OpenRouter</li>
+          <li data-t-id="Payment gateway: biaya provider" data-t-en="Payment gateway: provider fees">Payment gateway: biaya provider</li>
+          <li data-t-id="WhatsApp gateway: biaya provider" data-t-en="WhatsApp gateway: provider fees">WhatsApp gateway: biaya provider</li>
+          <li data-t-id="Tidak ada markup dari platform" data-t-en="No platform markup">Tidak ada markup dari platform</li>
         </ul>
         <a href="#kontak" class="btn btn-outline" style="width:100%;justify-content:center"
-           data-t-id="Diskusi Kebutuhan" data-t-en="Discuss Requirements">Diskusi Kebutuhan</a>
+           data-t-id="Tanya Developer" data-t-en="Ask the Developer">Tanya Developer</a>
       </div>
     </div>
   </div>

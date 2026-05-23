@@ -204,10 +204,8 @@ $exportBase = BASE_URL . '/api/export';
 <div class="section-header">
   <h2>Manajemen Menu</h2>
   <div style="display:flex;gap:8px;flex-wrap:wrap">
-    <a href="<?= $exportBase ?>/menu-items-branch.php" class="btn btn-outline" style="font-size:.85rem">&#8595; Export Menu</a>
-    <a href="<?= $exportBase ?>/menu-variants-branch.php" class="btn btn-outline" style="font-size:.85rem">&#8595; Export Variant</a>
-    <a href="<?= $exportBase ?>/menu-toppings.php" class="btn btn-outline" style="font-size:.85rem">&#8595; Export Topping</a>
-    <button class="btn btn-outline" type="button" onclick="document.getElementById('uploadModal').classList.remove('hidden')">&#8593; Upload CSV</button>
+    <a href="<?= $exportBase ?>/menu-catalog-ai-branch.php" class="btn btn-outline" style="font-size:.85rem">&#8595; AI Export XLS</a>
+    <button class="btn btn-outline" type="button" onclick="document.getElementById('uploadModal').classList.remove('hidden')">&#8593; AI Import Excel</button>
     <button class="btn btn-primary" type="button" onclick="document.getElementById('addModal').classList.remove('hidden')">+ Tambah Item</button>
   </div>
 </div>
@@ -303,17 +301,28 @@ $exportBase = BASE_URL . '/api/export';
 
 <div id="uploadModal" class="modal-overlay hidden">
   <div class="modal-box">
-    <div class="modal-title">Upload Menu (CSV)</div>
-    <p style="font-size:.85rem;color:var(--text-mid);margin-bottom:12px">Format: <code>category_name, name, description, price</code></p>
-    <form method="POST" action="<?= BASE_URL ?>/api/upload/menu.php" enctype="multipart/form-data">
+    <div class="modal-title">AI Import Katalog Menu</div>
+    <p style="font-size:.85rem;color:var(--text-mid);margin-bottom:12px">
+      Upload <code>.xlsx</code>, <code>.xls</code>, atau <code>.csv</code>. Sistem akan memakai LLM sesuai settings untuk mengenali sheet, header, dan tipe data, lalu melakukan <strong>update/insert</strong> ke tabel menu, variant, topping, dan availability.
+    </p>
+    <form method="POST" action="<?= BASE_URL ?>/api/upload/menu-ai.php" enctype="multipart/form-data" id="menuAiImportForm">
+      <?= Csrf::field() ?>
       <input type="hidden" name="branch_id" value="<?= $branchId ?>">
+      <input type="hidden" name="uploaded_file_id" id="menuAiUploadedFileId" value="">
+      <input type="hidden" name="mapping_json" id="menuAiMappingJson" value="">
       <div class="form-group">
         <label class="form-label" for="uploadFile">File CSV/Excel</label>
         <input type="file" name="file" id="uploadFile" class="form-control" accept=".csv,.xlsx,.xls" required>
       </div>
+      <div style="background:var(--bg-light,#faf9f7);border-radius:10px;padding:12px;margin-bottom:12px;font-size:.82rem;line-height:1.65">
+        <strong>Data yang dikenali:</strong><br>
+        menu item, kategori, harga global, harga cabang, variant/size, topping, relasi topping ke menu, availability cabang, status aktif/nonaktif.
+      </div>
+      <div id="menuAiImportResult" style="display:none;margin-bottom:12px;border-radius:10px;padding:12px;font-size:.83rem"></div>
       <div class="modal-footer">
         <button type="button" class="btn btn-outline" onclick="document.getElementById('uploadModal').classList.add('hidden')">Batal</button>
-        <button type="submit" class="btn btn-primary">Upload</button>
+        <button type="button" class="btn btn-outline" id="menuAiPreviewSubmit">Preview AI</button>
+        <button type="submit" class="btn btn-primary" id="menuAiImportSubmit" disabled>Konfirmasi Import</button>
       </div>
     </form>
   </div>
@@ -482,6 +491,14 @@ const branchOverrides = <?= $overridesJson ?>;
 const csrfName = '<?= $csrfName ?>';
 const csrfValue = '<?= $csrfValue ?>';
 const branchCurrency = '<?= htmlspecialchars($currency) ?>';
+const aiImportForm = document.getElementById('menuAiImportForm');
+const aiImportResult = document.getElementById('menuAiImportResult');
+const aiImportSubmit = document.getElementById('menuAiImportSubmit');
+const aiPreviewSubmit = document.getElementById('menuAiPreviewSubmit');
+const aiUploadedFileId = document.getElementById('menuAiUploadedFileId');
+const aiMappingJson = document.getElementById('menuAiMappingJson');
+let menuAiPreviewData = null;
+let menuAiEntityFieldOptions = {};
 
 function fmtGlobalDelta(delta) {
   if (delta === 0) return '-';
@@ -609,6 +626,219 @@ function openImageModal(id, name, imageUrl) {
     : `<div style="width:96px;height:96px;border-radius:14px;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;color:var(--text-light);background:#faf6f0">Belum ada foto</div>`;
 
   document.getElementById('imageModal').classList.remove('hidden');
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function formatFieldLabel(field) {
+  return String(field || '').replace(/_/g, ' ');
+}
+
+function renderManualMappingEditor(data) {
+  const sheets = Array.isArray(data.sheets) ? data.sheets : [];
+  return sheets.map((sheet, sheetIndex) => {
+    const entity = sheet.entity || 'ignore';
+    const options = menuAiEntityFieldOptions[entity] || [];
+    const headers = Array.isArray(sheet.headers) ? sheet.headers : [];
+    const fieldMap = sheet.field_map || {};
+
+    return `
+      <div class="menu-ai-sheet" data-sheet-index="${sheetIndex}" style="margin-bottom:12px;padding:12px;border:1px solid rgba(0,0,0,.08);border-radius:10px;background:#fff">
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap">
+          <div>
+            <strong>${escapeHtml(sheet.sheet_name)}</strong><br>
+            <span style="color:#666">${escapeHtml(sheet.notes || '')}</span><br>
+            <span style="font-size:.8rem;color:#666">Header: ${headers.map(escapeHtml).join(', ')}</span><br>
+            <span style="font-size:.8rem;color:#666">Row: ${sheet.row_count || 0}</span>
+          </div>
+          <div style="min-width:220px">
+            <label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:4px">Entity Sheet</label>
+            <select class="form-control menu-ai-entity-select" data-sheet-index="${sheetIndex}">
+              ${Object.keys(menuAiEntityFieldOptions).map((entityKey) => `
+                <option value="${escapeHtml(entityKey)}" ${entityKey === entity ? 'selected' : ''}>${escapeHtml(entityKey)}</option>
+              `).join('')}
+            </select>
+          </div>
+        </div>
+        <div class="menu-ai-field-mappings" data-sheet-index="${sheetIndex}" style="margin-top:10px">
+          ${renderFieldMappingControls(sheetIndex, entity, fieldMap, headers)}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderFieldMappingControls(sheetIndex, entity, fieldMap, headers) {
+  const fields = menuAiEntityFieldOptions[entity] || [];
+  if (!fields.length) {
+    return '<div style="font-size:.8rem;color:#666">Sheet ini akan diabaikan saat import.</div>';
+  }
+
+  return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px">`
+    + fields.map((field) => {
+      const selectedHeader = fieldMap[field] || '';
+      return `
+        <label style="display:block;font-size:.78rem">
+          <span style="display:block;font-weight:600;margin-bottom:4px">${escapeHtml(formatFieldLabel(field))}</span>
+          <select class="form-control menu-ai-field-select" data-sheet-index="${sheetIndex}" data-field="${escapeHtml(field)}">
+            <option value="">-- kosong --</option>
+            ${headers.map((header) => `
+              <option value="${escapeHtml(header)}" ${header === selectedHeader ? 'selected' : ''}>${escapeHtml(header)}</option>
+            `).join('')}
+          </select>
+        </label>`;
+    }).join('')
+    + `</div>`;
+}
+
+function buildManualMappingsFromPreview() {
+  const sheets = Array.isArray(menuAiPreviewData?.sheets) ? menuAiPreviewData.sheets : [];
+  return sheets.map((sheet, index) => {
+    const entitySelect = document.querySelector(`.menu-ai-entity-select[data-sheet-index="${index}"]`);
+    const entity = entitySelect ? entitySelect.value : (sheet.entity || 'ignore');
+    const fieldMap = {};
+    document.querySelectorAll(`.menu-ai-field-select[data-sheet-index="${index}"]`).forEach((select) => {
+      if (select.value) {
+        fieldMap[select.dataset.field] = select.value;
+      }
+    });
+    return {
+      sheet_name: sheet.sheet_name || `Sheet ${index + 1}`,
+      entity,
+      field_map: fieldMap,
+      confidence: sheet.confidence || 1,
+      notes: 'manual',
+    };
+  });
+}
+
+function bindManualMappingEditors() {
+  document.querySelectorAll('.menu-ai-entity-select').forEach((select) => {
+    select.addEventListener('change', function () {
+      const index = this.dataset.sheetIndex;
+      const container = document.querySelector(`.menu-ai-field-mappings[data-sheet-index="${index}"]`);
+      const sheet = (menuAiPreviewData?.sheets || [])[Number(index)] || {};
+      const headers = Array.isArray(sheet.headers) ? sheet.headers : [];
+      const existing = buildManualMappingsFromPreview()[Number(index)] || {};
+      container.innerHTML = renderFieldMappingControls(Number(index), this.value, existing.field_map || {}, headers);
+    });
+  });
+}
+
+async function runMenuAiPreview() {
+  aiPreviewSubmit.disabled = true;
+  aiImportSubmit.disabled = true;
+  aiImportResult.style.display = 'block';
+  aiImportResult.style.background = '#eef7fb';
+  aiImportResult.style.color = '#0b4f6c';
+  aiImportResult.innerHTML = 'LLM sedang mengenali struktur sheet dan menyiapkan preview mapping...';
+
+  try {
+    const previewForm = new FormData(aiImportForm);
+    previewForm.delete('uploaded_file_id');
+    const response = await fetch('<?= BASE_URL ?>/api/upload/menu-ai-preview.php', {
+      method: 'POST',
+      body: previewForm,
+      credentials: 'same-origin',
+    });
+    const payload = await response.json();
+    if (!response.ok || !payload.success) {
+      throw new Error(payload.message || 'Preview gagal');
+    }
+
+    const data = payload.data || {};
+    menuAiPreviewData = data;
+    menuAiEntityFieldOptions = data.entity_field_options || {};
+    aiUploadedFileId.value = data.uploaded_file_id || '';
+    aiMappingJson.value = '';
+    aiImportSubmit.disabled = !aiUploadedFileId.value;
+    aiImportResult.style.background = '#fffaf0';
+    aiImportResult.style.color = '#6b4e16';
+    aiImportResult.innerHTML = `
+      <strong>${payload.message}</strong><br>
+      Sheet: ${data.sheet_count || 0} | Total row data: ${data.total_rows || 0}<br>
+      LLM: ${(data.llm_provider || 'none')} / ${(data.llm_model || '-')}<br><br>
+      <div style="margin-bottom:10px;font-weight:600">Koreksi mapping manual bila perlu:</div>
+      ${renderManualMappingEditor(data)}
+      <div style="margin-top:8px"><strong>Kalau mapping sudah benar, klik "Konfirmasi Import".</strong></div>`;
+    bindManualMappingEditors();
+  } catch (error) {
+    aiImportResult.style.background = '#fff1f0';
+    aiImportResult.style.color = '#8a1c1c';
+    aiImportResult.innerHTML = `<strong>Preview gagal.</strong><br>${error.message}`;
+  } finally {
+    aiPreviewSubmit.disabled = false;
+  }
+}
+
+if (aiImportForm) {
+  aiPreviewSubmit.addEventListener('click', runMenuAiPreview);
+
+  aiImportForm.addEventListener('submit', async function (event) {
+    event.preventDefault();
+    if (!aiUploadedFileId.value) {
+      aiImportResult.style.display = 'block';
+      aiImportResult.style.background = '#fff1f0';
+      aiImportResult.style.color = '#8a1c1c';
+      aiImportResult.innerHTML = 'Jalankan preview AI dulu sebelum konfirmasi import.';
+      return;
+    }
+    aiImportSubmit.disabled = true;
+    aiPreviewSubmit.disabled = true;
+    aiImportSubmit.textContent = 'Mengimpor...';
+    aiImportResult.style.display = 'block';
+    aiImportResult.style.background = '#eef7fb';
+    aiImportResult.style.color = '#0b4f6c';
+    aiImportResult.innerHTML = 'Sistem sedang menjalankan upsert ke tabel menu berdasarkan preview AI...';
+
+    try {
+      const importForm = new FormData(aiImportForm);
+      importForm.delete('file');
+      const manualMappings = buildManualMappingsFromPreview();
+      aiMappingJson.value = JSON.stringify(manualMappings);
+      importForm.set('mapping_json', aiMappingJson.value);
+      const response = await fetch(aiImportForm.action, {
+        method: 'POST',
+        body: importForm,
+        credentials: 'same-origin',
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.message || 'Import gagal');
+      }
+
+      const data = payload.data || {};
+      const mappings = Array.isArray(data.sheet_mappings) ? data.sheet_mappings : [];
+      aiImportResult.style.background = '#edf9f0';
+      aiImportResult.style.color = '#1b5e20';
+      aiImportResult.innerHTML = `
+        <strong>${payload.message}</strong><br>
+        Item baru: ${data.inserted_items || 0} | Item update: ${data.updated_items || 0}<br>
+        Variant baru: ${data.inserted_variants || 0} | Variant update: ${data.updated_variants || 0}<br>
+        Topping baru: ${data.inserted_toppings || 0} | Topping update: ${data.updated_toppings || 0}<br>
+        Link topping: ${data.linked_toppings || 0} | Availability update: ${data.updated_availability || 0}<br>
+        Row dilewati: ${data.skipped_rows || 0}<br>
+        LLM: ${(data.llm_provider || 'none')} / ${(data.llm_model || '-')}` + (mappings.length
+          ? `<br><br><strong>Deteksi sheet:</strong><br>${mappings.map((m) => `${m.sheet_name || 'Sheet'} → ${m.entity || 'ignore'} (${m.notes || 'mapped'})`).join('<br>')}`
+          : '');
+
+      setTimeout(() => window.location.reload(), 1600);
+    } catch (error) {
+      aiImportResult.style.background = '#fff1f0';
+      aiImportResult.style.color = '#8a1c1c';
+      aiImportResult.innerHTML = `<strong>Import gagal.</strong><br>${error.message}`;
+    } finally {
+      aiImportSubmit.disabled = false;
+      aiPreviewSubmit.disabled = false;
+      aiImportSubmit.textContent = 'Konfirmasi Import';
+    }
+  });
 }
 </script>
 

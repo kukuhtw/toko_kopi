@@ -51,10 +51,12 @@ Sistem chatbot pemesanan kopi berbasis PHP 8 native, tanpa framework besar, deng
 | **Plugin System** | Tambah fitur tanpa ubah kode inti melalui action/filter hooks |
 | **Shopping Cart** | Tambah, edit, hapus, clear, promo, dan checkout berbasis session |
 | **Checkout Flow** | Chatbot meminta data customer langkah demi langkah sampai order siap dibuat |
+| **Checkout Profile Memory** | Data customer (nama, email, WA, alamat) disimpan di browser, diisi otomatis saat checkout berikutnya — customer hanya perlu memilih metode delivery |
 | **Loyalty Point** | Earn point otomatis, cek saldo, redeem point via chatbot dan halaman order web |
 | **Promo Engine** | Diskon persen, nominal, promo code, jadwal promo, min order, dan rekomendasi promo |
-| **Payment Gateway** | Midtrans dan Xendit via plugin |
+| **Payment Gateway** | Midtrans, Xendit, iPaymu, dan Nicepay via plugin |
 | **Menu Management** | Upload CSV, variant size/price, topping, dan override per cabang |
+| **Menu Templates** | Plugin template data menu siap pakai: Coffee Shop (132 item), Bakery (70 item), Toko Buah (60 item), Daging & Sayuran (80 item) — dengan seed data, harga IDR + override mata uang per cabang otomatis |
 | **Dashboard** | Super admin lintas cabang, branch admin per cabang, Customer CRM, histori loyalty customer, dan Customer Portal self-service |
 | **Customer CRM** | Normalisasi identitas customer berbasis email/WhatsApp, notifikasi loyalty, dan log CRM per cabang |
 | **Customer Portal** | Login customer ringan via kontak + nomor order untuk cek order history, loyalty, profile, dan repeat order |
@@ -119,6 +121,8 @@ LLM API key tidak diisi di `.env`, tetapi dikelola lewat dashboard Super Admin.
 | `http://localhost/toko_kopi/public/readme.php` | README versi HTML |
 | `http://localhost/toko_kopi/public/docs/index.php` | Pusat dokumentasi HTML |
 | `http://localhost/toko_kopi/public/docs/sirclo-full-connector.php` | Tutorial integrasi SIRCLO |
+| `http://localhost/toko_kopi/public/docs/payment-gateway-ipaymu.php` | Setup sandbox iPaymu |
+| `http://localhost/toko_kopi/public/docs/payment-gateway-nicepay.php` | Setup sandbox Nicepay |
 | `http://localhost/toko_kopi/public/login.php` | Login admin |
 | `http://localhost/toko_kopi/public/chat.php` | Chat demo |
 | `http://localhost/toko_kopi/public/order.php?branch={slug}` | Halaman order per cabang |
@@ -162,6 +166,8 @@ toko_kopi/
 |   |-- loyalty-point/
 |   |-- midtrans-payment/
 |   |-- xendit-payment/
+|   |-- ipaymu-payment/
+|   |-- nicepay-payment/
 |   |-- telegram-channel/
 |   |-- discord-channel/
 |   |-- fonnte-whatsapp/
@@ -173,6 +179,10 @@ toko_kopi/
 |   |-- rekomendasi-promo/
 |   |-- cms-berita/
 |   |-- sirclo-full-connector/
+|   |-- coffee-template/
+|   |-- bakery-template/
+|   |-- fruit-template/
+|   |-- meat-veggie-template/
 |   `-- plugins.json
 |-- public/
 |   |-- index.php
@@ -188,6 +198,8 @@ toko_kopi/
 |   |-- lisensi.md
 |   |-- plugin-system.md
 |   |-- sirclo-full-connector.md
+|   |-- payment-gateway-ipaymu.md
+|   |-- payment-gateway-nicepay.md
 |   |-- tutorial-membuat-plugin.md
 |   `-- customer-agent-architecture.md
 |-- uploads/
@@ -252,6 +264,29 @@ plugins/nama-plugin/
 `-- NamaPlugin.php
 ```
 
+---
+
+## Payment Gateway Sandbox
+
+Proyek ini sekarang punya empat plugin payment gateway utama:
+
+- `midtrans-payment`
+- `xendit-payment`
+- `ipaymu-payment`
+- `nicepay-payment`
+
+Untuk setup sandbox dua gateway baru, gunakan panduan berikut:
+
+- [`docs/payment-gateway-ipaymu.md`](docs/payment-gateway-ipaymu.md)
+- [`docs/payment-gateway-nicepay.md`](docs/payment-gateway-nicepay.md)
+
+Ringkasnya:
+
+- `iPaymu` di repo ini memakai flow redirect payment dan webhook internal `notify.php`
+- `Nicepay` di repo ini memakai flow `Registration -> Redirect Payment -> DB Process URL`
+- keduanya bisa dikonfigurasi per cabang dari dashboard settings
+- link bayar akan ikut muncul di checkout web maupun checkout via chat setelah order dibuat
+
 ### Hook Penting
 
 | Hook | Type | Keterangan |
@@ -292,6 +327,10 @@ Referensi:
 - `instagram-dm` - integrasi DM Instagram
 - `sirclo-full-connector` - fondasi integrasi SIRCLO untuk order, produk, dan customer
 - `anthropic-llm`, `gemini-llm`, `openrouter-llm` - provider AI tambahan
+- `coffee-template` - template seed 132 menu toko kopi (data dari database asli) lengkap dengan override harga multi-currency per cabang
+- `bakery-template` - template seed 70 menu toko bakery + roti dengan harga IDR dan override USD/SGD/AUD otomatis
+- `fruit-template` - template seed 60 menu toko buah segar, jus, smoothie, dan salad
+- `meat-veggie-template` - template seed 80 menu toko daging & sayuran
 
 Plugin diaktifkan lewat [`plugins/plugins.json`](plugins/plugins.json). Pada state proyek saat ini, `loyalty-point` dan `customer-crm` aktif dan saling terhubung.
 

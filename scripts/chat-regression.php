@@ -88,16 +88,83 @@ $cases = [
             ];
         },
     ],
+    [
+        'name' => 'variant_followup_small',
+        'steps' => [
+            'pesan 1 latte',
+            'kecil',
+        ],
+        'assert_steps' => static function (array $history): array {
+            $first = $history[0] ?? ['entities' => [], 'result' => []];
+            $second = $history[1] ?? ['entities' => [], 'result' => []];
+
+            return [
+                expectEqual('step1 intent', (string)($first['result']['intent'] ?? ''), 'tambah_item'),
+                expectContains('step1 asks size', (string)($first['result']['reply_message'] ?? ''), 'Ukuran untuk *Latte*'),
+                expectEqual('step2 intent', (string)($second['result']['intent'] ?? ''), 'tambah_item'),
+                expectContains('step2 adds latte small', (string)($second['result']['reply_message'] ?? ''), 'Latte - Small'),
+                expectNotContains('step2 not wrong item', (string)($second['result']['reply_message'] ?? ''), 'Gibraltar'),
+            ];
+        },
+    ],
+    [
+        'name' => 'checkout_email_skip',
+        'steps' => [
+            'pesan 1 americano small',
+            '-',
+            'checkout',
+            'Regression User',
+            'skip',
+        ],
+        'assert_steps' => static function (array $history): array {
+            $checkoutPrompt = $history[2] ?? ['entities' => [], 'result' => []];
+            $nameReply = $history[3] ?? ['entities' => [], 'result' => []];
+            $skipReply = $history[4] ?? ['entities' => [], 'result' => []];
+
+            return [
+                expectContains('checkout asks name', (string)($checkoutPrompt['result']['reply_message'] ?? ''), 'nama'),
+                expectEqual('name step intent', (string)($nameReply['result']['intent'] ?? ''), 'isi_nama'),
+                expectContains('name step asks email', (string)($nameReply['result']['reply_message'] ?? ''), 'email'),
+                expectEqual('skip step intent', (string)($skipReply['result']['intent'] ?? ''), 'isi_email'),
+                expectNotContains('skip step does not repeat email', (string)($skipReply['result']['reply_message'] ?? ''), 'type *skip* to skip'),
+                expectTrue(
+                    'skip step advances to wa/address/postal/summary',
+                    containsOneOf((string)($skipReply['result']['reply_message'] ?? ''), ['WhatsApp', 'Alamat', 'Address', 'Kode pos', 'Postal', 'Ringkasan Order', 'Order Summary'])
+                ),
+            ];
+        },
+    ],
 ];
 
 $failures = [];
 
 foreach ($cases as $case) {
-    $message = (string)$case['message'];
-    $entities = $extractor->extract($message, 'IDR');
     $session = 'chat-regression-' . $case['name'] . '-' . bin2hex(random_bytes(4));
-    $result = $service->process('web', $branchId, $session, $message);
-    $checks = $case['assert']($entities, $result);
+    $history = [];
+
+    if (isset($case['steps']) && is_array($case['steps'])) {
+        foreach ($case['steps'] as $message) {
+            $message = (string)$message;
+            $entities = $extractor->extract($message, 'IDR');
+            $result = $service->process('web', $branchId, $session, $message);
+            $history[] = [
+                'message' => $message,
+                'entities' => $entities,
+                'result' => $result,
+            ];
+        }
+        $checks = $case['assert_steps']($history);
+    } else {
+        $message = (string)$case['message'];
+        $entities = $extractor->extract($message, 'IDR');
+        $result = $service->process('web', $branchId, $session, $message);
+        $history[] = [
+            'message' => $message,
+            'entities' => $entities,
+            'result' => $result,
+        ];
+        $checks = $case['assert']($entities, $result);
+    }
 
     foreach ($checks as $check) {
         if ($check['ok'] !== true) {
@@ -107,10 +174,13 @@ foreach ($cases as $case) {
 
     if ($verbose) {
         echo '--- ' . $case['name'] . " ---\n";
-        echo 'message: ' . $message . "\n";
-        echo 'intent: ' . (string)($result['intent'] ?? '-') . "\n";
-        echo 'entities: ' . json_encode($entities, JSON_UNESCAPED_UNICODE) . "\n";
-        echo 'reply: ' . squashWhitespace((string)($result['reply_message'] ?? '')) . "\n\n";
+        foreach ($history as $index => $step) {
+            echo 'step ' . ($index + 1) . ' message: ' . $step['message'] . "\n";
+            echo 'step ' . ($index + 1) . ' intent: ' . (string)($step['result']['intent'] ?? '-') . "\n";
+            echo 'step ' . ($index + 1) . ' entities: ' . json_encode($step['entities'], JSON_UNESCAPED_UNICODE) . "\n";
+            echo 'step ' . ($index + 1) . ' reply: ' . squashWhitespace((string)($step['result']['reply_message'] ?? '')) . "\n";
+        }
+        echo "\n";
     }
 }
 
@@ -157,6 +227,14 @@ function expectTrue(string $label, bool $value): array
     return [
         'ok' => $value === true,
         'message' => $label . ' expected true, got false',
+    ];
+}
+
+function expectNotContains(string $label, string $haystack, string $needle): array
+{
+    return [
+        'ok' => !str_contains($haystack, $needle),
+        'message' => $label . ' expected not to contain ' . var_export($needle, true) . ', got ' . var_export(squashWhitespace($haystack), true),
     ];
 }
 

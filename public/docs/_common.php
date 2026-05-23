@@ -53,6 +53,10 @@ function docsCatalog(): array
         'plugin-system',
         'tutorial-membuat-plugin',
         'sirclo-full-connector',
+        'payment-gateway-midtrans',
+        'payment-gateway-ipaymu',
+        'payment-gateway-nicepay',
+        'delivery-kiriminaja',
         'customer-agent-architecture',
     ];
 

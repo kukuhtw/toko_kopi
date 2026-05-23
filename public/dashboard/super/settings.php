@@ -20,6 +20,14 @@ $pwError   = '';
 $branchModel = new BranchModel();
 $branches = $branchModel->getActive();
 $selectedBranchId = (int)($_GET['branch_id'] ?? $_POST['branch_id'] ?? ($branches[0]['id'] ?? 0));
+$selectedBranch = null;
+foreach ($branches as $branchRow) {
+    if ((int)($branchRow['id'] ?? 0) === $selectedBranchId) {
+        $selectedBranch = $branchRow;
+        break;
+    }
+}
+$selectedBranchName = (string)($selectedBranch['name'] ?? 'Cabang belum dipilih');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     Csrf::requireValid();
@@ -108,12 +116,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $rows = $db->query('SELECT setting_key, setting_val FROM app_settings')->fetchAll();
 $cfg  = array_column($rows, 'setting_val', 'setting_key');
+$pluginSectionsRaw = HookManager::applyFilters('super.settings.sections', [], $selectedBranchId);
+$pluginSections = [];
+foreach ($pluginSectionsRaw as $slug => $sectionHtml) {
+    $pluginSections[$slug] = str_replace(
+        ['Cabang ini', 'cabang ini'],
+        [$selectedBranchName, $selectedBranchName],
+        (string)$sectionHtml
+    );
+}
 
 ob_start();
 ?>
 <?php if ($message): ?><div class="alert alert-success"><?= htmlspecialchars($message) ?></div><?php endif; ?>
 
-<div class="card">
+<div class="card" id="settings-shortcuts" style="margin-bottom:20px">
+  <div class="card-title">Shortcut Settings</div>
+  <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+    <a href="#global-settings" class="btn btn-outline">Global App</a>
+    <a href="#branch-plugin-settings" class="btn btn-outline">Plugin Cabang</a>
+    <a href="#password-settings" class="btn btn-outline">Password</a>
+    <?php foreach (array_keys($pluginSections) as $pluginSlug): ?>
+      <a href="#plugin-<?= htmlspecialchars($pluginSlug) ?>" class="btn btn-outline">
+        <?= htmlspecialchars(ucwords(str_replace(['-', '_'], ' ', (string)$pluginSlug))) ?>
+      </a>
+    <?php endforeach; ?>
+    <span style="margin-left:auto;font-size:.9rem;color:var(--text-light)">Cabang terpilih: <strong><?= htmlspecialchars($selectedBranchName) ?></strong></span>
+  </div>
+</div>
+
+<div class="card" id="global-settings">
   <div class="card-title">⚙️ Pengaturan Global Aplikasi</div>
   <form method="POST">
     <?= Csrf::field() ?>
@@ -251,7 +283,7 @@ ob_start();
   </form>
 </div>
 
-<div class="card" style="margin-top:20px">
+<div class="card" id="branch-plugin-settings" style="margin-top:20px">
   <div class="card-title">🏢 Pengaturan Plugin Per Cabang</div>
   <form method="GET" style="margin-bottom:16px;max-width:420px">
     <label class="form-label" for="plugin_branch_id">Pilih Cabang</label>
@@ -267,20 +299,22 @@ ob_start();
     </div>
     <small style="color:var(--text-light)">Beberapa plugin memakai pengaturan per cabang, sementara plugin lain bisa menampilkan pengaturan global di area yang sama.</small>
   </form>
+  <div style="margin-bottom:16px;padding:12px 14px;border-radius:10px;background:#eef7fb;border:1px solid #cfe8f3">
+    <strong>Cabang yang sedang diatur:</strong> <?= htmlspecialchars($selectedBranchName) ?>
+  </div>
 
-  <?php
-  $pluginSections = HookManager::applyFilters('super.settings.sections', [], $selectedBranchId);
-  if (empty($pluginSections)):
-  ?>
+  <?php if (empty($pluginSections)): ?>
     <div style="color:var(--text-light);font-size:.9rem">Belum ada plugin yang menambahkan section pengaturan super admin.</div>
   <?php else: ?>
-    <?php foreach ($pluginSections as $section): ?>
-      <?= $section ?>
+    <?php foreach ($pluginSections as $pluginSlug => $section): ?>
+      <div id="plugin-<?= htmlspecialchars((string)$pluginSlug) ?>">
+        <?= $section ?>
+      </div>
     <?php endforeach; ?>
   <?php endif; ?>
 </div>
 
-<div class="card" style="margin-top:20px">
+<div class="card" id="password-settings" style="margin-top:20px">
   <div class="card-title">Ganti Password Akun Super Admin</div>
   <?php if ($pwMessage): ?><div class="alert alert-success"><?= htmlspecialchars($pwMessage) ?></div><?php endif; ?>
   <?php if ($pwError):   ?><div class="alert alert-error"><?= htmlspecialchars($pwError) ?></div><?php endif; ?>

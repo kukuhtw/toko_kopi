@@ -115,17 +115,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $s = fn(string $key, string $default = '') => htmlspecialchars($settings[$key] ?? $default);
+$pluginSections = HookManager::applyFilters('settings.sections', [], $branchId);
 
 ob_start();
 ?>
 <?php if ($message): ?><div class="alert alert-success"><?= htmlspecialchars($message) ?></div><?php endif; ?>
+
+<div class="card" id="settings-shortcuts" style="margin-bottom:16px">
+  <div class="card-title">Shortcut Settings</div>
+  <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+    <a href="#branch-info" class="btn btn-outline">Informasi Cabang</a>
+    <a href="#chatbot-content" class="btn btn-outline">Konten Chatbot</a>
+    <a href="#general-settings" class="btn btn-outline">Pengaturan Umum</a>
+    <?php foreach (array_keys($pluginSections) as $pluginSlug): ?>
+      <a href="#plugin-<?= htmlspecialchars((string)$pluginSlug) ?>" class="btn btn-outline">
+        <?= htmlspecialchars(ucwords(str_replace(['-', '_'], ' ', (string)$pluginSlug))) ?>
+      </a>
+    <?php endforeach; ?>
+    <a href="#password-settings" class="btn btn-outline">Password</a>
+    <span style="margin-left:auto;font-size:.9rem;color:var(--text-light)">Cabang: <strong><?= htmlspecialchars((string)($branch['name'] ?? '')) ?></strong></span>
+  </div>
+</div>
 
 <form method="POST">
 <?= Csrf::field() ?>
 <input type="hidden" name="action" value="update_settings">
 
 <!-- ── Informasi Cabang ─────────────────────────────────── -->
-<div class="card" style="margin-bottom:16px">
+<div class="card" id="branch-info" style="margin-bottom:16px">
   <div class="card-title">🏪 Informasi Cabang</div>
 
   <!-- Nama cabang dual language -->
@@ -198,7 +215,7 @@ ob_start();
 </div>
 
 <!-- ── Konten Chatbot (Dual Language) ──────────────────── -->
-<div class="card" style="margin-bottom:16px">
+<div class="card" id="chatbot-content" style="margin-bottom:16px">
   <div class="card-title">🤖 Konten Chatbot
     <small style="font-size:.8rem;color:var(--text-light);font-weight:400;margin-left:8px">
       Teks yang digunakan bot saat menyambut pelanggan
@@ -249,7 +266,7 @@ ob_start();
 </div>
 
 <!-- ── Pengaturan Umum ──────────────────────────────────── -->
-<div class="card" style="margin-bottom:16px">
+<div class="card" id="general-settings" style="margin-bottom:16px">
   <div class="card-title">⚙️ Pengaturan Umum</div>
   <div class="form-row">
     <div class="form-group">
@@ -319,14 +336,13 @@ ob_start();
 
 <!-- ── Plugin Settings Sections ─────────────────────────── -->
 <?php
-$pluginSections = HookManager::applyFilters('settings.sections', [], $branchId);
-foreach ($pluginSections as $section) {
-    echo $section;
+foreach ($pluginSections as $pluginSlug => $section) {
+    echo '<div id="plugin-' . htmlspecialchars((string)$pluginSlug) . '">' . $section . '</div>';
 }
 ?>
 
 <!-- ── Ganti Password ───────────────────────────────────── -->
-<div class="card">
+<div class="card" id="password-settings">
   <div class="card-title">🔑 Ganti Password Akun</div>
   <?php if ($pwMessage): ?><div class="alert alert-success"><?= htmlspecialchars($pwMessage) ?></div><?php endif; ?>
   <?php if ($pwError):   ?><div class="alert alert-error"><?= htmlspecialchars($pwError) ?></div><?php endif; ?>

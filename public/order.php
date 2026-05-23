@@ -3,6 +3,7 @@ declare(strict_types=1);
 require_once dirname(__DIR__) . '/app/Config/config.php';
 use App\Models\{BranchModel, MenuModel};
 use App\Helpers\{Auth, Currency, MenuImage};
+use App\Plugin\HookManager;
 Auth::startSession();
 
 $slug        = $_GET['branch'] ?? '';
@@ -99,6 +100,7 @@ $categories = array_values($catMap);
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Order Online — <?= htmlspecialchars($branch['name']) ?></title>
   <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/app.css">
+  <?= HookManager::applyFilters('site.head_styles', '') ?>
   <style>
     body { background:var(--coffee-cream); }
     .order-page  { max-width:1100px; margin:0 auto; padding:20px; }
@@ -226,6 +228,20 @@ $categories = array_values($catMap);
       border-radius:12px; font-size:.88rem;
     }
 
+    /* Profile recognition */
+    .profile-banner {
+      background:rgba(101,67,33,.06); border:1.5px solid rgba(101,67,33,.2);
+      border-radius:10px; padding:10px 14px; margin-bottom:14px;
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+    }
+    .profile-banner-name { font-weight:600; font-size:.9rem; color:var(--coffee-dark); }
+    .profile-banner-sub  { font-size:.78rem; color:var(--text-mid); margin-top:2px; }
+    .profile-banner-clear {
+      font-size:.78rem; color:var(--text-light); cursor:pointer; white-space:nowrap;
+      border:none; background:none; padding:4px 8px; border-radius:6px; flex-shrink:0;
+    }
+    .profile-banner-clear:hover { background:rgba(0,0,0,.06); color:var(--text-mid); }
+
     /* Floating chat button */
     .chatbot-float {
       position:fixed; bottom:24px; right:24px;
@@ -292,6 +308,17 @@ $categories = array_values($catMap);
 
         <div class="checkout-form" id="checkoutForm" style="display:none">
           <h4 style="margin-bottom:12px;color:var(--coffee-dark)"><?= htmlspecialchars($t['delivery_data']) ?></h4>
+
+          <div id="profileBanner" class="profile-banner" style="display:none">
+            <div>
+              <div class="profile-banner-name" id="profileBannerName"></div>
+              <div class="profile-banner-sub"><?= $isEnglish ? 'Your details have been pre-filled.' : 'Data kamu sudah diisi otomatis.' ?></div>
+            </div>
+            <button type="button" class="profile-banner-clear" onclick="clearSavedProfile()">
+              <?= $isEnglish ? 'Not you? ×' : 'Bukan kamu? ×' ?>
+            </button>
+          </div>
+
           <div class="form-group">
             <label style="font-size:.85rem;font-weight:600;margin-bottom:8px;display:block"><?= htmlspecialchars($t['fulfillment']) ?></label>
             <div class="fulfillment-options">
@@ -447,6 +474,7 @@ const TEXT = <?= json_encode([
     'added_to_cart' => $isEnglish ? 'added to cart' : 'ditambahkan ke keranjang',
     'topping_limit_reached' => $isEnglish ? 'Maximum topping choice reached.' : 'Batas pilihan topping sudah tercapai.',
     'notes_placeholder' => $isEnglish ? 'Notes (e.g. less sugar, no ice)' : 'Catatan (contoh: sedikit gula, tanpa es)',
+    'profile_hello' => $isEnglish ? 'Hello, {name}!' : 'Halo, {name}!',
 ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_INVALID_UTF8_SUBSTITUTE) ?>;
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -931,7 +959,9 @@ function showCheckout() {
     document.getElementById('checkoutForm').style.display = 'block';
     document.getElementById('checkoutBtn').style.display  = 'none';
     onFulfillmentChange();
-    document.getElementById('custName').focus();
+    loadSavedProfile();
+    const firstEmpty = ['custName','custEmail','custWa'].find(id => !document.getElementById(id)?.value.trim());
+    document.getElementById(firstEmpty || 'custName')?.focus();
     refreshLoyaltyStatus();
     autoApplyPromo();
 }
@@ -1199,6 +1229,9 @@ async function placeOrder() {
         const data = await res.json().catch(() => null);
 
         if (data?.success) {
+            saveCustomerProfile(name, email, wa,
+                document.getElementById('custAddress')?.value.trim() || '',
+                document.getElementById('custPostal')?.value.trim()  || '');
             const paymentUrl = typeof data?.data?.payment?.url === 'string' ? data.data.payment.url : '';
             const paymentBtn = document.getElementById('orderPaymentBtn');
             const paymentHint = document.getElementById('orderPaymentHint');
@@ -1401,6 +1434,59 @@ function getCustomerIdentityPayload() {
         customer_email: document.getElementById('custEmail')?.value.trim() || '',
         customer_whatsapp: document.getElementById('custWa')?.value.trim() || '',
     };
+}
+
+// ── Customer profile (localStorage) ──────────────────────────────────────────
+const PROFILE_KEY     = 'customerProfile_v1';
+const PROFILE_MAX_AGE = 90; // days
+
+function loadSavedProfile() {
+    try {
+        const raw = localStorage.getItem(PROFILE_KEY);
+        if (!raw) return;
+        const p = JSON.parse(raw);
+        const ageDays = (Date.now() - new Date(p.savedAt).getTime()) / 86400000;
+        if (ageDays > PROFILE_MAX_AGE) { localStorage.removeItem(PROFILE_KEY); return; }
+
+        const nameEl    = document.getElementById('custName');
+        const emailEl   = document.getElementById('custEmail');
+        const waEl      = document.getElementById('custWa');
+        const addrEl    = document.getElementById('custAddress');
+        const postalEl  = document.getElementById('custPostal');
+        if (p.name     && nameEl)   nameEl.value   = p.name;
+        if (p.email    && emailEl)  emailEl.value  = p.email;
+        if (p.whatsapp && waEl)     waEl.value     = p.whatsapp;
+        if (p.address  && addrEl)   addrEl.value   = p.address;
+        if (p.postal   && postalEl) postalEl.value = p.postal;
+
+        if (p.name) {
+            const banner = document.getElementById('profileBanner');
+            const label  = document.getElementById('profileBannerName');
+            if (banner && label) {
+                label.textContent = TEXT.profile_hello.replace('{name}', p.name);
+                banner.style.display = 'flex';
+            }
+        }
+    } catch {}
+}
+
+function clearSavedProfile() {
+    try { localStorage.removeItem(PROFILE_KEY); } catch {}
+    document.getElementById('profileBanner').style.display = 'none';
+    ['custName','custEmail','custWa','custAddress','custPostal'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    document.getElementById('custName')?.focus();
+}
+
+function saveCustomerProfile(name, email, whatsapp, address, postal) {
+    try {
+        localStorage.setItem(PROFILE_KEY, JSON.stringify({
+            name, email, whatsapp, address, postal,
+            savedAt: new Date().toISOString(),
+        }));
+    } catch {}
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────

@@ -71,7 +71,28 @@
     "rajaongkir-delivery": {
         "active": true
     },
+    "kiriminaja-delivery": {
+        "active": true
+    },
     "rich-chat-ui": {
+        "active": true
+    },
+    "bakery-template": {
+        "active": true
+    },
+    "fruit-template": {
+        "active": true
+    },
+    "meat-veggie-template": {
+        "active": true
+    },
+    "coffee-template": {
+        "active": true
+    },
+    "ipaymu-payment": {
+        "active": true
+    },
+    "nicepay-payment": {
         "active": true
     }
 }

@@ -116,6 +116,7 @@ class ThemesPlugin implements PluginInterface
     public function register(): void
     {
         HookManager::addFilter('dashboard.head_styles', [$this, 'injectStyles'],    5);
+        HookManager::addFilter('site.head_styles',      [$this, 'injectStyles'],    5);
         HookManager::addFilter('dashboard.brand_html',  [$this, 'overrideBrand'],   5);
         HookManager::addFilter('dashboard.app_name',    [$this, 'overrideAppName'], 5);
         HookManager::addFilter('dashboard.nav_items',   [$this, 'addNavItem'],      5);

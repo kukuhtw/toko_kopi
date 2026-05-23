@@ -70,6 +70,7 @@
   $webChatHeadHtml = HookManager::applyFilters('webchat.head_html', '', $webChatConfig, $selectedBranchId, $selectedBranch ?? []);
   ?>
   <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/app.css">
+  <?= HookManager::applyFilters('site.head_styles', '') ?>
   <?= $webChatHeadHtml ?>
   <style>
     body { margin:0; background:var(--coffee-cream); }
