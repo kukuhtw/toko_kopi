@@ -38,6 +38,12 @@ $logsStmt = $db->prepare(
 );
 $logsStmt->execute([$orderId]);
 $logs = $logsStmt->fetchAll();
+$fulfillmentType = (string)($order['fulfillment_type'] ?? 'delivery');
+$fulfillmentLabel = match ($fulfillmentType) {
+    'pickup' => 'Ambil di toko',
+    'table' => 'Delivery ke meja',
+    default => 'Delivery ke alamat',
+};
 
 function customerCurrency(float $amount): string
 {
@@ -196,6 +202,17 @@ function customerDetailStatusBadgeClass(string $type, ?string $status): string
             <strong><?= customerCurrency((float)$order['ppn_amount']) ?></strong>
           </div>
         <?php endif; ?>
+        <?php if ((float)($order['delivery_fee'] ?? 0) > 0): ?>
+          <div class="summary-row">
+            <span>
+              Biaya Delivery
+              <?php if (!empty($order['delivery_courier']) || !empty($order['delivery_service'])): ?>
+                <span class="muted"><?= htmlspecialchars(trim(strtoupper((string)($order['delivery_courier'] ?? '')) . ' ' . (string)($order['delivery_service'] ?? ''))) ?><?= !empty($order['delivery_etd']) ? ' · ETD ' . htmlspecialchars((string)$order['delivery_etd']) : '' ?></span>
+              <?php endif; ?>
+            </span>
+            <strong><?= customerCurrency((float)($order['delivery_fee'] ?? 0)) ?></strong>
+          </div>
+        <?php endif; ?>
         <div class="summary-row total">
           <span>Total</span>
           <span><?= customerCurrency((float)$order['total_amount']) ?></span>
@@ -223,11 +240,23 @@ function customerDetailStatusBadgeClass(string $type, ?string $status): string
             <small>Cabang</small>
             <strong><?= htmlspecialchars($branchName) ?></strong>
           </div>
+          <div class="mini-box">
+            <small>Metode</small>
+            <strong><?= htmlspecialchars($fulfillmentLabel) ?></strong>
+          </div>
+          <?php if ($fulfillmentType === 'table'): ?>
+          <div class="mini-box">
+            <small>Nomor Meja</small>
+            <strong><?= htmlspecialchars((string)($order['table_number'] ?? '-')) ?></strong>
+          </div>
+          <?php endif; ?>
         </div>
+        <?php if ($fulfillmentType === 'delivery'): ?>
         <div class="mini-box" style="margin-top:12px">
           <small>Alamat Pengiriman</small>
           <strong><?= htmlspecialchars((string)($order['delivery_address'] ?: '-')) ?></strong>
         </div>
+        <?php endif; ?>
         <div class="mini-box" style="margin-top:12px">
           <small>Catatan Order</small>
           <strong><?= htmlspecialchars((string)($order['notes'] ?: '-')) ?></strong>

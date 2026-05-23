@@ -98,6 +98,16 @@ class CartModel extends BaseModel
         return $res->rowCount() > 0;
     }
 
+    public function updateItemById(int $cartItemId, int $qty): bool
+    {
+        if ($qty <= 0) {
+            return $this->removeItemById($cartItemId);
+        }
+
+        $res = $this->query('UPDATE cart_items SET quantity = ? WHERE id = ?', [$qty, $cartItemId]);
+        return $res->rowCount() > 0;
+    }
+
     public function removeItem(int $cartId, int $menuItemId, ?int $variantId = null): bool
     {
         $existing = $this->findCartItem($cartId, $menuItemId, $variantId);

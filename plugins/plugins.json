@@ -64,5 +64,14 @@
     },
     "customer-crm": {
         "active": true
+    },
+    "sirclo-full-connector": {
+        "active": true
+    },
+    "rajaongkir-delivery": {
+        "active": true
+    },
+    "rich-chat-ui": {
+        "active": true
     }
 }

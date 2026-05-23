@@ -33,6 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $branchModel->update($branchId, [
             'name'    => Sanitize::string($_POST['name'] ?? ''),
             'city'    => Sanitize::string($_POST['city'] ?? ''),
+            'postal_code' => preg_replace('/\D/', '', (string)($_POST['postal_code'] ?? '')),
             'phone'   => Sanitize::string($_POST['phone'] ?? ''),
             'email'   => Sanitize::email($_POST['email'] ?? '') ?: null,
             'address' => Sanitize::string($_POST['address'] ?? ''),
@@ -165,13 +166,19 @@ ob_start();
           <input type="text" id="b_city" name="city" class="form-control" value="<?= htmlspecialchars($branch['city'] ?? '') ?>">
         </div>
         <div class="form-group">
+          <label class="form-label" for="b_postal_code">Kode Pos Cabang</label>
+          <input type="text" id="b_postal_code" name="postal_code" class="form-control" value="<?= htmlspecialchars($branch['postal_code'] ?? '') ?>">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
           <label class="form-label" for="b_phone">Telepon</label>
           <input type="text" id="b_phone" name="phone" class="form-control" value="<?= htmlspecialchars($branch['phone'] ?? '') ?>">
         </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="b_email">Email</label>
-        <input type="email" id="b_email" name="email" class="form-control" value="<?= htmlspecialchars($branch['email'] ?? '') ?>">
+        <div class="form-group">
+          <label class="form-label" for="b_email">Email</label>
+          <input type="email" id="b_email" name="email" class="form-control" value="<?= htmlspecialchars($branch['email'] ?? '') ?>">
+        </div>
       </div>
       <div class="form-group">
         <label class="form-label" for="b_address">Alamat</label>

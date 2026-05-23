@@ -24,6 +24,7 @@ class ChatbotEngine
 
     private const CHECKOUT_STATES = [
         'awaiting_name', 'awaiting_email', 'awaiting_wa',
+        'awaiting_fulfillment', 'awaiting_table',
         'awaiting_address', 'awaiting_postal', 'awaiting_confirmation',
     ];
     private const VARIANT_STATE        = 'awaiting_variant';
@@ -179,10 +180,13 @@ class ChatbotEngine
     private function dispatch(array $context): array
     {
         $intent = $context['intent'];
+        $state = (string)($context['conversation']['state'] ?? '');
 
         // Jika customer mengirim order baru saat ada pending state, batalkan pending dan proses ulang.
         $pendingStates = [self::VARIANT_STATE, self::TOPPING_STATE, self::REMOVE_VARIANT_STATE, self::ITEM_NOTES_STATE];
-        if ($intent === 'tambah_item' && in_array($context['conversation']['state'] ?? '', $pendingStates, true)) {
+        if ($intent === 'tambah_item'
+            && in_array($state, $pendingStates, true)
+            && $this->looksLikeFreshAddRequest((string)($context['message'] ?? ''), $state)) {
             $context['conv_context'] = array_diff_key(
                 $context['conv_context'] ?? [],
                 array_flip(['pending_variant_selection', 'pending_topping_selection', 'pending_note_cart_item_ids'])
@@ -210,6 +214,19 @@ class ChatbotEngine
         $inCheckout = in_array($context['conversation']['state'], self::CHECKOUT_STATES);
         if ($inCheckout && !in_array($intent, self::CHECKOUT_ESCAPE_INTENTS)) {
             return $this->runSkill(new CheckoutSkill(), $context);
+        }
+
+        // Escape intent during checkout: jawab dulu, lalu lanjut tanya field checkout
+        if ($inCheckout && in_array($intent, self::CHECKOUT_ESCAPE_INTENTS, true)) {
+            $escapeResult  = $this->dispatchToSkill($context);
+            $checkoutSkill = new CheckoutSkill();
+            $resumeResult  = $checkoutSkill->handle(array_merge($context, ['intent' => '__resume__']));
+            return [
+                'reply_message' => ($escapeResult['reply_message'] ?? '') . "\n\n" . ($resumeResult['reply'] ?? ''),
+                'new_state'     => $resumeResult['state'] ?? (string)($context['conversation']['state'] ?? 'idle'),
+                'action_result' => $escapeResult['action_result'] ?? null,
+                'conv_context'  => $resumeResult['conv_context'] ?? $context['conv_context'],
+            ];
         }
 
         // Follow-up "detail" after showing order history
@@ -500,6 +517,24 @@ class ChatbotEngine
         }
 
         return preg_match('/\b(topping|boba|oreo|keju|coklat|chocolate|mangga|strawberry|vanilla|matcha|caramel)\b/u', $lower) === 1;
+    }
+
+    private function looksLikeFreshAddRequest(string $message, string $state): bool
+    {
+        $lower = mb_strtolower(trim($message), 'UTF-8');
+        if ($lower === '') {
+            return false;
+        }
+
+        if ($state === self::VARIANT_STATE && $this->looksLikeVariantAnswer($lower)) {
+            return false;
+        }
+
+        if ($state === self::TOPPING_STATE && $this->looksLikeToppingAnswer($lower)) {
+            return false;
+        }
+
+        return preg_match('/\b(mau|pesan|order|beli|minta|tambah|add)\b/u', $lower) === 1;
     }
 
     private function errorResponse(string $msg): array

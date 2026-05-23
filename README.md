@@ -28,6 +28,7 @@
 > WhatsApp  : https://wa.me/628129893706
 > Instagram : @kukuhtw
 > X/Twitter : @kukuhtw
+> GitHub    : https://github.com/kukuhtw/toko_kopi
 > Facebook  : https://www.facebook.com/kukuhtw
 > LinkedIn  : https://linkedin.com/in/kukuhtw
 >
@@ -117,6 +118,7 @@ LLM API key tidak diisi di `.env`, tetapi dikelola lewat dashboard Super Admin.
 | `http://localhost/toko_kopi/public/` | Landing page |
 | `http://localhost/toko_kopi/public/readme.php` | README versi HTML |
 | `http://localhost/toko_kopi/public/docs/index.php` | Pusat dokumentasi HTML |
+| `http://localhost/toko_kopi/public/docs/sirclo-full-connector.php` | Tutorial integrasi SIRCLO |
 | `http://localhost/toko_kopi/public/login.php` | Login admin |
 | `http://localhost/toko_kopi/public/chat.php` | Chat demo |
 | `http://localhost/toko_kopi/public/order.php?branch={slug}` | Halaman order per cabang |
@@ -170,6 +172,7 @@ toko_kopi/
 |   |-- upselling/
 |   |-- rekomendasi-promo/
 |   |-- cms-berita/
+|   |-- sirclo-full-connector/
 |   `-- plugins.json
 |-- public/
 |   |-- index.php
@@ -184,6 +187,7 @@ toko_kopi/
 |   |-- instalasi.md
 |   |-- lisensi.md
 |   |-- plugin-system.md
+|   |-- sirclo-full-connector.md
 |   |-- tutorial-membuat-plugin.md
 |   `-- customer-agent-architecture.md
 |-- uploads/
@@ -286,9 +290,43 @@ Referensi:
 - `notifikasi-admin` - helper notifikasi/admin mailer support
 - `themes` - pengelolaan tema/tampilan
 - `instagram-dm` - integrasi DM Instagram
+- `sirclo-full-connector` - fondasi integrasi SIRCLO untuk order, produk, dan customer
 - `anthropic-llm`, `gemini-llm`, `openrouter-llm` - provider AI tambahan
 
 Plugin diaktifkan lewat [`plugins/plugins.json`](plugins/plugins.json). Pada state proyek saat ini, `loyalty-point` dan `customer-crm` aktif dan saling terhubung.
+
+---
+
+## Integrasi SIRCLO
+
+Proyek ini sekarang memiliki plugin `sirclo-full-connector` sebagai fondasi integrasi ke SIRCLO.
+
+Cakupan yang sudah tersedia:
+
+- pengaturan koneksi per cabang dan global
+- menu dashboard branch dan super admin untuk monitoring
+- log sinkronisasi ke tabel `sirclo_sync_logs`
+- queue event order untuk `created`, `status_changed`, dan `payment_updated`
+- snapshot manual untuk sinkronisasi order, produk, dan customer
+
+Penting:
+
+- versi saat ini masih **scaffold integrasi**
+- request HTTP real ke API SIRCLO belum diimplementasikan
+- webhook inbound SIRCLO juga belum dibuat
+
+Dokumentasi lengkap:
+
+- [`docs/sirclo-full-connector.md`](docs/sirclo-full-connector.md)
+- [`public/docs/sirclo-full-connector.php`](public/docs/sirclo-full-connector.php)
+
+File utama plugin:
+
+- [`plugins/sirclo-full-connector/SircloFullConnectorPlugin.php`](plugins/sirclo-full-connector/SircloFullConnectorPlugin.php)
+- [`plugins/sirclo-full-connector/SircloConnectorRepository.php`](plugins/sirclo-full-connector/SircloConnectorRepository.php)
+- [`plugins/sirclo-full-connector/SircloConnectorService.php`](plugins/sirclo-full-connector/SircloConnectorService.php)
+- [`public/dashboard/branch/sirclo.php`](public/dashboard/branch/sirclo.php)
+- [`public/dashboard/super/sirclo.php`](public/dashboard/super/sirclo.php)
 
 ---
 
@@ -421,6 +459,18 @@ Di halaman order web, redeem point juga bisa dipakai langsung dari panel loyalty
 
 Portal customer juga dapat diakses langsung setelah checkout lewat tombol `Dashboard Customer`, dengan prefill kontak dan nomor order terakhir.
 
+### Regression Check
+
+Untuk cek cepat flow entity extraction dan chatbot tanpa browser, jalankan:
+
+```text
+php scripts/chat-regression.php
+php scripts/chat-regression.php --verbose
+php scripts/chat-regression.php --branch=1
+```
+
+Script ini menguji skenario umum seperti deskripsi menu, query budget, order dengan varian, order dengan hint harga, dan lookup promo.
+
 ---
 
 ## Dokumentasi
@@ -432,6 +482,7 @@ Versi HTML yang bisa dibuka langsung di browser:
 - [`public/docs/instalasi.php`](public/docs/instalasi.php)
 - [`public/docs/lisensi.php`](public/docs/lisensi.php)
 - [`public/docs/plugin-system.php`](public/docs/plugin-system.php)
+- [`public/docs/sirclo-full-connector.php`](public/docs/sirclo-full-connector.php)
 - [`public/docs/tutorial-membuat-plugin.php`](public/docs/tutorial-membuat-plugin.php)
 
 Dokumen Markdown sumber:
@@ -439,6 +490,7 @@ Dokumen Markdown sumber:
 - [`docs/instalasi.md`](docs/instalasi.md)
 - [`docs/lisensi.md`](docs/lisensi.md)
 - [`docs/plugin-system.md`](docs/plugin-system.md)
+- [`docs/sirclo-full-connector.md`](docs/sirclo-full-connector.md)
 - [`docs/tutorial-membuat-plugin.md`](docs/tutorial-membuat-plugin.md)
 - [`docs/customer-agent-architecture.md`](docs/customer-agent-architecture.md)
 

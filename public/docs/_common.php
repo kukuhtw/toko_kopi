@@ -52,6 +52,7 @@ function docsCatalog(): array
         'lisensi',
         'plugin-system',
         'tutorial-membuat-plugin',
+        'sirclo-full-connector',
         'customer-agent-architecture',
     ];
 
@@ -1002,6 +1003,7 @@ function docsRenderIndexPage(): string
       <a href="instalasi.php">Panduan Instalasi</a>
       <a href="lisensi.php">Lisensi AGPL + Commercial</a>
       <a href="plugin-system.php">Plugin System</a>
+      <a href="sirclo-full-connector.php">Tutorial Integrasi SIRCLO</a>
       <a href="tutorial-membuat-plugin.php">Tutorial Membuat Plugin</a>
     </nav>
   </aside>

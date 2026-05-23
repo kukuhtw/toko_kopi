@@ -84,6 +84,14 @@ class IntentDetector implements IntentDetectorInterface
             'alamat', 'address', 'dikirim ke', 'antar ke', 'jl.', 'jalan', 'gang',
             'perumahan', 'kompleks', 'deliver to', 'send to', 'street', 'road', 'avenue',
         ],
+        'isi_fulfillment' => [
+            'ambil di toko', 'pickup', 'pick up', 'pick-up', 'take away',
+            'delivery', 'antar ke alamat', 'kirim ke alamat',
+            'nomor meja', 'meja', 'antar ke meja', 'table',
+        ],
+        'isi_nomor_meja' => [
+            'meja', 'table', 'nomor meja', 'table number',
+        ],
         'isi_kode_pos' => [
             'kode pos', 'postal code', 'zip code', 'kodepos', 'zip',
         ],
@@ -119,7 +127,7 @@ class IntentDetector implements IntentDetectorInterface
         $lower = mb_strtolower(trim($message), 'UTF-8');
         $state = $context['state'] ?? 'idle';
 
-        if (in_array($state, ['awaiting_name','awaiting_email','awaiting_wa','awaiting_address','awaiting_postal'])) {
+        if (in_array($state, ['awaiting_name','awaiting_email','awaiting_wa','awaiting_fulfillment','awaiting_table','awaiting_address','awaiting_postal'])) {
             return $this->detectCheckoutField($lower, $state);
         }
 
@@ -166,6 +174,7 @@ class IntentDetector implements IntentDetectorInterface
             if (preg_match('/\b(kode\s*pos|kodepos|postal)\b/u', $lower))          { return 'isi_kode_pos'; }
             if (preg_match('/\bemail\b/u', $lower))                                 { return 'isi_email'; }
             if (preg_match('/\b(wa|whatsapp|nomor|hp|telepon|nomer)\b/u', $lower))  { return 'isi_wa'; }
+            if (preg_match('/\b(meja|table|pickup|pick\s*up|delivery|antar|ambil)\b/u', $lower)) { return 'isi_fulfillment'; }
             if (preg_match('/\b(alamat|address)\b/u', $lower))                      { return 'isi_alamat'; }
             if (preg_match('/\b(nama|name)\b/u', $lower))                           { return 'isi_nama'; }
         }
@@ -216,10 +225,22 @@ class IntentDetector implements IntentDetectorInterface
 
     private function detectCheckoutField(string $lower, string $state): string
     {
+        static $escapeIntents = [
+            'tanya_promo', 'tanya_menu', 'lihat_cart', 'clear_cart',
+            'hapus_item', 'pakai_promo', 'tambah_item', 'ubah_item',
+        ];
+
+        $scored = $this->scoreMessage($lower);
+        if (in_array($scored, $escapeIntents, true)) {
+            return $scored;
+        }
+
         return match ($state) {
             'awaiting_name'   => 'isi_nama',
-            'awaiting_email'  => str_contains($lower, '@') ? 'isi_email' : 'isi_nama',
+            'awaiting_email'  => 'isi_email',
             'awaiting_wa'     => 'isi_wa',
+            'awaiting_fulfillment' => 'isi_fulfillment',
+            'awaiting_table'  => 'isi_nomor_meja',
             'awaiting_address'=> 'isi_alamat',
             'awaiting_postal' => 'isi_kode_pos',
             default           => 'konfirmasi_order',

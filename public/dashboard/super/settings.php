@@ -55,10 +55,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $db->prepare(
                     'INSERT INTO plugin_branch_settings (plugin_slug, branch_id, setting_key, setting_val)
                      VALUES (?, ?, ?, ?)
-                     ON DUPLICATE KEY UPDATE setting_val = VALUES(setting_val)'
+                    ON DUPLICATE KEY UPDATE setting_val = VALUES(setting_val)'
                 )->execute([$slug, $selectedBranchId, $key, (string)$rawVal]);
             }
             $message = 'Pengaturan plugin cabang disimpan.';
+            HookManager::doAction('settings.saved', $selectedBranchId, $_POST);
         }
     } elseif ($action === 'change_password') {
         $current = $_POST['current_password'] ?? '';

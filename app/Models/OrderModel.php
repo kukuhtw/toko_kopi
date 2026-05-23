@@ -9,6 +9,13 @@ use App\Plugin\HookManager;
 class OrderModel extends BaseModel
 {
     protected string $table = 'orders';
+    private static array $columnCache = [];
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->ensureSchema();
+    }
 
     public function createFromCart(array $cart, array $cartItems, array $customerData, int $customerId, float $ppnRate = 0.0): int
     {
@@ -22,6 +29,15 @@ class OrderModel extends BaseModel
         $total    = (float) HookManager::applyFilters('cart.total', $total, $cartItems, $cart);
         $orderNum = $this->generateOrderNumber();
 
+        $fulfillmentType = $this->normalizeFulfillmentType((string)($customerData['fulfillment_type'] ?? 'delivery'));
+        $tableNumber = $this->normalizeTableNumber((string)($customerData['table_number'] ?? ''));
+        $deliveryAddress = $fulfillmentType === 'delivery'
+            ? ($customerData['address'] ?? null)
+            : null;
+        $postalCode = $fulfillmentType === 'delivery'
+            ? ($customerData['postal_code'] ?? null)
+            : null;
+
         $orderData = [
             'order_number'    => $orderNum,
             'branch_id'       => $cart['branch_id'],
@@ -30,8 +46,8 @@ class OrderModel extends BaseModel
             'customer_name'   => $customerData['name'],
             'customer_email'  => $customerData['email']       ?? null,
             'customer_wa'     => $customerData['whatsapp']    ?? null,
-            'delivery_address'=> $customerData['address']     ?? null,
-            'postal_code'     => $customerData['postal_code'] ?? null,
+            'delivery_address'=> $deliveryAddress,
+            'postal_code'     => $postalCode,
             'subtotal'        => $subtotal,
             'discount_amount' => $discount,
             'ppn_rate'        => $ppnRate,
@@ -40,6 +56,12 @@ class OrderModel extends BaseModel
             'promo_code'      => $cart['promo_code']  ?? null,
             'notes'           => $cart['notes']       ?? null,
         ];
+        if ($this->hasColumn('fulfillment_type')) {
+            $orderData['fulfillment_type'] = $fulfillmentType;
+        }
+        if ($this->hasColumn('table_number')) {
+            $orderData['table_number'] = $fulfillmentType === 'table' ? $tableNumber : null;
+        }
 
         $orderData = (array) HookManager::applyFilters(
             'order.before_create',
@@ -281,5 +303,67 @@ class OrderModel extends BaseModel
             [$branchId]
         )->fetch();
         return $row ?: [];
+    }
+
+    private function ensureSchema(): void
+    {
+        $this->ensureColumn('fulfillment_type', "VARCHAR(20) NOT NULL DEFAULT 'delivery' AFTER customer_wa");
+        $this->ensureColumn('table_number', "VARCHAR(50) DEFAULT NULL AFTER fulfillment_type");
+    }
+
+    private function ensureColumn(string $column, string $definition): void
+    {
+        if ($this->hasColumn($column)) {
+            return;
+        }
+
+        $this->db->exec(sprintf(
+            'ALTER TABLE %s ADD COLUMN %s %s',
+            $this->table,
+            $column,
+            $definition
+        ));
+        self::$columnCache[$this->table . '.' . $column] = true;
+    }
+
+    private function hasColumn(string $column): bool
+    {
+        $key = $this->table . '.' . $column;
+        if (array_key_exists($key, self::$columnCache)) {
+            return self::$columnCache[$key];
+        }
+
+        $stmt = $this->query(
+            'SELECT 1
+             FROM information_schema.columns
+             WHERE table_schema = DATABASE()
+               AND table_name = ?
+               AND column_name = ?
+             LIMIT 1',
+            [$this->table, $column]
+        );
+        self::$columnCache[$key] = (bool) $stmt->fetchColumn();
+
+        return self::$columnCache[$key];
+    }
+
+    private function normalizeFulfillmentType(string $value): string
+    {
+        $value = strtolower(trim($value));
+        return match ($value) {
+            'pickup', 'pick_up', 'ambil', 'ambil_di_toko' => 'pickup',
+            'table', 'meja', 'dine_in', 'table_delivery' => 'table',
+            default => 'delivery',
+        };
+    }
+
+    private function normalizeTableNumber(string $value): string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return '';
+        }
+
+        return mb_substr($value, 0, 50);
     }
 }

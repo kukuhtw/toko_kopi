@@ -26,6 +26,13 @@ $currency    = $branchModel->getCurrency((int)$order['branch_id']);
 $timezone    = $branchModel->getTimezone((int)$order['branch_id']);
 $tzLabel     = (new \DateTime('now', new \DateTimeZone($timezone)))->format('T (P)');
 
+$fulfillmentType = (string)($order['fulfillment_type'] ?? 'delivery');
+$fulfillmentLabel = match ($fulfillmentType) {
+    'pickup' => 'Ambil di toko',
+    'table' => 'Delivery ke meja',
+    default => 'Delivery ke alamat',
+};
+
 $message = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     Csrf::requireValid();
@@ -63,8 +70,14 @@ ob_start();
         <div><strong>WhatsApp:</strong> <?= htmlspecialchars($order['customer_wa'] ?? '-') ?></div>
         <div><strong>Email:</strong> <?= htmlspecialchars($order['customer_email'] ?? '-') ?></div>
         <div><strong>Channel:</strong> <?= htmlspecialchars($order['channel']) ?></div>
+        <div><strong>Metode:</strong> <?= htmlspecialchars($fulfillmentLabel) ?></div>
+        <?php if ($fulfillmentType === 'table'): ?>
+        <div><strong>Nomor Meja:</strong> <?= htmlspecialchars((string)($order['table_number'] ?? '-')) ?></div>
+        <?php endif; ?>
+        <?php if ($fulfillmentType === 'delivery'): ?>
         <div style="grid-column:1/-1"><strong>Alamat:</strong> <?= htmlspecialchars($order['delivery_address'] ?? '-') ?></div>
         <div><strong>Kode Pos:</strong> <?= htmlspecialchars($order['postal_code'] ?? '-') ?></div>
+        <?php endif; ?>
         <div><strong>Waktu Order:</strong> <?= date('d/m/Y H:i', strtotime($order['created_at'])) ?> <span style="color:var(--text-light)"><?= htmlspecialchars($tzLabel) ?></span></div>
         <?php if ($order['notes']): ?><div style="grid-column:1/-1"><strong>Catatan:</strong> <?= htmlspecialchars($order['notes']) ?></div><?php endif; ?>
       </div>
@@ -105,6 +118,19 @@ ob_start();
           <?php endif; ?>
           <?php if ((float)($order['ppn_amount'] ?? 0) > 0): ?>
           <tr><td colspan="3" style="text-align:right">PPN (<?= (float)$order['ppn_rate'] ?>%):</td><td><?= Currency::format((float)$order['ppn_amount'], $currency) ?></td></tr>
+          <?php endif; ?>
+          <?php if ((float)($order['delivery_fee'] ?? 0) > 0): ?>
+          <tr>
+            <td colspan="3" style="text-align:right">
+              Biaya Delivery
+              <?php if (!empty($order['delivery_courier']) || !empty($order['delivery_service'])): ?>
+                <small style="color:var(--text-light)">
+                  (<?= htmlspecialchars(trim(strtoupper((string)($order['delivery_courier'] ?? '')) . ' ' . (string)($order['delivery_service'] ?? ''))) ?><?= !empty($order['delivery_etd']) ? ' · ETD ' . htmlspecialchars((string)$order['delivery_etd']) : '' ?>)
+                </small>
+              <?php endif; ?>
+            </td>
+            <td><?= Currency::format((float)$order['delivery_fee'], $currency) ?></td>
+          </tr>
           <?php endif; ?>
           <tr><td colspan="3" style="text-align:right;font-weight:700;font-size:1.05rem">Total:</td><td style="font-weight:700"><?= Currency::format((float)$order['total_amount'], $currency) ?></td></tr>
         </tfoot>

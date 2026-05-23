@@ -647,6 +647,87 @@ $branches    = $branchModel->getActive();
   </div>
 </section>
 
+<!-- SIRCLO Integration -->
+<section class="section">
+  <div class="section-inner">
+    <p class="section-label" data-t-id="Integrasi Enterprise" data-t-en="Enterprise Integration">Integrasi Enterprise</p>
+    <h2 class="section-title" data-t-id="Fondasi Integrasi SIRCLO Sudah Disiapkan" data-t-en="The SIRCLO Integration Foundation Is Ready">Fondasi Integrasi SIRCLO Sudah Disiapkan</h2>
+    <p class="section-sub"
+       data-t-id="KopiBot sekarang punya plugin Sirclo Full Connector untuk menyiapkan sinkronisasi order, katalog produk, dan customer per cabang. Versi saat ini fokus pada konfigurasi, dashboard monitoring, queue log, dan snapshot data sebagai dasar implementasi API SIRCLO berikutnya."
+       data-t-en="KopiBot now includes a Sirclo Full Connector plugin that prepares per-branch order, product catalog, and customer synchronization. The current version focuses on configuration, monitoring dashboards, queue logs, and data snapshots as the foundation for the next SIRCLO API implementation.">KopiBot sekarang punya plugin Sirclo Full Connector untuk menyiapkan sinkronisasi order, katalog produk, dan customer per cabang. Versi saat ini fokus pada konfigurasi, dashboard monitoring, queue log, dan snapshot data sebagai dasar implementasi API SIRCLO berikutnya.</p>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🔁</div>
+        <div class="feature-title" data-t-id="Order Sync Queue" data-t-en="Order Sync Queue">Order Sync Queue</div>
+        <div class="feature-desc"
+             data-t-id="Event order baru, perubahan status, dan update pembayaran otomatis dicatat ke log sinkronisasi sehingga mapping ke API SIRCLO bisa diuji bertahap."
+             data-t-en="New orders, status changes, and payment updates are automatically logged into the sync queue so mapping to the SIRCLO API can be tested step by step.">Event order baru, perubahan status, dan update pembayaran otomatis dicatat ke log sinkronisasi sehingga mapping ke API SIRCLO bisa diuji bertahap.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📦</div>
+        <div class="feature-title" data-t-id="Product Snapshot" data-t-en="Product Snapshot">Product Snapshot</div>
+        <div class="feature-desc"
+             data-t-id="Katalog menu, kategori, harga efektif, dan availability per cabang bisa di-queue sebagai snapshot sebelum koneksi HTTP real diaktifkan."
+             data-t-en="Menu catalogs, categories, effective prices, and per-branch availability can be queued as snapshots before the real HTTP connection is enabled.">Katalog menu, kategori, harga efektif, dan availability per cabang bisa di-queue sebagai snapshot sebelum koneksi HTTP real diaktifkan.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">👥</div>
+        <div class="feature-title" data-t-id="Customer Snapshot" data-t-en="Customer Snapshot">Customer Snapshot</div>
+        <div class="feature-desc"
+             data-t-id="Customer aktif per cabang disiapkan dari histori order supaya integrasi CRM atau customer sync ke SIRCLO bisa dibangun di atas data yang sudah rapi."
+             data-t-en="Active customers per branch are prepared from order history so CRM or customer sync into SIRCLO can be built on top of already-clean data.">Customer aktif per cabang disiapkan dari histori order supaya integrasi CRM atau customer sync ke SIRCLO bisa dibangun di atas data yang sudah rapi.</div>
+      </div>
+    </div>
+
+    <div class="promo-detail" style="margin-top:28px">
+      <div class="promo-detail-item">
+        <div class="promo-detail-icon">1.</div>
+        <div>
+          <div class="promo-detail-title" data-t-id="Isi konfigurasi cabang" data-t-en="Fill branch configuration">Isi konfigurasi cabang</div>
+          <div class="promo-detail-desc"
+               data-t-id="Masukkan API base URL, store ID, API key, API secret, dan status mapping di pengaturan plugin per cabang."
+               data-t-en="Enter the API base URL, store ID, API key, API secret, and status mapping in the per-branch plugin settings.">Masukkan API base URL, store ID, API key, API secret, dan status mapping di pengaturan plugin per cabang.</div>
+        </div>
+      </div>
+      <div class="promo-detail-item">
+        <div class="promo-detail-icon">2.</div>
+        <div>
+          <div class="promo-detail-title" data-t-id="Pantau queue sinkronisasi" data-t-en="Monitor the sync queue">Pantau queue sinkronisasi</div>
+          <div class="promo-detail-desc"
+               data-t-id="Buka dashboard Sirclo Connector di branch atau super admin untuk melihat status koneksi, credential, dan activity log terbaru."
+               data-t-en="Open the Sirclo Connector dashboard in branch or super admin mode to see connection status, credentials, and the latest activity logs.">Buka dashboard Sirclo Connector di branch atau super admin untuk melihat status koneksi, credential, dan activity log terbaru.</div>
+        </div>
+      </div>
+      <div class="promo-detail-item">
+        <div class="promo-detail-icon">3.</div>
+        <div>
+          <div class="promo-detail-title" data-t-id="Lanjutkan ke API produksi" data-t-en="Continue to the production API">Lanjutkan ke API produksi</div>
+          <div class="promo-detail-desc"
+               data-t-id="Setelah payload dan mapping final, service plugin bisa dilanjutkan untuk request HTTP real, webhook inbound, retry policy, dan sinkronisasi dua arah."
+               data-t-en="Once payloads and mappings are final, the plugin service can be extended with real HTTP requests, inbound webhooks, retry policies, and two-way synchronization.">Setelah payload dan mapping final, service plugin bisa dilanjutkan untuk request HTTP real, webhook inbound, retry policy, dan sinkronisasi dua arah.</div>
+        </div>
+      </div>
+      <div class="promo-detail-item">
+        <div class="promo-detail-icon">ℹ️</div>
+        <div>
+          <div class="promo-detail-title" data-t-id="Status saat ini" data-t-en="Current status">Status saat ini</div>
+          <div class="promo-detail-desc"
+               data-t-id="Plugin SIRCLO yang ada sekarang masih berupa fondasi integrasi. Ia sudah siap untuk konfigurasi, snapshot, dan monitoring, tetapi belum mengirim request HTTP real ke API SIRCLO."
+               data-t-en="The current SIRCLO plugin is still an integration foundation. It is ready for configuration, snapshots, and monitoring, but it does not yet send real HTTP requests to the SIRCLO API.">Plugin SIRCLO yang ada sekarang masih berupa fondasi integrasi. Ia sudah siap untuk konfigurasi, snapshot, dan monitoring, tetapi belum mengirim request HTTP real ke API SIRCLO.</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:22px">
+      <a href="<?= BASE_URL ?>/docs/sirclo-full-connector.php" class="btn btn-primary btn-sm"
+         data-t-id="Baca Tutorial SIRCLO" data-t-en="Read the SIRCLO Tutorial">Baca Tutorial SIRCLO</a>
+      <a href="<?= BASE_URL ?>/readme.php" class="btn btn-outline btn-sm"
+         data-t-id="Lihat README Lengkap" data-t-en="View the Full README">Lihat README Lengkap</a>
+    </div>
+  </div>
+</section>
+
 <!-- Tech specs -->
 <section class="section bg-cream">
   <div class="section-inner">

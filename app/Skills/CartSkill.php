@@ -920,11 +920,12 @@ class CartSkill implements SkillInterface
                 'slug' => (string)($topping['slug'] ?? ''),
             ], $item['toppings'] ?? []),
         ];
+        $pending = $convCtx['pending_topping_selection'];
 
         return [
             'reply' => $reply,
             'state' => 'awaiting_toppings',
-            'action_result' => null,
+            'action_result' => $this->buildToppingSelectionPayload($pending),
             'conv_context' => $convCtx,
         ];
     }
@@ -970,7 +971,9 @@ class CartSkill implements SkillInterface
             return [
                 'reply' => $lang === 'id' ? 'Jumlah topping belum sesuai. Coba sebutkan topping yang kamu pilih.' : 'The topping count is not valid yet. Please list the toppings you want.',
                 'state' => 'awaiting_toppings',
-                'action_result' => null,
+                'action_result' => $this->buildToppingSelectionPayload(array_merge($pending, [
+                    'selected_toppings' => $selected,
+                ])),
                 'conv_context' => $convCtx,
             ];
         }
@@ -1118,5 +1121,28 @@ class CartSkill implements SkillInterface
             'en' => ['specify_item' => 'Please type the menu item name.', 'item_not_found' => 'Item not found.'],
         ];
         return $t[$lang][$key] ?? $t['id'][$key];
+    }
+
+    private function buildToppingSelectionPayload(array $pending): array
+    {
+        return [
+            'type' => 'topping_selection',
+            'menu_item_id' => (int)($pending['menu_item_id'] ?? 0),
+            'menu_name' => (string)($pending['menu_name'] ?? ''),
+            'qty' => (int)($pending['qty'] ?? 1),
+            'variant' => is_array($pending['variant'] ?? null) ? $pending['variant'] : null,
+            'min_toppings' => (int)($pending['min_toppings'] ?? 0),
+            'max_toppings' => (int)($pending['max_toppings'] ?? 0),
+            'selected_toppings' => array_values(array_map(static fn(array $topping): array => [
+                'id' => (int)($topping['id'] ?? 0),
+                'name' => (string)($topping['name'] ?? ''),
+                'slug' => (string)($topping['slug'] ?? ''),
+            ], array_filter((array)($pending['selected_toppings'] ?? []), static fn($topping): bool => is_array($topping)))),
+            'toppings' => array_values(array_map(static fn(array $topping): array => [
+                'id' => (int)($topping['id'] ?? 0),
+                'name' => (string)($topping['name'] ?? ''),
+                'slug' => (string)($topping['slug'] ?? ''),
+            ], array_filter((array)($pending['toppings'] ?? []), static fn($topping): bool => is_array($topping)))),
+        ];
     }
 }

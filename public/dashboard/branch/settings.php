@@ -77,6 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'name'    => Sanitize::string($_POST['name']    ?? $branch['name']),
             'address' => Sanitize::string($_POST['address'] ?? ''),
             'city'    => Sanitize::string($_POST['city']    ?? ''),
+            'postal_code' => preg_replace('/\D/', '', (string)($_POST['postal_code'] ?? '')),
             'phone'   => Sanitize::string($_POST['phone']   ?? ''),
             'email'   => Sanitize::string($_POST['email']   ?? ''),
         ]);
@@ -181,6 +182,13 @@ ob_start();
       <label class="form-label" for="set_address">Alamat / Address</label>
       <textarea id="set_address" name="address" class="form-control" rows="2"><?= htmlspecialchars($branch['address'] ?? '') ?></textarea>
     </div>
+    <div class="form-group">
+      <label class="form-label" for="set_postal_code">Kode Pos Cabang</label>
+      <input type="text" id="set_postal_code" name="postal_code" class="form-control"
+             value="<?= htmlspecialchars($branch['postal_code'] ?? '') ?>" placeholder="Contoh: 40123">
+    </div>
+  </div>
+  <div class="form-row">
     <div class="form-group">
       <label class="form-label" for="set_email">Email</label>
       <input type="email" id="set_email" name="email" class="form-control"

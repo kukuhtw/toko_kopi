@@ -63,11 +63,23 @@ if ($promoCode !== '' && ($cart['promo_code'] ?? '') !== $promoCode) {
     }
 }
 
-$required = ['name', 'address'];
-foreach ($required as $field) {
+$fulfillmentType = strtolower(trim((string)($body['fulfillment_type'] ?? 'delivery')));
+if (!in_array($fulfillmentType, ['pickup', 'table', 'delivery'], true)) {
+    $fulfillmentType = 'delivery';
+}
+
+foreach (['name', 'whatsapp'] as $field) {
     if (empty($body[$field])) {
         Response::error("Field '{$field}' is required");
     }
+}
+
+if ($fulfillmentType === 'delivery' && empty($body['address'])) {
+    Response::error("Field 'address' is required");
+}
+
+if ($fulfillmentType === 'table' && trim((string)($body['table_number'] ?? '')) === '') {
+    Response::error("Field 'table_number' is required");
 }
 
 $customerModel = new CustomerModel();
@@ -90,8 +102,10 @@ $customerData = [
     'name'        => Sanitize::string($body['name']),
     'email'       => filter_var($body['email'] ?? '', FILTER_VALIDATE_EMAIL) ?: null,
     'whatsapp'    => preg_replace('/[^0-9+]/', '', $body['whatsapp'] ?? ''),
-    'address'     => Sanitize::string($body['address']),
-    'postal_code' => preg_replace('/\D/', '', $body['postal_code'] ?? ''),
+    'fulfillment_type' => $fulfillmentType,
+    'address'     => $fulfillmentType === 'delivery' ? Sanitize::string((string)($body['address'] ?? '')) : '',
+    'postal_code' => $fulfillmentType === 'delivery' ? preg_replace('/\D/', '', $body['postal_code'] ?? '') : '',
+    'table_number' => $fulfillmentType === 'table' ? Sanitize::string((string)($body['table_number'] ?? '')) : '',
 ];
 
 // Filter: plugin bisa modifikasi atau validasi data checkout sebelum order dibuat
@@ -109,10 +123,12 @@ try {
 
     // Update customer profile
     $customerModel->updateInfo($customerId, ['name' => $customerData['name'], 'email' => $customerData['email']]);
-    $customerModel->updateProfile($customerId, [
-        'address'     => $customerData['address'],
-        'postal_code' => $customerData['postal_code'],
-    ]);
+    if ($customerData['fulfillment_type'] === 'delivery') {
+        $customerModel->updateProfile($customerId, [
+            'address'     => $customerData['address'],
+            'postal_code' => $customerData['postal_code'],
+        ]);
+    }
 
     Response::success($orderResponse, 'Order created successfully');
 } catch (\Throwable $e) {

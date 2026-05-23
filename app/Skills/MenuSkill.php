@@ -10,8 +10,6 @@ use App\Services\MenuRagResponder;
 
 class MenuSkill implements SkillInterface
 {
-    private const CHATBOT_LIMIT = 10;   // items shown per category in chat
-
     private MenuModel $menuModel;
     private MenuRagResponder $ragResponder;
 
@@ -176,11 +174,18 @@ class MenuSkill implements SkillInterface
         }
 
         if (!empty($matchedCats)) {
+            $matchedItems = $this->collectCategoryItems($matchedCats, $branchId);
             return [
                 'reply'         => $this->buildCategoryView($matchedCats, $branchId, $currency, $lang),
                 'state'         => 'idle',
-                'action_result' => null,
-                'conv_context'  => ['last_topic' => 'menu'],
+                'action_result' => $matchedItems,
+                'conv_context'  => [
+                    'last_topic' => 'menu',
+                    'last_menu_items' => array_map(static fn(array $item): array => [
+                        'id' => (int)($item['id'] ?? 0),
+                        'name' => (string)($item['name'] ?? ''),
+                    ], $matchedItems),
+                ],
             ];
         }
 
@@ -270,34 +275,20 @@ class MenuSkill implements SkillInterface
 
     private function buildCategoryView(array $cats, int $branchId, string $currency, string $lang): string
     {
-        $limit = self::CHATBOT_LIMIT;
         $lines = [];
 
         foreach ($cats as $cat) {
-            $items = $this->menuModel->getMenuByCategory($branchId, (int)$cat['id'], $limit);
+            $total = max(1, (int)($cat['item_count'] ?? 0));
+            $items = $this->menuModel->getMenuByCategory($branchId, (int)$cat['id'], $total);
             if (empty($items)) {
                 continue;
             }
-            $total = (int)$cat['item_count'];
-            $shown = count($items);
 
             $header = "\n*{$cat['name']}*";
-            if ($total > $limit) {
-                $header .= $lang === 'en'
-                    ? " (showing {$shown} of {$total})"
-                    : " (menampilkan {$shown} dari {$total})";
-            }
             $lines[] = $header;
 
             foreach ($items as $item) {
                 $lines[] = "• {$item['name']} — " . $this->formatItemPrice($item, $currency);
-            }
-
-            if ($total > $limit) {
-                $remaining = $total - $limit;
-                $lines[]   = $lang === 'en'
-                    ? "_...and {$remaining} more. See full list on our website._"
-                    : "_...dan {$remaining} menu lainnya. Lihat daftar lengkap di website kami._";
             }
         }
 
@@ -307,6 +298,19 @@ class MenuSkill implements SkillInterface
 
         $lines[] = "\n" . $this->t($lang, 'order_hint_generic');
         return implode("\n", $lines);
+    }
+
+    private function collectCategoryItems(array $cats, int $branchId): array
+    {
+        $items = [];
+        foreach ($cats as $cat) {
+            $total = max(1, (int)($cat['item_count'] ?? 0));
+            foreach ($this->menuModel->getMenuByCategory($branchId, (int)($cat['id'] ?? 0), $total) as $item) {
+                $items[] = $item;
+            }
+        }
+
+        return $items;
     }
 
     private function buildItemListView(array $items, string $currency, string $lang): string

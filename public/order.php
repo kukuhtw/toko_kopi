@@ -15,6 +15,7 @@ $currency  = $branchModel->getCurrency((int)$branch['id']);
 $language  = $branchModel->getLanguage((int)$branch['id']);
 $ppnRate   = $branchModel->getPpnRate((int)$branch['id']);
 $sessionId = session_id();
+$rajaOngkirEnabled = \App\Plugin\PluginLoader::isLoaded('rajaongkir-delivery');
 
 $isEnglish = $language === 'en';
 $t = [
@@ -23,6 +24,11 @@ $t = [
     'cart_title'    => $isEnglish ? 'Shopping Cart' : 'Keranjang Belanja',
     'no_items'      => $isEnglish ? 'No items yet' : 'Belum ada item',
     'delivery_data' => $isEnglish ? 'Delivery Details' : 'Data Pengiriman',
+    'fulfillment'   => $isEnglish ? 'Order Method *' : 'Metode Pesanan *',
+    'pickup'        => $isEnglish ? 'Pick up in store' : 'Ambil di toko',
+    'table'         => $isEnglish ? 'Delivery to table number' : 'Delivery ke nomor meja',
+    'delivery'      => $isEnglish ? 'Delivery to customer address' : 'Delivery ke alamat pemesan',
+    'table_number'  => $isEnglish ? 'Table number *' : 'Nomor meja *',
     'full_name'     => $isEnglish ? 'Full name *' : 'Nama lengkap *',
     'email_opt'     => $isEnglish ? 'Email (optional)' : 'Email (opsional)',
     'wa'            => $isEnglish ? 'WhatsApp number *' : 'Nomor WhatsApp *',
@@ -198,6 +204,12 @@ $categories = array_values($catMap);
     .item-notes-input:focus { color:var(--coffee-dark); border-top-color:var(--coffee-brown); }
     .cart-total      { font-size:1.15rem; font-weight:700; color:var(--coffee-dark); padding-top:12px; display:flex; justify-content:space-between; }
     .checkout-form   { margin-top:16px; border-top:1px solid var(--border); padding-top:16px; }
+    .fulfillment-options { display:grid; gap:8px; margin-bottom:12px; }
+    .fulfillment-option {
+      display:flex; align-items:flex-start; gap:10px; padding:10px 12px; border:1px solid var(--border);
+      border-radius:12px; background:var(--bg-light,#faf9f7); cursor:pointer;
+    }
+    .fulfillment-option input { margin-top:3px; }
     .customize-btn {
       margin-top:8px; border:1px solid var(--coffee-brown); background:#fff; color:var(--coffee-brown);
       border-radius:999px; padding:7px 14px; font-size:.82rem; font-weight:600; cursor:pointer;
@@ -280,11 +292,33 @@ $categories = array_values($catMap);
 
         <div class="checkout-form" id="checkoutForm" style="display:none">
           <h4 style="margin-bottom:12px;color:var(--coffee-dark)"><?= htmlspecialchars($t['delivery_data']) ?></h4>
+          <div class="form-group">
+            <label style="font-size:.85rem;font-weight:600;margin-bottom:8px;display:block"><?= htmlspecialchars($t['fulfillment']) ?></label>
+            <div class="fulfillment-options">
+              <label class="fulfillment-option">
+                <input type="radio" name="fulfillmentType" value="pickup" onchange="onFulfillmentChange()" checked>
+                <span><?= htmlspecialchars($t['pickup']) ?></span>
+              </label>
+              <label class="fulfillment-option">
+                <input type="radio" name="fulfillmentType" value="table" onchange="onFulfillmentChange()">
+                <span><?= htmlspecialchars($t['table']) ?></span>
+              </label>
+              <label class="fulfillment-option">
+                <input type="radio" name="fulfillmentType" value="delivery" onchange="onFulfillmentChange()">
+                <span><?= htmlspecialchars($t['delivery']) ?></span>
+              </label>
+            </div>
+          </div>
           <div class="form-group"><input type="text"  id="custName"    class="form-control" placeholder="<?= htmlspecialchars($t['full_name']) ?>"></div>
           <div class="form-group"><input type="email" id="custEmail"   class="form-control" placeholder="<?= htmlspecialchars($t['email_opt']) ?>"></div>
           <div class="form-group"><input type="text"  id="custWa"      class="form-control" placeholder="<?= htmlspecialchars($t['wa']) ?>"></div>
-          <div class="form-group"><textarea            id="custAddress" class="form-control" rows="2" placeholder="<?= htmlspecialchars($t['address']) ?>"></textarea></div>
-          <div class="form-group"><input type="text"  id="custPostal"  class="form-control" placeholder="<?= htmlspecialchars($t['postal']) ?>"></div>
+          <div class="form-group" id="tableNumberGroup" style="display:none"><input type="text" id="custTableNumber" class="form-control" placeholder="<?= htmlspecialchars($t['table_number']) ?>"></div>
+          <div class="form-group" id="addressGroup" style="display:none"><textarea id="custAddress" class="form-control" rows="2" placeholder="<?= htmlspecialchars($t['address']) ?>"></textarea></div>
+          <div class="form-group" id="postalGroup" style="display:none"><input type="text" id="custPostal" class="form-control" placeholder="<?= htmlspecialchars($t['postal']) ?>"></div>
+          <div class="form-group" id="deliveryFeeGroup" style="display:none">
+            <button type="button" class="btn btn-outline" onclick="calculateDeliveryFee()"><?= $isEnglish ? 'Calculate delivery fee' : 'Hitung biaya delivery' ?></button>
+            <div id="deliveryFeeMsg" style="font-size:.82rem;margin-top:6px;color:var(--text-mid)"></div>
+          </div>
           <div class="form-group"><textarea            id="custNotes"   class="form-control" rows="2" placeholder="<?= htmlspecialchars($t['notes']) ?>"></textarea></div>
           <div class="form-group">
             <label for="promoCode" style="font-size:.85rem;font-weight:600;margin-bottom:4px;display:block"><?= htmlspecialchars($t['promo_code']) ?></label>
@@ -360,6 +394,7 @@ const BASE_URL   = <?= json_encode(BASE_URL, JSON_HEX_TAG | JSON_HEX_APOS | JSON
 const CURRENCY   = <?= json_encode($currency, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_INVALID_UTF8_SUBSTITUTE) ?>;
 const LANGUAGE   = <?= json_encode($language, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_INVALID_UTF8_SUBSTITUTE) ?>;
 const PPN_RATE   = <?= (float)$ppnRate ?>;
+const RAJAONGKIR_ENABLED = <?= $rajaOngkirEnabled ? 'true' : 'false' ?>;
 const MENU_DATA  = <?= json_encode($menuData,   JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_INVALID_UTF8_SUBSTITUTE) ?: '[]' ?>;
 const CATEGORIES = <?= json_encode($categories, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_INVALID_UTF8_SUBSTITUTE) ?: '[]' ?>;
 const TEXT = <?= json_encode([
@@ -382,9 +417,15 @@ const TEXT = <?= json_encode([
     'add_items_first' => $isEnglish ? 'Add items to cart first.' : 'Tambahkan item ke keranjang dulu.',
     'checking_promo' => $isEnglish ? 'Checking promo code...' : 'Memeriksa kode promo…',
     'discount_label' => $isEnglish ? 'Discount:' : 'Diskon:',
+    'delivery_fee' => $isEnglish ? 'Delivery fee' : 'Biaya delivery',
+    'calculate_delivery' => $isEnglish ? 'Calculate delivery fee' : 'Hitung biaya delivery',
+    'calculating_delivery' => $isEnglish ? 'Calculating delivery fee...' : 'Menghitung biaya delivery...',
+    'delivery_unavailable' => $isEnglish ? 'Delivery fee is unavailable for this address.' : 'Biaya delivery tidak tersedia untuk alamat ini.',
     'invalid_promo' => $isEnglish ? 'Promo code is invalid.' : 'Kode promo tidak valid.',
     'server_failed' => $isEnglish ? 'Failed to contact server.' : 'Gagal menghubungi server.',
-    'required_fields' => $isEnglish ? 'Name, WhatsApp, address, and postal code are required.' : 'Nama, WhatsApp, alamat, dan kode pos wajib diisi.',
+    'required_pickup' => $isEnglish ? 'Name and WhatsApp are required.' : 'Nama dan WhatsApp wajib diisi.',
+    'required_table' => $isEnglish ? 'Name, WhatsApp, and table number are required.' : 'Nama, WhatsApp, dan nomor meja wajib diisi.',
+    'required_delivery' => $isEnglish ? 'Name, WhatsApp, address, and postal code are required.' : 'Nama, WhatsApp, alamat, dan kode pos wajib diisi.',
     'processing_order' => $isEnglish ? '⏳ Processing your order...' : '⏳ Pesanan sedang diproses...',
     'order_no' => $isEnglish ? 'Your order number is' : 'Nomor order kamu:',
     'order_processing' => $isEnglish ? 'Our admin will process your order shortly!' : 'Admin kami akan segera memproses pesananmu!',
@@ -429,6 +470,28 @@ let loyaltyRedeemValueAmount = 0;
 let loyaltyMinRedeemPoints = 0;
 let customizingItem = null;
 let paymentRedirectTimer = null;
+let deliveryFee = 0;
+let deliveryMeta = null;
+
+function getFulfillmentType() {
+    const selected = document.querySelector('input[name="fulfillmentType"]:checked');
+    return selected ? selected.value : 'pickup';
+}
+
+function onFulfillmentChange() {
+    const type = getFulfillmentType();
+    document.getElementById('tableNumberGroup').style.display = type === 'table' ? 'block' : 'none';
+    document.getElementById('addressGroup').style.display = type === 'delivery' ? 'block' : 'none';
+    document.getElementById('postalGroup').style.display = type === 'delivery' ? 'block' : 'none';
+    document.getElementById('deliveryFeeGroup').style.display = (type === 'delivery' && RAJAONGKIR_ENABLED) ? 'block' : 'none';
+    if (type !== 'delivery') {
+        deliveryFee = 0;
+        deliveryMeta = null;
+        const info = document.getElementById('deliveryFeeMsg');
+        if (info) info.textContent = '';
+        renderCart();
+    }
+}
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
 function h(s) {
@@ -805,7 +868,7 @@ function renderCart() {
     const subtotal = Object.values(cart).reduce((s, i) => s + i.price * i.qty, 0);
     const afterDisc = Math.max(0, subtotal - appliedDiscount - loyaltyRedeemedDiscount);
     const ppnAmount = PPN_RATE > 0 ? Math.round(afterDisc * PPN_RATE) / 100 : 0;
-    const total     = afterDisc + ppnAmount;
+    const total     = afterDisc + ppnAmount + deliveryFee;
 
     if (keys.length === 0) {
         list.innerHTML = '<p style="color:var(--text-light);text-align:center">' + h(TEXT.no_items) + '</p>';
@@ -845,6 +908,14 @@ function renderCart() {
               <span>${h(TEXT.vat)} (${PPN_RATE}%)</span><span>${fmt(ppnAmount)}</span>
             </div>`;
         }
+        if (deliveryFee > 0) {
+            const label = deliveryMeta?.courier
+                ? `${TEXT.delivery_fee} (${deliveryMeta.courier.toUpperCase()} ${deliveryMeta.service || ''})`
+                : TEXT.delivery_fee;
+            rows += `<div class="cart-item" style="color:var(--text-mid)">
+              <span>${h(label.trim())}</span><span>${fmt(deliveryFee)}</span>
+            </div>`;
+        }
         list.innerHTML    = rows;
         btn.style.display = 'flex';
     }
@@ -859,9 +930,80 @@ function showCheckout() {
     if (!Object.keys(cart).length) return;
     document.getElementById('checkoutForm').style.display = 'block';
     document.getElementById('checkoutBtn').style.display  = 'none';
+    onFulfillmentChange();
     document.getElementById('custName').focus();
     refreshLoyaltyStatus();
     autoApplyPromo();
+}
+
+async function calculateDeliveryFee() {
+    const msg = document.getElementById('deliveryFeeMsg');
+    const fulfillmentType = getFulfillmentType();
+    const address = document.getElementById('custAddress')?.value.trim() || '';
+    const postal = document.getElementById('custPostal')?.value.trim() || '';
+
+    if (!msg || !RAJAONGKIR_ENABLED || fulfillmentType !== 'delivery') {
+        return false;
+    }
+
+    if (!Object.keys(cart).length) {
+        msg.style.color = 'var(--danger,#e53e3e)';
+        msg.textContent = TEXT.add_items_first;
+        return false;
+    }
+
+    if (!address || !postal) {
+        msg.style.color = 'var(--danger,#e53e3e)';
+        msg.textContent = TEXT.required_delivery;
+        return false;
+    }
+
+    msg.style.color = 'var(--text-mid)';
+    msg.textContent = TEXT.calculating_delivery;
+
+    try {
+        const synced = await syncCartToServer();
+        if (!synced) {
+            throw new Error('sync-failed');
+        }
+
+        const res = await fetch(BASE_URL + '/api/plugins/rajaongkir/calculate.php', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({
+                branch_id: BRANCH_ID,
+                session_id: SESSION_ID,
+                address,
+                postal_code: postal,
+            }),
+        });
+        const data = await res.json().catch(() => null);
+
+        if (data?.success) {
+            deliveryFee = Number(data.data?.cost || 0);
+            deliveryMeta = data.data || null;
+            const etd = data.data?.etd ? `, ETD ${data.data.etd}` : '';
+            const serviceLabel = [data.data?.courier?.toUpperCase?.(), data.data?.service].filter(Boolean).join(' ');
+            msg.style.color = 'green';
+            msg.textContent = `OK ${serviceLabel} ${fmt(deliveryFee)}${etd}`.trim();
+            renderCart();
+            return true;
+        }
+
+        deliveryFee = 0;
+        deliveryMeta = null;
+        msg.style.color = 'var(--danger,#e53e3e)';
+        msg.textContent = data?.message || TEXT.delivery_unavailable;
+        renderCart();
+        return false;
+    } catch {
+        deliveryFee = 0;
+        deliveryMeta = null;
+        msg.style.color = 'var(--danger,#e53e3e)';
+        msg.textContent = TEXT.delivery_unavailable;
+        renderCart();
+        return false;
+    }
 }
 
 // ── Promo ─────────────────────────────────────────────────────────────────────
@@ -1002,15 +1144,25 @@ async function autoApplyPromo() {
 }
 
 async function placeOrder() {
+    const fulfillmentType = getFulfillmentType();
     const name    = document.getElementById('custName').value.trim();
     const email   = document.getElementById('custEmail').value.trim();
     const wa      = document.getElementById('custWa').value.trim();
+    const tableNumber = document.getElementById('custTableNumber').value.trim();
     const address = document.getElementById('custAddress').value.trim();
     const postal  = document.getElementById('custPostal').value.trim();
     const notes   = document.getElementById('custNotes').value.trim();
 
-    if (!name || !wa || !address || !postal) {
-        alert(TEXT.required_fields);
+    if (!name || !wa) {
+        alert(TEXT.required_pickup);
+        return;
+    }
+    if (fulfillmentType === 'table' && !tableNumber) {
+        alert(TEXT.required_table);
+        return;
+    }
+    if (fulfillmentType === 'delivery' && (!address || !postal)) {
+        alert(TEXT.required_delivery);
         return;
     }
 
@@ -1025,11 +1177,21 @@ async function placeOrder() {
             throw new Error('sync-failed');
         }
 
+        if (fulfillmentType === 'delivery' && RAJAONGKIR_ENABLED) {
+            const deliveryReady = await calculateDeliveryFee();
+            if (!deliveryReady) {
+                throw new Error('delivery-fee-failed');
+            }
+        }
+
         const res = await fetch(BASE_URL + '/api/order/checkout.php', {
             method: 'POST', headers: {'Content-Type':'application/json'},
             body: JSON.stringify({
                 session_id: SESSION_ID, branch_id: BRANCH_ID,
-                name, email, whatsapp: wa, address,
+                name, email, whatsapp: wa,
+                fulfillment_type: fulfillmentType,
+                table_number: tableNumber,
+                address,
                 postal_code: postal, notes,
                 promo_code: document.getElementById('promoCode').value.trim().toUpperCase() || null,
             }),

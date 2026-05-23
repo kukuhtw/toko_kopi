@@ -7,6 +7,13 @@ namespace App\Models;
 class BranchModel extends BaseModel
 {
     protected string $table = 'branches';
+    private static bool $schemaReady = false;
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->ensureSchema();
+    }
 
     public function findBySlug(string $slug): array|false
     {
@@ -61,5 +68,28 @@ class BranchModel extends BaseModel
     public function getTimezone(int $branchId): string
     {
         return $this->getSetting($branchId, 'timezone') ?? 'Asia/Jakarta';
+    }
+
+    private function ensureSchema(): void
+    {
+        if (self::$schemaReady) {
+            return;
+        }
+
+        $stmt = $this->query(
+            'SELECT 1
+             FROM information_schema.columns
+             WHERE table_schema = DATABASE()
+               AND table_name = ?
+               AND column_name = ?
+             LIMIT 1',
+            [$this->table, 'postal_code']
+        );
+
+        if (!$stmt->fetchColumn()) {
+            $this->db->exec('ALTER TABLE branches ADD COLUMN postal_code VARCHAR(10) DEFAULT NULL AFTER city');
+        }
+
+        self::$schemaReady = true;
     }
 }

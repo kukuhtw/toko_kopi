@@ -38,7 +38,7 @@ class LlmIntentDetector implements IntentDetectorInterface
     private const INTENTS = [
         'tanya_menu', 'tanya_harga', 'tanya_promo',
         'tambah_item', 'ubah_item', 'hapus_item', 'clear_cart', 'lihat_cart',
-        'checkout', 'isi_nama', 'isi_email', 'isi_wa', 'isi_alamat', 'isi_kode_pos',
+        'checkout', 'isi_nama', 'isi_email', 'isi_wa', 'isi_fulfillment', 'isi_nomor_meja', 'isi_alamat', 'isi_kode_pos',
         'konfirmasi_order', 'tanya_status_order', 'batal_order',
         'small_talk', 'out_of_scope',
     ];
@@ -55,7 +55,7 @@ class LlmIntentDetector implements IntentDetectorInterface
     {
         // Still use rule-based for checkout data-collection states
         $state = $context['state'] ?? 'idle';
-        if (in_array($state, ['awaiting_name','awaiting_email','awaiting_wa','awaiting_address','awaiting_postal','awaiting_confirmation'])) {
+        if (in_array($state, ['awaiting_name','awaiting_email','awaiting_wa','awaiting_fulfillment','awaiting_table','awaiting_address','awaiting_postal','awaiting_confirmation'])) {
             return $this->fallback->detect($message, $context);
         }
 

@@ -24,6 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $name  = Sanitize::post('name');
         $slug  = Sanitize::slug($name);
         $city  = Sanitize::post('city');
+        $postalCode = preg_replace('/\D/', '', (string)($_POST['postal_code'] ?? ''));
         $phone = Sanitize::post('phone');
         $email = Sanitize::post('email', 'email');
         $addr  = Sanitize::post('address');
@@ -33,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $branchModel->insert([
                 'name' => $name, 'slug' => $slug,
-                'city' => $city, 'phone' => $phone,
+                'city' => $city, 'postal_code' => $postalCode, 'phone' => $phone,
                 'email' => $email, 'address' => $addr,
             ]);
             $message = "Cabang '{$name}' berhasil ditambahkan.";
@@ -122,6 +123,12 @@ ob_start();
           <label class="form-label">Telepon</label>
           <input type="text" name="phone" class="form-control">
         </div>
+        <div class="form-group">
+          <label class="form-label">Kode Pos Cabang</label>
+          <input type="text" name="postal_code" class="form-control">
+        </div>
+      </div>
+      <div class="form-row">
         <div class="form-group">
           <label class="form-label">Email</label>
           <input type="email" name="email" class="form-control">
