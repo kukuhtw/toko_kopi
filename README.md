@@ -59,6 +59,7 @@ Sistem chatbot pemesanan kopi berbasis PHP 8 native, tanpa framework besar, deng
 | **Complaint Handling** | Deteksi komplain di flow chat, klasifikasi AI vs human follow-up, dan tiket komplain untuk cabang |
 | **Payment Gateway** | Midtrans, Xendit, iPaymu, dan Nicepay via plugin |
 | **POS Connector** | Scaffold + live sync queue untuk Moka Connect / Private Solution, inbound webhook sync, dan retry runner |
+| **Delivery Connector** | GoSend partner connector dengan live-ready endpoint config, queue booking, pickup trigger, webhook status, dan audit |
 | **Menu Management** | Upload CSV, variant size/price, topping, override per cabang, upload foto produk, dan generate foto produk dengan AI |
 | **Menu Templates** | Plugin template data menu siap pakai: Coffee Shop (132 item), Bakery (70 item), Toko Buah (60 item), Daging & Sayuran (80 item) — dengan seed data, harga IDR + override mata uang per cabang otomatis |
 | **Dashboard** | Super admin lintas cabang, branch admin per cabang, Customer CRM, histori loyalty customer, dan Customer Portal self-service |
@@ -333,6 +334,7 @@ Referensi:
 - `faq-rag` - FAQ global/cabang dengan retrieval vector lokal, analytics, dan import/export
 - `sirclo-full-connector` - fondasi integrasi SIRCLO untuk order, produk, dan customer
 - `moka-connect-private-solution` - konektor Moka dengan live push order, pull katalog, retry queue, webhook inbound, simulasi payload, dan mapping UI
+- `gosend-delivery` - konektor GoSend dengan booking delivery, request pickup dari detail order, queue runner, webhook status, dan endpoint live yang configurable
 - `anthropic-llm`, `gemini-llm`, `openrouter-llm` - provider AI tambahan
 - `coffee-template` - template seed 132 menu toko kopi (data dari database asli) lengkap dengan override harga multi-currency per cabang
 - `bakery-template` - template seed 70 menu toko bakery + roti dengan harga IDR dan override USD/SGD/AUD otomatis
@@ -447,6 +449,35 @@ Halaman penting:
 Catatan:
 
 - integrasi ini sudah bisa request HTTP live, tetapi payload final tetap mungkin perlu penyesuaian mengikuti approval dan dokumentasi Private Solution Moka yang Anda dapatkan
+
+---
+
+## Integrasi GoSend Delivery
+
+Proyek ini sekarang juga memiliki plugin `gosend-delivery` untuk alur delivery partner GoSend.
+
+Cakupan yang sudah tersedia:
+
+- queue booking delivery GoSend saat order delivery dibuat
+- connector live-ready dengan `base_url`, `auth`, `header`, `method`, dan `path endpoint` yang bisa diubah dari dashboard
+- request pickup langsung dari halaman detail order cabang maupun super admin
+- lookup / refresh status booking GoSend dari detail order
+- webhook inbound untuk sinkron status delivery ke `order_status` internal
+- runner otomatis untuk memproses queue booking
+- audit webhook dan monitoring status delivery per order
+
+Halaman penting:
+
+- [`public/dashboard/branch/gosend.php`](public/dashboard/branch/gosend.php)
+- [`public/dashboard/super/gosend.php`](public/dashboard/super/gosend.php)
+- [`public/api/plugins/gosend/webhook.php`](public/api/plugins/gosend/webhook.php)
+- [`public/api/plugins/gosend/process-queue.php`](public/api/plugins/gosend/process-queue.php)
+- [`docs/gosend-delivery.md`](docs/gosend-delivery.md)
+
+Catatan:
+
+- berdasarkan informasi resmi GoSend yang tersedia publik, kredensial produksi dan dokumentasi final tetap diberikan setelah NDA, staging, dan UAT
+- karena itu payload dan endpoint dibuat configurable agar bisa disesuaikan cepat begitu spesifikasi partner Anda final
 
 ---
 

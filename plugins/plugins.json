@@ -103,5 +103,8 @@
     },
     "moka-connect-private-solution": {
         "active": true
+    },
+    "gosend-delivery": {
+        "active": true
     }
 }

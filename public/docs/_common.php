@@ -54,6 +54,7 @@ function docsCatalog(): array
         'tutorial-membuat-plugin',
         'faq-rag-and-complaints',
         'moka-connect-private-solution',
+        'gosend-delivery',
         'sirclo-full-connector',
         'payment-gateway-midtrans',
         'payment-gateway-ipaymu',
@@ -997,7 +998,7 @@ function docsRenderIndexPage(): string
   <section class="docs-card docs-main">
     <div class="docs-kicker">Dokumentasi Developer</div>
     <h1>Dokumentasi HTML KopiBot AI</h1>
-    <p>Semua file di folder <code>/docs</code> sekarang punya versi HTML yang lebih nyaman dibaca di browser. Konten sumbernya tetap Markdown, jadi dokumentasi tetap satu sumber dan lebih mudah dirawat, termasuk update terbaru untuk FAQ RAG, complaint automation, integrasi Moka Connect, loyalty, Customer CRM, dan Customer Portal.</p>
+    <p>Semua file di folder <code>/docs</code> sekarang punya versi HTML yang lebih nyaman dibaca di browser. Konten sumbernya tetap Markdown, jadi dokumentasi tetap satu sumber dan lebih mudah dirawat, termasuk update terbaru untuk FAQ RAG, complaint automation, integrasi Moka Connect, integrasi GoSend, loyalty, Customer CRM, dan Customer Portal.</p>
     <div class="docs-listing">
       {$listing}
     </div>
@@ -1012,6 +1013,7 @@ function docsRenderIndexPage(): string
       <a href="plugin-system.php">Plugin System</a>
       <a href="faq-rag-and-complaints.php">FAQ RAG &amp; Complaint Handling</a>
       <a href="moka-connect-private-solution.php">Moka Connect / Private Solution</a>
+      <a href="gosend-delivery.php">GoSend Delivery</a>
       <a href="sirclo-full-connector.php">Tutorial Integrasi SIRCLO</a>
       <a href="tutorial-membuat-plugin.php">Tutorial Membuat Plugin</a>
     </nav>

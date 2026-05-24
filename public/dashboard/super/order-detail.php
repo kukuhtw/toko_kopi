@@ -3,10 +3,14 @@
 declare(strict_types=1);
 
 require_once dirname(__DIR__, 3) . '/app/Config/config.php';
+require_once BASE_PATH . '/plugins/gosend-delivery/GoSendDeliveryRepository.php';
+require_once BASE_PATH . '/plugins/gosend-delivery/GoSendDeliveryClient.php';
+require_once BASE_PATH . '/plugins/gosend-delivery/GoSendDeliveryService.php';
 
 use App\Helpers\{Auth, View, Currency, Csrf};
 use App\Models\{OrderModel, BranchModel};
 use App\Config\Database;
+use App\Plugin\PluginLoader;
 
 Auth::startSession();
 Auth::requireRole('super_admin');
@@ -21,18 +25,29 @@ if (!$order) {
 }
 
 $message = '';
+$errorMessage = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     Csrf::requireValid();
     $action = $_POST['action'] ?? '';
-    if ($action === 'update_status') {
-        $orderModel->updateStatus($orderId, $_POST['order_status'] ?? 'pending', (int)Auth::user()['id']);
-        $message = 'Status diperbarui.';
-    } elseif ($action === 'update_payment') {
-        $orderModel->updatePayment($orderId, $_POST['payment_status'] ?? 'unpaid', (int)Auth::user()['id']);
-        $message = 'Pembayaran diperbarui.';
-    } elseif ($action === 'update_admin_notes') {
-        $orderModel->updateAdminNotes($orderId, $_POST['admin_notes'] ?? '');
-        $message = 'Catatan admin disimpan.';
+    try {
+        if ($action === 'update_status') {
+            $orderModel->updateStatus($orderId, $_POST['order_status'] ?? 'pending', (int)Auth::user()['id']);
+            $message = 'Status diperbarui.';
+        } elseif ($action === 'update_payment') {
+            $orderModel->updatePayment($orderId, $_POST['payment_status'] ?? 'unpaid', (int)Auth::user()['id']);
+            $message = 'Pembayaran diperbarui.';
+        } elseif ($action === 'update_admin_notes') {
+            $orderModel->updateAdminNotes($orderId, $_POST['admin_notes'] ?? '');
+            $message = 'Catatan admin disimpan.';
+        } elseif ($action === 'gosend_request_pickup' && PluginLoader::isLoaded('gosend-delivery')) {
+            $result = (new GoSendDeliveryService(new GoSendDeliveryRepository()))->requestPickupForOrder($orderId);
+            $message = (string)($result['message'] ?? 'Pickup GoSend diproses.');
+        } elseif ($action === 'gosend_refresh_status' && PluginLoader::isLoaded('gosend-delivery')) {
+            $result = (new GoSendDeliveryService(new GoSendDeliveryRepository()))->refreshStatusForOrder($orderId);
+            $message = (string)($result['message'] ?? 'Status GoSend di-refresh.');
+        }
+    } catch (Throwable $e) {
+        $errorMessage = $e->getMessage();
     }
     $order = $orderModel->getWithItems($orderId);
 }
@@ -59,6 +74,11 @@ $stmt = $db->prepare(
 $stmt->execute([$orderId]);
 $logs = $stmt->fetchAll();
 
+$gosendStatus = null;
+if (PluginLoader::isLoaded('gosend-delivery') && $fulfillmentType === 'delivery') {
+    $gosendStatus = (new GoSendDeliveryService(new GoSendDeliveryRepository()))->getDeliveryOrderStatus($orderId) ?: null;
+}
+
 ob_start();
 ?>
 <div style="margin-bottom:16px;display:flex;align-items:center;gap:12px">
@@ -67,6 +87,7 @@ ob_start();
 </div>
 
 <?php if ($message): ?><div class="alert alert-success"><?= htmlspecialchars($message) ?></div><?php endif; ?>
+<?php if ($errorMessage): ?><div class="alert alert-error"><?= htmlspecialchars($errorMessage) ?></div><?php endif; ?>
 
 <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px">
   <div>
@@ -222,6 +243,31 @@ ob_start();
         <button class="btn btn-primary" style="width:100%;justify-content:center">Update Payment</button>
       </form>
     </div>
+    <?php if ($fulfillmentType === 'delivery' && PluginLoader::isLoaded('gosend-delivery')): ?>
+    <div class="card" style="margin-top:20px">
+      <div class="card-title">GoSend Delivery</div>
+      <div style="font-size:.85rem;line-height:1.75;margin-bottom:12px">
+        Status Delivery: <strong><?= htmlspecialchars((string)($gosendStatus['delivery_status'] ?? 'belum dibuat')) ?></strong><br>
+        External Ref: <code><?= htmlspecialchars((string)($gosendStatus['external_ref'] ?? '-')) ?></code><br>
+        <?php if (!empty($gosendStatus['tracking_url'])): ?>
+        Tracking: <a href="<?= htmlspecialchars((string)$gosendStatus['tracking_url']) ?>" target="_blank" rel="noopener">Buka tracking</a><br>
+        <?php endif; ?>
+        <?php if (!empty($gosendStatus['latest_note'])): ?>
+        Catatan: <?= htmlspecialchars((string)$gosendStatus['latest_note']) ?>
+        <?php endif; ?>
+      </div>
+      <form method="POST" style="margin-bottom:10px">
+        <?= Csrf::field() ?>
+        <input type="hidden" name="action" value="gosend_request_pickup">
+        <button class="btn btn-primary" style="width:100%;justify-content:center">Request Pickup</button>
+      </form>
+      <form method="POST">
+        <?= Csrf::field() ?>
+        <input type="hidden" name="action" value="gosend_refresh_status">
+        <button class="btn btn-outline" style="width:100%;justify-content:center">Refresh Status GoSend</button>
+      </form>
+    </div>
+    <?php endif; ?>
   </div>
 </div>
 
