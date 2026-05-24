@@ -10,6 +10,7 @@
 > - AI Upselling & Promo Recommendation
 > - Order via Website & Chat Apps
 > - Variant Product & Topping Support
+> - Product Photo Upload & AI Image Generation
 > - Loyalty Point, Redeem Point, and Customer CRM
 > - Customer Self-Service Dashboard
 > - Multi Currency, Tax, and Timezone
@@ -58,7 +59,7 @@ Sistem chatbot pemesanan kopi berbasis PHP 8 native, tanpa framework besar, deng
 | **Complaint Handling** | Deteksi komplain di flow chat, klasifikasi AI vs human follow-up, dan tiket komplain untuk cabang |
 | **Payment Gateway** | Midtrans, Xendit, iPaymu, dan Nicepay via plugin |
 | **POS Connector** | Scaffold + live sync queue untuk Moka Connect / Private Solution, inbound webhook sync, dan retry runner |
-| **Menu Management** | Upload CSV, variant size/price, topping, dan override per cabang |
+| **Menu Management** | Upload CSV, variant size/price, topping, override per cabang, upload foto produk, dan generate foto produk dengan AI |
 | **Menu Templates** | Plugin template data menu siap pakai: Coffee Shop (132 item), Bakery (70 item), Toko Buah (60 item), Daging & Sayuran (80 item) — dengan seed data, harga IDR + override mata uang per cabang otomatis |
 | **Dashboard** | Super admin lintas cabang, branch admin per cabang, Customer CRM, histori loyalty customer, dan Customer Portal self-service |
 | **Customer CRM** | Normalisasi identitas customer berbasis email/WhatsApp, notifikasi loyalty, dan log CRM per cabang |
@@ -87,7 +88,7 @@ Panduan lengkap ada di [`docs/instalasi.md`](docs/instalasi.md).
 2. Buka:
 
 ```text
-http://localhost/toko_kopi/public/install.php
+https://yourbranddomain.com/public/install.php
 ```
 
 3. Ikuti wizard sampai database, `.env`, dan akun admin selesai dibuat.
@@ -120,20 +121,20 @@ LLM API key tidak diisi di `.env`, tetapi dikelola lewat dashboard Super Admin.
 
 | URL | Keterangan |
 |-----|-----------|
-| `http://localhost/toko_kopi/public/` | Landing page |
-| `http://localhost/toko_kopi/public/readme.php` | README versi HTML |
-| `http://localhost/toko_kopi/public/docs/index.php` | Pusat dokumentasi HTML |
-| `http://localhost/toko_kopi/public/docs/sirclo-full-connector.php` | Tutorial integrasi SIRCLO |
-| `http://localhost/toko_kopi/public/docs/payment-gateway-ipaymu.php` | Setup sandbox iPaymu |
-| `http://localhost/toko_kopi/public/docs/payment-gateway-nicepay.php` | Setup sandbox Nicepay |
-| `http://localhost/toko_kopi/public/login.php` | Login admin |
-| `http://localhost/toko_kopi/public/chat.php` | Chat demo |
-| `http://localhost/toko_kopi/public/order.php?branch={slug}` | Halaman order per cabang |
-| `http://localhost/toko_kopi/public/customer/login.php` | Login Customer Portal |
-| `http://localhost/toko_kopi/public/customer/` | Overview Customer Portal |
-| `http://localhost/toko_kopi/public/customer/orders.php` | Riwayat order customer |
-| `http://localhost/toko_kopi/public/customer/loyalty.php` | Dashboard loyalty customer |
-| `http://localhost/toko_kopi/public/customer/profile.php` | Profil dan preferensi customer |
+| `https://yourbranddomain.com/public/` | Landing page |
+| `https://yourbranddomain.com/public/readme.php` | README versi HTML |
+| `https://yourbranddomain.com/public/docs/index.php` | Pusat dokumentasi HTML |
+| `https://yourbranddomain.com/public/docs/sirclo-full-connector.php` | Tutorial integrasi SIRCLO |
+| `https://yourbranddomain.com/public/docs/payment-gateway-ipaymu.php` | Setup sandbox iPaymu |
+| `https://yourbranddomain.com/public/docs/payment-gateway-nicepay.php` | Setup sandbox Nicepay |
+| `https://yourbranddomain.com/public/login.php` | Login admin |
+| `https://yourbranddomain.com/public/chat.php` | Chat demo |
+| `https://yourbranddomain.com/public/order.php?branch={slug}` | Halaman order per cabang |
+| `https://yourbranddomain.com/public/customer/login.php` | Login Customer Portal |
+| `https://yourbranddomain.com/public/customer/` | Overview Customer Portal |
+| `https://yourbranddomain.com/public/customer/orders.php` | Riwayat order customer |
+| `https://yourbranddomain.com/public/customer/loyalty.php` | Dashboard loyalty customer |
+| `https://yourbranddomain.com/public/customer/profile.php` | Profil dan preferensi customer |
 
 ---
 
