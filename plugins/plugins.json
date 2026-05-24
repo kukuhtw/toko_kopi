@@ -106,5 +106,8 @@
     },
     "gosend-delivery": {
         "active": true
+    },
+    "kitchen-display": {
+        "active": true
     }
 }
