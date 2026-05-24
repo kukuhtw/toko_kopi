@@ -1464,12 +1464,14 @@ function resolveCategoryResults(text, meta = {}) {
 }
 
 function mapPayloadProduct(item) {
+  const menuItems = Array.isArray(WEBCHAT_CONFIG?.menu_items) ? WEBCHAT_CONFIG.menu_items : [];
+  const cached = menuItems.find(m => Number(m?.id) === Number(item?.id || 0));
   return {
     id: Number(item?.id || 0),
     name: String(item?.name || ''),
     description: String(item?.description || ''),
     price: Number(item?.effective_price ?? item?.price ?? 0),
-    image_url: item?.image_url || '',
+    image_url: item?.image_url || cached?.image_url || '',
     variants: Array.isArray(item?.variants) ? item.variants.map(variant => ({
       id: Number(variant?.id || 0),
       label: String(variant?.label || ''),

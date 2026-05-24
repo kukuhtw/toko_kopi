@@ -109,5 +109,8 @@
     },
     "kitchen-display": {
         "active": true
+    },
+    "indonesian-resto-template": {
+        "active": true
     }
 }

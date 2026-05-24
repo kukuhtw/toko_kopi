@@ -615,24 +615,28 @@ class CartSkill implements SkillInterface
     private function resolveVariant(array $item, ?string $variantLabel): ?array
     {
         $variants = $item['variants'] ?? [];
-        if (empty($variants)) {
+        if (empty($variants) || $variantLabel === null || $variantLabel === '') {
             return null;
         }
 
-        if ($variantLabel === null || $variantLabel === '') {
-            return null;
-        }
+        return $this->matchVariant($variants, mb_strtolower(trim($variantLabel), 'UTF-8'));
+    }
 
-        $needle = mb_strtolower(trim($variantLabel), 'UTF-8');
+    private function matchVariant(array $variants, string $needle): ?array
+    {
+        $partial = null;
         foreach ($variants as $variant) {
             $label = mb_strtolower((string)($variant['label'] ?? ''), 'UTF-8');
-            $slug = mb_strtolower((string)($variant['slug'] ?? ''), 'UTF-8');
+            $slug  = mb_strtolower((string)($variant['slug'] ?? ''), 'UTF-8');
             if ($needle === $label || $needle === $slug) {
                 return $variant;
             }
+            // "biasa" contains-matches "Porsi Biasa" — keep as fallback
+            if ($partial === null && (str_contains($label, $needle) || str_contains($slug, $needle))) {
+                $partial = $variant;
+            }
         }
-
-        return null;
+        return $partial;
     }
 
     private function askForVariant(array $item, int $qty, array $ctx, array $selectedToppings = []): array

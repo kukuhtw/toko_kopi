@@ -278,9 +278,28 @@ class IntentDetector implements IntentDetectorInterface
         ];
         $sizes = ['small', 'medium', 'large', 'sm', 'md', 'lg'];
 
-        $lower = mb_strtolower(trim($message), 'UTF-8');
+        $stripped = $this->stripOrderPhrases(mb_strtolower(trim($message), 'UTF-8'));
+        $parts = preg_split('/\s+dan\s+|,\s*|\s*\+\s*|\s*&\s*/u', $stripped, -1, PREG_SPLIT_NO_EMPTY);
 
-        // Strip multi-word ordering phrases first, then single verbs/particles
+        $results = [];
+        foreach ($parts as $part) {
+            $part = trim($part);
+            if ($part === '') { continue; }
+
+            $qty          = $this->extractQtyFromPart($part, $numbers);
+            $variantLabel = $this->extractVariantLabelFromPart($part, $sizes);
+            $itemName     = (string)preg_replace('/\s+/', ' ', trim($part));
+
+            if ($itemName !== '') {
+                $results[] = ['item_query' => $itemName, 'qty' => $qty, 'variant_label' => $variantLabel];
+            }
+        }
+
+        return $results ?: [['item_query' => '', 'qty' => 1, 'variant_label' => null]];
+    }
+
+    private function stripOrderPhrases(string $lower): string
+    {
         $multiPhrases = [
             'i would like', "i'd like", 'can i have', 'can i get',
             'let me get', 'let me have', "i'll have", "i'll take",
@@ -298,58 +317,50 @@ class IntentDetector implements IntentDetectorInterface
         foreach ($singleWords as $w) {
             $stripped = preg_replace('/\b' . preg_quote($w, '/') . '\b/u', '', $stripped);
         }
-        // Strip bare English articles/pronouns that survive after phrase removal
         $stripped = preg_replace('/\b(a|an|the|some|me|us)\b/u', '', $stripped);
-        $stripped = preg_replace('/\s+/', ' ', trim($stripped));
+        return (string)preg_replace('/\s+/', ' ', trim($stripped));
+    }
 
-        // Split on "dan", comma, "+", "&"
-        $parts = preg_split('/\s+dan\s+|,\s*|\s*\+\s*|\s*&\s*/u', $stripped, -1, PREG_SPLIT_NO_EMPTY);
-
-        $results = [];
-        foreach ($parts as $part) {
-            $part = trim($part);
-            if ($part === '') { continue; }
-
-            $qty = 1;
-            $variantLabel = null;
-
-            // Word quantity (check before digit so "dua" isn't eaten by \d+)
-            $wordQtyFound = false;
-            foreach ($numbers as $word => $val) {
-                if (str_contains($part, $word)) {
-                    $qty          = $val;
-                    $part         = preg_replace('/\b' . $word . '\b/u', '', $part);
-                    $wordQtyFound = true;
-                    break;
-                }
-            }
-
-            // Digit quantity — skip if word qty already found to avoid overriding it
-            // and only remove the FIRST digit so numbers embedded in item names are preserved
-            if (!$wordQtyFound && preg_match('/\b(\d+)\b/', $part, $m)) {
-                $qty  = (int)$m[1];
-                $part = preg_replace('/\b\d+\b/', '', $part, 1);
-            }
-
-            foreach ($sizes as $size) {
-                if (preg_match('/\b' . preg_quote($size, '/') . '\b/u', $part)) {
-                    $variantLabel = match ($size) {
-                        'sm' => 'small',
-                        'md' => 'medium',
-                        'lg' => 'large',
-                        default => $size,
-                    };
-                    $part = preg_replace('/\b' . preg_quote($size, '/') . '\b/u', '', $part);
-                    break;
-                }
-            }
-
-            $itemName = preg_replace('/\s+/', ' ', trim($part));
-            if ($itemName !== '') {
-                $results[] = ['item_query' => $itemName, 'qty' => $qty, 'variant_label' => $variantLabel];
+    private function extractQtyFromPart(string &$part, array $numbers): int
+    {
+        foreach ($numbers as $word => $val) {
+            if (str_contains($part, $word)) {
+                $part = (string)preg_replace('/\b' . $word . '\b/u', '', $part);
+                return $val;
             }
         }
 
-        return $results ?: [['item_query' => '', 'qty' => 1, 'variant_label' => null]];
+        // Only remove the FIRST digit so numbers embedded in item names are preserved
+        if (preg_match('/\b(\d+)\b/', $part, $m)) {
+            $qty  = (int)$m[1];
+            $part = (string)preg_replace('/\b\d+\b/', '', $part, 1);
+            return $qty;
+        }
+
+        return 1;
+    }
+
+    private function extractVariantLabelFromPart(string &$part, array $sizes): ?string
+    {
+        // Explicit keyword: "varian Porsi Biasa" or "variant large"
+        if (preg_match('/\b(?:varian|variant)\s+(.+)/iu', $part, $m)) {
+            $label = trim((string)$m[1]);
+            $part  = (string)preg_replace('/\b(?:varian|variant)\s+.+/iu', '', $part);
+            return $label;
+        }
+
+        foreach ($sizes as $size) {
+            if (preg_match('/\b' . preg_quote($size, '/') . '\b/u', $part)) {
+                $part = (string)preg_replace('/\b' . preg_quote($size, '/') . '\b/u', '', $part);
+                return match ($size) {
+                    'sm'    => 'small',
+                    'md'    => 'medium',
+                    'lg'    => 'large',
+                    default => $size,
+                };
+            }
+        }
+
+        return null;
     }
 }
