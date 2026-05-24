@@ -54,7 +54,10 @@ Sistem chatbot pemesanan kopi berbasis PHP 8 native, tanpa framework besar, deng
 | **Checkout Profile Memory** | Data customer (nama, email, WA, alamat) disimpan di browser, diisi otomatis saat checkout berikutnya — customer hanya perlu memilih metode delivery |
 | **Loyalty Point** | Earn point otomatis, cek saldo, redeem point via chatbot dan halaman order web |
 | **Promo Engine** | Diskon persen, nominal, promo code, jadwal promo, min order, dan rekomendasi promo |
+| **FAQ RAG** | FAQ global + custom per cabang, override branch, import/export CSV/XLS, analytics, dan vector store lokal |
+| **Complaint Handling** | Deteksi komplain di flow chat, klasifikasi AI vs human follow-up, dan tiket komplain untuk cabang |
 | **Payment Gateway** | Midtrans, Xendit, iPaymu, dan Nicepay via plugin |
+| **POS Connector** | Scaffold + live sync queue untuk Moka Connect / Private Solution, inbound webhook sync, dan retry runner |
 | **Menu Management** | Upload CSV, variant size/price, topping, dan override per cabang |
 | **Menu Templates** | Plugin template data menu siap pakai: Coffee Shop (132 item), Bakery (70 item), Toko Buah (60 item), Daging & Sayuran (80 item) — dengan seed data, harga IDR + override mata uang per cabang otomatis |
 | **Dashboard** | Super admin lintas cabang, branch admin per cabang, Customer CRM, histori loyalty customer, dan Customer Portal self-service |
@@ -325,7 +328,10 @@ Referensi:
 - `notifikasi-admin` - helper notifikasi/admin mailer support
 - `themes` - pengelolaan tema/tampilan
 - `instagram-dm` - integrasi DM Instagram
+- `complaint-handler` - deteksi komplain, klasifikasi AI vs human, tiket follow-up cabang
+- `faq-rag` - FAQ global/cabang dengan retrieval vector lokal, analytics, dan import/export
 - `sirclo-full-connector` - fondasi integrasi SIRCLO untuk order, produk, dan customer
+- `moka-connect-private-solution` - konektor Moka dengan live push order, pull katalog, retry queue, webhook inbound, simulasi payload, dan mapping UI
 - `anthropic-llm`, `gemini-llm`, `openrouter-llm` - provider AI tambahan
 - `coffee-template` - template seed 132 menu toko kopi (data dari database asli) lengkap dengan override harga multi-currency per cabang
 - `bakery-template` - template seed 70 menu toko bakery + roti dengan harga IDR dan override USD/SGD/AUD otomatis
@@ -366,6 +372,80 @@ File utama plugin:
 - [`plugins/sirclo-full-connector/SircloConnectorService.php`](plugins/sirclo-full-connector/SircloConnectorService.php)
 - [`public/dashboard/branch/sirclo.php`](public/dashboard/branch/sirclo.php)
 - [`public/dashboard/super/sirclo.php`](public/dashboard/super/sirclo.php)
+
+---
+
+## FAQ RAG dan Komplain
+
+Proyek ini sekarang juga memiliki dua plugin service layer untuk customer support di flow chat:
+
+- `faq-rag`
+- `complaint-handler`
+
+### FAQ RAG
+
+Fitur yang sudah tersedia:
+
+- FAQ global dan FAQ custom per cabang
+- branch override terhadap FAQ global tertentu
+- retrieval berbasis vector store lokal di database
+- import/export `CSV` dan `Excel XML (.xls)`
+- analytics FAQ paling sering ditanya dan unmatched query
+- starter seed 5 FAQ global bila data masih kosong
+
+File utama:
+
+- [`plugins/faq-rag/FaqRepository.php`](plugins/faq-rag/FaqRepository.php)
+- [`plugins/faq-rag/FaqVectorService.php`](plugins/faq-rag/FaqVectorService.php)
+- [`plugins/faq-rag/FaqSkill.php`](plugins/faq-rag/FaqSkill.php)
+- [`public/dashboard/super/faqs.php`](public/dashboard/super/faqs.php)
+- [`public/dashboard/branch/faqs.php`](public/dashboard/branch/faqs.php)
+
+### Complaint Handler
+
+Fitur yang sudah tersedia:
+
+- deteksi intent komplain di flow order/chat
+- klasifikasi komplain yang masih bisa dijawab AI vs yang harus di-follow up manusia
+- pembuatan tiket komplain ke cabang untuk kasus human follow-up
+- dashboard tiket komplain branch
+
+File utama:
+
+- [`plugins/complaint-handler/ComplaintAnalyzer.php`](plugins/complaint-handler/ComplaintAnalyzer.php)
+- [`plugins/complaint-handler/ComplaintTicketRepository.php`](plugins/complaint-handler/ComplaintTicketRepository.php)
+- [`plugins/complaint-handler/ComplaintSkill.php`](plugins/complaint-handler/ComplaintSkill.php)
+- [`public/dashboard/branch/complaints.php`](public/dashboard/branch/complaints.php)
+
+---
+
+## Integrasi Moka Connect / Private Solution
+
+Selain SIRCLO, proyek ini sekarang memiliki plugin `moka-connect-private-solution` untuk fondasi dan live sync integrasi Moka POS.
+
+Cakupan yang sudah tersedia:
+
+- pengaturan koneksi Moka per cabang dan global
+- push order live ke endpoint Moka
+- pull katalog live dari endpoint Moka
+- queue sinkronisasi order dengan retry policy
+- status sinkronisasi per order
+- webhook inbound untuk sinkron balik ke `order_status` dan `payment_status` internal
+- halaman simulasi payload webhook
+- mapping UI yang bisa diubah tanpa edit code
+- runner otomatis untuk memproses queue via cron / scheduler
+
+Halaman penting:
+
+- [`public/dashboard/branch/moka.php`](public/dashboard/branch/moka.php)
+- [`public/dashboard/branch/moka-webhook-test.php`](public/dashboard/branch/moka-webhook-test.php)
+- [`public/dashboard/super/moka.php`](public/dashboard/super/moka.php)
+- [`public/api/plugins/moka/webhook.php`](public/api/plugins/moka/webhook.php)
+- [`public/api/plugins/moka/process-queue.php`](public/api/plugins/moka/process-queue.php)
+
+Catatan:
+
+- integrasi ini sudah bisa request HTTP live, tetapi payload final tetap mungkin perlu penyesuaian mengikuti approval dan dokumentasi Private Solution Moka yang Anda dapatkan
 
 ---
 
@@ -521,6 +601,8 @@ Versi HTML yang bisa dibuka langsung di browser:
 - [`public/docs/instalasi.php`](public/docs/instalasi.php)
 - [`public/docs/lisensi.php`](public/docs/lisensi.php)
 - [`public/docs/plugin-system.php`](public/docs/plugin-system.php)
+- [`public/docs/faq-rag-and-complaints.php`](public/docs/faq-rag-and-complaints.php)
+- [`public/docs/moka-connect-private-solution.php`](public/docs/moka-connect-private-solution.php)
 - [`public/docs/sirclo-full-connector.php`](public/docs/sirclo-full-connector.php)
 - [`public/docs/tutorial-membuat-plugin.php`](public/docs/tutorial-membuat-plugin.php)
 
@@ -529,6 +611,8 @@ Dokumen Markdown sumber:
 - [`docs/instalasi.md`](docs/instalasi.md)
 - [`docs/lisensi.md`](docs/lisensi.md)
 - [`docs/plugin-system.md`](docs/plugin-system.md)
+- [`docs/faq-rag-and-complaints.md`](docs/faq-rag-and-complaints.md)
+- [`docs/moka-connect-private-solution.md`](docs/moka-connect-private-solution.md)
 - [`docs/sirclo-full-connector.md`](docs/sirclo-full-connector.md)
 - [`docs/tutorial-membuat-plugin.md`](docs/tutorial-membuat-plugin.md)
 - [`docs/customer-agent-architecture.md`](docs/customer-agent-architecture.md)

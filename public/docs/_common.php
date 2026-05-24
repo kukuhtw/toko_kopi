@@ -52,6 +52,8 @@ function docsCatalog(): array
         'lisensi',
         'plugin-system',
         'tutorial-membuat-plugin',
+        'faq-rag-and-complaints',
+        'moka-connect-private-solution',
         'sirclo-full-connector',
         'payment-gateway-midtrans',
         'payment-gateway-ipaymu',
@@ -475,7 +477,7 @@ function docsBrandRemarkHtml(): string
 <section class="docs-brand-remark-wrap">
   <div class="docs-brand-remark">
     <div class="docs-brand-remark-kicker">&#9749; AI Agent Coffee Shop Commerce Platform</div>
-    <p>Platform AI untuk otomatisasi order, customer service, loyalty customer, Customer CRM, Customer Portal, dan manajemen multi cabang coffee shop.</p>
+    <p>Platform AI untuk otomatisasi order, customer service, loyalty customer, FAQ RAG, complaint ticketing, POS connector, Customer CRM, Customer Portal, dan manajemen multi cabang coffee shop.</p>
     <div class="docs-brand-remark-grid">
       <div>
         <h3>&#128640; Features</h3>
@@ -487,13 +489,14 @@ function docsBrandRemarkHtml(): string
           <li>Order via Website &amp; Chat Apps</li>
           <li>Variant Product &amp; Topping Support</li>
           <li>Loyalty Point, Customer CRM, dan Customer Portal</li>
+          <li>FAQ RAG, Complaint Ticketing, dan POS Connector</li>
           <li>Multi Currency, Tax &amp; Timezone</li>
           <li>AI Customer Interaction Automation</li>
         </ul>
       </div>
       <div>
         <h3>&#128187; Tech Stack</h3>
-        <p>PHP Native &bull; MySQL &bull; OpenAI &bull; Anthropic<br>WhatsApp Gateway &bull; REST API &bull; LLM AI</p>
+        <p>PHP Native &bull; MySQL &bull; OpenAI &bull; Anthropic<br>WhatsApp Gateway &bull; REST API &bull; LLM AI &bull; RAG Lokal</p>
         <h3>&#9749; Suitable For</h3>
         <p>Coffee Shop &bull; Cafe &bull; Restaurant &bull; Bakery &bull; Beverage Store</p>
       </div>
@@ -994,7 +997,7 @@ function docsRenderIndexPage(): string
   <section class="docs-card docs-main">
     <div class="docs-kicker">Dokumentasi Developer</div>
     <h1>Dokumentasi HTML KopiBot AI</h1>
-    <p>Semua file di folder <code>/docs</code> sekarang punya versi HTML yang lebih nyaman dibaca di browser. Konten sumbernya tetap Markdown, jadi dokumentasi tetap satu sumber dan lebih mudah dirawat, termasuk update terbaru untuk loyalty, Customer CRM, dan Customer Portal.</p>
+    <p>Semua file di folder <code>/docs</code> sekarang punya versi HTML yang lebih nyaman dibaca di browser. Konten sumbernya tetap Markdown, jadi dokumentasi tetap satu sumber dan lebih mudah dirawat, termasuk update terbaru untuk FAQ RAG, complaint automation, integrasi Moka Connect, loyalty, Customer CRM, dan Customer Portal.</p>
     <div class="docs-listing">
       {$listing}
     </div>
@@ -1007,6 +1010,8 @@ function docsRenderIndexPage(): string
       <a href="instalasi.php">Panduan Instalasi</a>
       <a href="lisensi.php">Lisensi AGPL + Commercial</a>
       <a href="plugin-system.php">Plugin System</a>
+      <a href="faq-rag-and-complaints.php">FAQ RAG &amp; Complaint Handling</a>
+      <a href="moka-connect-private-solution.php">Moka Connect / Private Solution</a>
       <a href="sirclo-full-connector.php">Tutorial Integrasi SIRCLO</a>
       <a href="tutorial-membuat-plugin.php">Tutorial Membuat Plugin</a>
     </nav>

@@ -855,7 +855,7 @@
         <div style="font-size:1rem;font-weight:800">Detail Produk</div>
         <div style="font-size:.8rem;opacity:.8">Lihat detail tanpa keluar dari chat</div>
       </div>
-      <button type="button" class="chat-cart-sheet-close" onclick="closeProductDetail()">âœ•</button>
+      <button type="button" class="chat-cart-sheet-close" onclick="closeProductDetail()">&times;</button>
     </div>
     <div class="chat-sheet-body" id="chatProductSheetBody"></div>
     <div class="chat-cart-footer">
@@ -900,6 +900,9 @@ let activeProductDetail = null;
 // ── On load: check if identity already saved in localStorage ──
 window.addEventListener('DOMContentLoaded', () => {
   if (!BRANCH_ID) return;
+
+  const productSheetClose = document.querySelector('#chatProductSheet .chat-cart-sheet-close');
+  if (productSheetClose) productSheetClose.innerHTML = '&times;';
 
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved) {
@@ -1614,7 +1617,7 @@ function createProductCard(item) {
 
   const thumbHtml = item.image_url
     ? `<img src="${escapeHtml(item.image_url)}" alt="${escapeHtml(item.name)}" class="product-rich-thumb">`
-    : `<div class="product-rich-fallback">☕</div>`;
+    : `<div class="product-rich-fallback">&#9749;</div>`;
 
   card.innerHTML = `
     <div class="product-rich-main">
@@ -1633,7 +1636,7 @@ function createProductCard(item) {
     item.variants.forEach(variant => {
       const option = document.createElement('option');
       option.value = variant.label || '';
-      option.textContent = `${variant.label} • ${formatCurrency(variant.price || item.price || 0)}`;
+      option.textContent = `${variant.label} - ${formatCurrency(variant.price || item.price || 0)}`;
       select.appendChild(option);
     });
     card.appendChild(select);
@@ -1861,7 +1864,7 @@ function renderProductDetailSheet(item, selectedLabel = '') {
   const variant = getSelectedVariant(item, selectedLabel);
   const thumbHtml = item.image_url
     ? `<img src="${escapeHtml(item.image_url)}" alt="${escapeHtml(item.name || '')}" class="chat-sheet-thumb">`
-    : `<div class="chat-sheet-fallback">â˜•</div>`;
+    : `<div class="chat-sheet-fallback">&#9749;</div>`;
   const variants = Array.isArray(item.variants) ? item.variants : [];
   const activePrice = variant ? Number(variant.price || item.price || 0) : Number(item.price || 0);
 
@@ -1882,12 +1885,17 @@ function renderProductDetailSheet(item, selectedLabel = '') {
     </div>
   `;
 
+  if (!item.image_url) {
+    const fallback = body.querySelector('.chat-sheet-fallback');
+    if (fallback) fallback.innerHTML = '&#9749;';
+  }
+
   const select = body.querySelector('#chatProductVariantSelect');
   if (select && variants.length) {
     variants.forEach(optionItem => {
       const option = document.createElement('option');
       option.value = optionItem.label || '';
-      option.textContent = `${optionItem.label} â€¢ ${formatCurrency(optionItem.price || item.price || 0)}`;
+      option.textContent = `${optionItem.label} - ${formatCurrency(optionItem.price || item.price || 0)}`;
       if ((optionItem.label || '') === (variant?.label || '')) {
         option.selected = true;
       }

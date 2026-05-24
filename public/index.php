@@ -13,6 +13,8 @@
  * - Variant Product & Topping Support
  * - Multi Currency, Tax & Timezone
  * - AI Customer Interaction Automation
+ * - FAQ RAG & Complaint Automation
+ * - POS Connector: SIRCLO & Moka
  * - Checkout Profile Auto-fill (localStorage)
  * - Menu Templates: Coffee, Bakery, Fruit, Meat & Veggie
  *
@@ -328,14 +330,14 @@ $branches    = $branchModel->getActive();
     <div class="hero-stat"><strong>24/7</strong><span data-t-id="Buka terus, tanpa libur" data-t-en="Always open, never closed">Buka terus, tanpa libur</span></div>
     <div class="hero-stat"><strong>4 Channel</strong><span>Web, WhatsApp, Telegram, Discord</span></div>
     <div class="hero-stat"><strong data-t-id="Multi Cabang" data-t-en="Multi Branch">Multi Cabang</strong><span data-t-id="Satu dashboard, semua cabang" data-t-en="One dashboard, all branches">Satu dashboard, semua cabang</span></div>
-    <div class="hero-stat"><strong>Plugin Ready</strong><span data-t-id="Ekstensi fitur tanpa ubah core" data-t-en="Extend features without touching core">Ekstensi fitur tanpa ubah core</span></div>
+    <div class="hero-stat"><strong>Plugin Ready</strong><span data-t-id="FAQ, komplain, dan connector POS tanpa ubah core" data-t-en="FAQ, complaint, and POS connectors without touching the core">FAQ, komplain, dan connector POS tanpa ubah core</span></div>
   </div>
   <div class="hero-remark">
     <div class="hero-remark-head">
       <div class="hero-remark-chip">&#9749; Product Remark</div>
       <div class="hero-remark-title">AI Agent Coffee Shop Commerce Platform</div>
     </div>
-    <p class="hero-remark-desc">Platform AI untuk otomatisasi order, customer service, loyalty customer, dan manajemen multi cabang coffee shop.</p>
+    <p class="hero-remark-desc">Platform AI untuk otomatisasi order, customer service, loyalty customer, FAQ RAG, complaint ticketing, connector POS, dan manajemen multi cabang coffee shop.</p>
     <div class="hero-remark-grid">
       <div class="hero-remark-card">
         <h3>&#128640; Features</h3>
@@ -346,6 +348,9 @@ $branches    = $branchModel->getActive();
           <li>AI Upselling &amp; Promo Recommendation</li>
           <li>Order via Website &amp; Chat Apps</li>
           <li>Variant Product &amp; Topping Support</li>
+          <li>FAQ RAG Global &amp; Cabang</li>
+          <li>Complaint Ticketing &amp; Human Handoff</li>
+          <li>POS Connector: SIRCLO &amp; Moka</li>
           <li>Multi Currency, Tax &amp; Timezone</li>
           <li>AI Customer Interaction Automation</li>
           <li>Checkout Profile Auto-fill (localStorage)</li>
@@ -507,6 +512,44 @@ $branches    = $branchModel->getActive();
         <div class="feature-desc"
              data-t-id="Plugin template seed data menu: Coffee Shop (132 item), Bakery (70 item), Toko Buah (60 item), Daging &amp; Sayuran (80 item). Harga IDR + override multi-currency per cabang otomatis."
              data-t-en="Menu seed template plugins: Coffee Shop (132 items), Bakery (70 items), Fruit Store (60 items), Meat &amp; Veggie (80 items). IDR prices with automatic per-branch multi-currency overrides.">Plugin template seed data menu: Coffee Shop (132 item), Bakery (70 item), Toko Buah (60 item), Daging &amp; Sayuran (80 item). Harga IDR + override multi-currency per cabang otomatis.</div>
+      </div>
+    </div>
+
+    <div class="promo-detail" style="margin-top:24px">
+      <div style="grid-column:1/-1;margin-bottom:8px">
+        <h3 style="font-size:1.1rem;font-weight:800;color:var(--coffee-dark);margin:0 0 6px"
+            data-t-id="FAQ, Komplain, dan Connector Baru"
+            data-t-en="New FAQ, Complaint, and Connector Features">FAQ, Komplain, dan Connector Baru</h3>
+        <p style="font-size:.875rem;color:var(--body-text);margin:0;line-height:1.6"
+           data-t-id="Rilis terbaru menambahkan FAQ RAG global dan per cabang, complaint handling dengan tiket follow-up manusia, serta connector POS Moka dengan webhook, retry queue, dan audit trail."
+           data-t-en="The latest release adds global and per-branch FAQ RAG, complaint handling with human follow-up tickets, and a Moka POS connector with webhooks, retry queues, and audit trails.">Rilis terbaru menambahkan FAQ RAG global dan per cabang, complaint handling dengan tiket follow-up manusia, serta connector POS Moka dengan webhook, retry queue, dan audit trail.</p>
+      </div>
+      <div class="promo-detail-item">
+        <div class="promo-detail-icon">1.</div>
+        <div>
+          <div class="promo-detail-title" data-t-id="FAQ RAG Global &amp; Cabang" data-t-en="Global &amp; Branch FAQ RAG">FAQ RAG Global &amp; Cabang</div>
+          <div class="promo-detail-desc"
+               data-t-id="FAQ bisa diatur dari dashboard pusat maupun cabang, mendukung import/export, analytics pertanyaan, override cabang, dan penyimpanan vector database lokal."
+               data-t-en="FAQs can be managed from both central and branch dashboards, with import/export, question analytics, branch overrides, and local vector database storage.">FAQ bisa diatur dari dashboard pusat maupun cabang, mendukung import/export, analytics pertanyaan, override cabang, dan penyimpanan vector database lokal.</div>
+        </div>
+      </div>
+      <div class="promo-detail-item">
+        <div class="promo-detail-icon">2.</div>
+        <div>
+          <div class="promo-detail-title" data-t-id="Complaint Handling dengan Tiket" data-t-en="Complaint Handling with Tickets">Complaint Handling dengan Tiket</div>
+          <div class="promo-detail-desc"
+               data-t-id="Saat customer komplain di flow chat order, sistem bisa memutuskan apakah AI cukup menjawab atau perlu eskalasi ke manusia, lalu membuat tiket follow-up cabang secara otomatis."
+               data-t-en="When customers complain during the chat order flow, the system can decide whether AI should answer or a human escalation is needed, then automatically create a branch follow-up ticket.">Saat customer komplain di flow chat order, sistem bisa memutuskan apakah AI cukup menjawab atau perlu eskalasi ke manusia, lalu membuat tiket follow-up cabang secara otomatis.</div>
+        </div>
+      </div>
+      <div class="promo-detail-item">
+        <div class="promo-detail-icon">3.</div>
+        <div>
+          <div class="promo-detail-title" data-t-id="Moka Connect Live Sync" data-t-en="Moka Connect Live Sync">Moka Connect Live Sync</div>
+          <div class="promo-detail-desc"
+               data-t-id="Plugin Moka sekarang mendukung push order live, pull katalog, mapping UI tanpa edit kode, simulasi webhook, cron runner, dan audit diff perubahan status order."
+               data-t-en="The Moka plugin now supports live order push, catalog pull, UI-based mapping without code edits, webhook simulation, cron runners, and audit diffs for order status changes.">Plugin Moka sekarang mendukung push order live, pull katalog, mapping UI tanpa edit kode, simulasi webhook, cron runner, dan audit diff perubahan status order.</div>
+        </div>
       </div>
     </div>
 
@@ -672,10 +715,10 @@ $branches    = $branchModel->getActive();
 <section class="section">
   <div class="section-inner">
     <p class="section-label" data-t-id="Integrasi Enterprise" data-t-en="Enterprise Integration">Integrasi Enterprise</p>
-    <h2 class="section-title" data-t-id="Fondasi Integrasi SIRCLO Sudah Disiapkan" data-t-en="The SIRCLO Integration Foundation Is Ready">Fondasi Integrasi SIRCLO Sudah Disiapkan</h2>
+    <h2 class="section-title" data-t-id="Connector POS dan Integrasi Enterprise Sudah Disiapkan" data-t-en="POS Connectors and Enterprise Integrations Are Ready">Connector POS dan Integrasi Enterprise Sudah Disiapkan</h2>
     <p class="section-sub"
-       data-t-id="KopiBot sekarang punya plugin Sirclo Full Connector untuk menyiapkan sinkronisasi order, katalog produk, dan customer per cabang. Versi saat ini fokus pada konfigurasi, dashboard monitoring, queue log, dan snapshot data sebagai dasar implementasi API SIRCLO berikutnya."
-       data-t-en="KopiBot now includes a Sirclo Full Connector plugin that prepares per-branch order, product catalog, and customer synchronization. The current version focuses on configuration, monitoring dashboards, queue logs, and data snapshots as the foundation for the next SIRCLO API implementation.">KopiBot sekarang punya plugin Sirclo Full Connector untuk menyiapkan sinkronisasi order, katalog produk, dan customer per cabang. Versi saat ini fokus pada konfigurasi, dashboard monitoring, queue log, dan snapshot data sebagai dasar implementasi API SIRCLO berikutnya.</p>
+       data-t-id="KopiBot sekarang punya fondasi connector enterprise untuk SIRCLO dan plugin Moka Connect / Private Solution yang sudah menyiapkan push order live, pull katalog, webhook inbound, queue retry, dan dashboard monitoring per cabang."
+       data-t-en="KopiBot now includes an enterprise connector foundation for SIRCLO and a Moka Connect / Private Solution plugin that already prepares live order push, catalog pull, inbound webhooks, retry queues, and per-branch monitoring dashboards.">KopiBot sekarang punya fondasi connector enterprise untuk SIRCLO dan plugin Moka Connect / Private Solution yang sudah menyiapkan push order live, pull katalog, webhook inbound, queue retry, dan dashboard monitoring per cabang.</p>
 
     <div class="feature-grid">
       <div class="feature-card">
@@ -743,6 +786,10 @@ $branches    = $branchModel->getActive();
     <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:22px">
       <a href="<?= BASE_URL ?>/docs/sirclo-full-connector.php" class="btn btn-primary btn-sm"
          data-t-id="Baca Tutorial SIRCLO" data-t-en="Read the SIRCLO Tutorial">Baca Tutorial SIRCLO</a>
+      <a href="<?= BASE_URL ?>/docs/moka-connect-private-solution.php" class="btn btn-outline btn-sm"
+         data-t-id="Baca Dokumen Moka Connect" data-t-en="Read the Moka Connect Docs">Baca Dokumen Moka Connect</a>
+      <a href="<?= BASE_URL ?>/docs/faq-rag-and-complaints.php" class="btn btn-outline btn-sm"
+         data-t-id="Baca FAQ &amp; Komplain" data-t-en="Read FAQ &amp; Complaint Docs">Baca FAQ &amp; Komplain</a>
       <a href="<?= BASE_URL ?>/readme.php" class="btn btn-outline btn-sm"
          data-t-id="Lihat README Lengkap" data-t-en="View the Full README">Lihat README Lengkap</a>
     </div>

@@ -126,6 +126,10 @@ class IntentDetector implements IntentDetectorInterface
     {
         $lower = mb_strtolower(trim($message), 'UTF-8');
         $state = $context['state'] ?? 'idle';
+        $customIntent = HookManager::applyFilters('intent.detect', '', $message, $context);
+        if (is_string($customIntent) && trim($customIntent) !== '') {
+            return trim($customIntent);
+        }
 
         if (in_array($state, ['awaiting_name','awaiting_email','awaiting_wa','awaiting_fulfillment','awaiting_table','awaiting_address','awaiting_postal'])) {
             return $this->detectCheckoutField($lower, $state);
@@ -156,6 +160,10 @@ class IntentDetector implements IntentDetectorInterface
 
         if (preg_match('/\b(kosongkan|clear cart|hapus semua|reset|mulai ulang)\b/u', $lower)) {
             return 'clear_cart';
+        }
+
+        if ($this->scoreMessage($lower) === 'komplain_customer') {
+            return 'komplain_customer';
         }
 
         if (preg_match('/\b(keranjang|cart|lihat pesanan|pesanan saya|saya pesan apa)\b/u', $lower)) {
@@ -227,7 +235,7 @@ class IntentDetector implements IntentDetectorInterface
     {
         static $escapeIntents = [
             'tanya_promo', 'tanya_menu', 'lihat_cart', 'clear_cart',
-            'hapus_item', 'pakai_promo', 'tambah_item', 'ubah_item',
+            'hapus_item', 'pakai_promo', 'tambah_item', 'ubah_item', 'komplain_customer', 'faq_customer',
         ];
 
         $scored = $this->scoreMessage($lower);

@@ -3,7 +3,7 @@
         "active": true
     },
     "example-skill-plugin": {
-        "active": false
+        "active": true
     },
     "midtrans-payment": {
         "active": true
@@ -93,6 +93,15 @@
         "active": true
     },
     "nicepay-payment": {
+        "active": true
+    },
+    "complaint-handler": {
+        "active": true
+    },
+    "faq-rag": {
+        "active": true
+    },
+    "moka-connect-private-solution": {
         "active": true
     }
 }

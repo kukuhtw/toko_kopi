@@ -39,7 +39,7 @@ class ChatbotEngine
 
     private const CHECKOUT_ESCAPE_INTENTS = [
         'tanya_menu', 'tanya_promo', 'lihat_cart', 'clear_cart', 'hapus_item', 'pakai_promo',
-        'tambah_item', 'ubah_item',
+        'tambah_item', 'ubah_item', 'komplain_customer', 'faq_customer',
     ];
 
     public function __construct(?IntentDetectorInterface $detector = null)
@@ -99,7 +99,14 @@ class ChatbotEngine
         $message = (string) HookManager::applyFilters('chat.before_ai', $message, $branchId, $channel);
         $entities = $this->entityExtractor->extract($message, $currency);
 
-        $intent = $this->detector->detect($message, ['state' => $conversation['state']]);
+        $intent = $this->detector->detect($message, [
+            'state' => $conversation['state'],
+            'branch_id' => $branchId,
+            'channel' => $channel,
+            'customer_id' => (int)($customer['id'] ?? 0),
+            'conversation_id' => (int)($conversation['id'] ?? 0),
+            'conv_context' => $convCtx,
+        ]);
         $intent = $this->normalizePendingStateIntent($intent, $message, (string)($conversation['state'] ?? 'idle'));
         $intent = $this->applyFollowUpHeuristics($intent, $message, $convCtx);
         $intent = $this->preferCheckoutEditIntent($intent, $message, $conversation['state']);

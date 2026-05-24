@@ -7,6 +7,7 @@ require_once dirname(__DIR__, 3) . '/app/Config/config.php';
 use App\Config\Database;
 use App\Helpers\{Auth, View, Currency, Csrf, Sanitize, MenuImage};
 use App\Models\{MenuModel, BranchModel};
+use App\Services\OpenAiMenuImageService;
 
 Auth::startSession();
 Auth::requireLogin();
@@ -25,6 +26,77 @@ $error   = '';
 
 $db        = Database::getInstance();
 $menuModel = new MenuModel();
+$imageAi   = new OpenAiMenuImageService();
+$categories = $menuModel->getCategories();
+
+$findMenuItemWithCategory = static function (int $itemId) use ($db): ?array {
+    $stmt = $db->prepare(
+        'SELECT mi.*, mc.name AS category_name
+         FROM menu_items mi
+         LEFT JOIN menu_categories mc ON mc.id = mi.category_id
+         WHERE mi.id = ?
+         LIMIT 1'
+    );
+    $stmt->execute([$itemId]);
+    $row = $stmt->fetch();
+    return $row ?: null;
+};
+
+$resolveCategoryName = static function (int $categoryId) use ($categories): string {
+    foreach ($categories as $category) {
+        if ((int)($category['id'] ?? 0) === $categoryId) {
+            return (string)($category['name'] ?? '');
+        }
+    }
+    return '';
+};
+
+$createBranchMenuItem = static function (bool $generateAiImage) use ($menuModel, $imageAi, $db, $branchId, $resolveCategoryName): string {
+    $catId = (int)($_POST['category_id'] ?? 0);
+    $name  = Sanitize::string($_POST['name'] ?? '');
+    $slug  = Sanitize::slug($name) . '-' . $branchId;
+    $price = (float)($_POST['price'] ?? 0);
+    $desc  = Sanitize::string($_POST['description'] ?? '');
+
+    if (!$name || !$price) {
+        throw new RuntimeException('Nama dan harga wajib diisi.');
+    }
+
+    $imagePath = MenuImage::uploadFromRequest('image', $slug ?: $name);
+    if ($generateAiImage) {
+        $generated = $imageAi->generateForMenu([
+            'name' => $name,
+            'description' => $desc,
+            'category_name' => $resolveCategoryName($catId),
+        ], [
+            'prompt' => $_POST['ai_image_prompt'] ?? '',
+            'style' => $_POST['ai_image_style'] ?? '',
+            'size' => $_POST['ai_image_size'] ?? '1024x1024',
+            'quality' => $_POST['ai_image_quality'] ?? 'medium',
+        ], $branchId);
+
+        if ($imagePath) {
+            MenuImage::deleteManaged($imagePath);
+        }
+        $imagePath = $generated['relative_path'];
+    }
+
+    $itemId = $menuModel->insert([
+        'category_id' => $catId,
+        'name' => $name,
+        'slug' => $slug,
+        'description' => $desc,
+        'price' => $price,
+        'image_path' => $imagePath,
+    ]);
+
+    $db->prepare(
+        'INSERT INTO branch_menu_overrides (branch_id, menu_item_id, custom_price, is_available)
+         VALUES (?,?,?,1)'
+    )->execute([$branchId, $itemId, $price]);
+
+    return $name;
+};
 
 $renderMenuThumb = static function (?string $imagePath, string $name): string {
     $imageUrl = MenuImage::publicUrl($imagePath);
@@ -105,34 +177,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
              ON DUPLICATE KEY UPDATE custom_price=VALUES(custom_price), is_available=VALUES(is_available)'
         )->execute([$branchId, $menuItemId, $customPrice > 0 ? $customPrice : null, $isAvailable]);
         $message = 'Harga dan ketersediaan diperbarui.';
-    } elseif ($action === 'add_item') {
-        $catId = (int)($_POST['category_id'] ?? 0);
-        $name  = Sanitize::string($_POST['name'] ?? '');
-        $slug  = Sanitize::slug($name) . '-' . $branchId;
-        $price = (float)($_POST['price'] ?? 0);
-        $desc  = Sanitize::string($_POST['description'] ?? '');
-
-        if (!$name || !$price) {
-            $error = 'Nama dan harga wajib diisi.';
-        } else {
-            try {
-                $imagePath = MenuImage::uploadFromRequest('image', $slug ?: $name);
-                $itemId = $menuModel->insert([
-                    'category_id' => $catId,
-                    'name'        => $name,
-                    'slug'        => $slug,
-                    'description' => $desc,
-                    'price'       => $price,
-                    'image_path'  => $imagePath,
-                ]);
-                $db->prepare(
-                    'INSERT INTO branch_menu_overrides (branch_id, menu_item_id, custom_price, is_available)
-                     VALUES (?,?,?,1)'
-                )->execute([$branchId, $itemId, $price]);
-                $message = "Menu '{$name}' ditambahkan.";
-            } catch (RuntimeException $e) {
-                $error = $e->getMessage();
-            }
+    } elseif ($action === 'add_item' || $action === 'add_item_generate_ai') {
+        try {
+            $name = $createBranchMenuItem($action === 'add_item_generate_ai');
+            $message = $action === 'add_item_generate_ai'
+                ? "Menu '{$name}' ditambahkan dengan foto AI."
+                : "Menu '{$name}' ditambahkan.";
+        } catch (Throwable $e) {
+            $error = $e->getMessage();
         }
     } elseif ($action === 'update_item_image') {
         $menuItemId   = (int)($_POST['menu_item_id'] ?? 0);
@@ -162,7 +214,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $menuModel->update($menuItemId, ['image_path' => $imagePath]);
                     $message = 'Foto produk diperbarui.';
                 }
-            } catch (RuntimeException $e) {
+            } catch (Throwable $e) {
+                $error = $e->getMessage();
+            }
+        }
+    } elseif ($action === 'generate_item_image') {
+        $menuItemId = (int)($_POST['menu_item_id'] ?? 0);
+        $menuItem = $findMenuItemWithCategory($menuItemId);
+
+        if (!$menuItem) {
+            $error = 'Menu tidak ditemukan.';
+        } else {
+            try {
+                $generated = $imageAi->generateForMenu($menuItem, [
+                    'prompt' => $_POST['ai_image_prompt'] ?? '',
+                    'style' => $_POST['ai_image_style'] ?? '',
+                    'size' => $_POST['ai_image_size'] ?? '1024x1024',
+                    'quality' => $_POST['ai_image_quality'] ?? 'medium',
+                ], $branchId);
+
+                MenuImage::deleteManaged($menuItem['image_path'] ?? null);
+                $menuModel->update($menuItemId, ['image_path' => $generated['relative_path']]);
+                $message = "Foto AI untuk '{$menuItem['name']}' berhasil dibuat.";
+            } catch (Throwable $e) {
                 $error = $e->getMessage();
             }
         }
@@ -174,8 +248,6 @@ $currency    = $branchModel->getCurrency($branchId);
 $priceStep   = in_array($currency, ['USD', 'SGD', 'AUD'], true) ? '0.01' : '500';
 
 $grouped    = $menuModel->getMenuGrouped($branchId);
-$categories = $menuModel->getCategories();
-
 $allVariantsRaw = $db->query(
     'SELECT * FROM menu_item_variants ORDER BY menu_item_id, sort_order, label'
 )->fetchAll();
@@ -333,7 +405,6 @@ $exportBase = BASE_URL . '/api/export';
     <div class="modal-title">Tambah Menu Baru</div>
     <form method="POST" enctype="multipart/form-data">
       <?= Csrf::field() ?>
-      <input type="hidden" name="action" value="add_item">
       <div class="form-group">
         <label class="form-label" for="addCategoryId">Kategori *</label>
         <select name="category_id" id="addCategoryId" class="form-control" required>
@@ -361,9 +432,51 @@ $exportBase = BASE_URL . '/api/export';
         <input type="file" name="image" id="addImage" class="form-control" accept="image/jpeg,image/png,image/webp,image/gif">
         <small style="color:var(--text-mid);font-size:.82rem">Format JPG, PNG, WEBP, atau GIF. Maksimal 5 MB.</small>
       </div>
+      <div style="margin-bottom:14px;padding:12px;border:1px solid var(--border);border-radius:12px;background:#faf6f0">
+        <div style="font-weight:700;color:var(--coffee-dark);margin-bottom:8px">Preset Style Foto AI</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="addAiPreset">Preset Kategori</label>
+            <select id="addAiPreset" class="form-control">
+              <option value="auto">Otomatis dari kategori</option>
+              <option value="coffee">Coffee</option>
+              <option value="bakery">Bakery</option>
+              <option value="steak">Steak</option>
+              <option value="dessert">Dessert</option>
+              <option value="general">General Food</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="addAiImageSize">Ukuran</label>
+            <select name="ai_image_size" id="addAiImageSize" class="form-control">
+              <option value="1024x1024">Square 1024x1024</option>
+              <option value="1536x1024">Landscape 1536x1024</option>
+              <option value="1024x1536">Portrait 1024x1536</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="addAiImageStyle">Gaya Visual</label>
+          <input type="text" name="ai_image_style" id="addAiImageStyle" class="form-control" value="foto produk studio realistis, premium, clean background, pencahayaan hangat">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="addAiImagePrompt">Prompt Tambahan</label>
+          <textarea name="ai_image_prompt" id="addAiImagePrompt" class="form-control" rows="2" placeholder="Contoh: tampilkan plating premium dengan sudut 3/4 dan fokus pada detail produk"></textarea>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label" for="addAiImageQuality">Kualitas</label>
+          <select name="ai_image_quality" id="addAiImageQuality" class="form-control">
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+            <option value="low">Low</option>
+          </select>
+          <small style="color:var(--text-mid);font-size:.82rem">Klik "Tambah + Generate AI" untuk langsung membuat item baru beserta foto produk OpenAI.</small>
+        </div>
+      </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-outline" onclick="document.getElementById('addModal').classList.add('hidden')">Batal</button>
-        <button type="submit" class="btn btn-primary">Simpan</button>
+        <button type="submit" name="action" value="add_item_generate_ai" class="btn btn-outline">Tambah + Generate AI</button>
+        <button type="submit" name="action" value="add_item" class="btn btn-primary">Simpan</button>
       </div>
     </form>
   </div>
@@ -400,7 +513,6 @@ $exportBase = BASE_URL . '/api/export';
     <div class="modal-title">Kelola Foto Produk</div>
     <form method="POST" enctype="multipart/form-data">
       <?= Csrf::field() ?>
-      <input type="hidden" name="action" value="update_item_image">
       <input type="hidden" name="menu_item_id" id="img_item_id">
       <div class="form-group">
         <p class="form-label" style="margin:0">Item: <strong id="img_item_name"></strong></p>
@@ -414,13 +526,43 @@ $exportBase = BASE_URL . '/api/export';
         <input type="file" name="image" id="img_file" class="form-control" accept="image/jpeg,image/png,image/webp,image/gif">
         <small style="color:var(--text-mid);font-size:.82rem">Format JPG, PNG, WEBP, atau GIF. Maksimal 5 MB.</small>
       </div>
+      <div style="margin-bottom:14px;padding:12px;border:1px solid var(--border);border-radius:12px;background:#faf6f0">
+        <div style="font-weight:700;color:var(--coffee-dark);margin-bottom:8px">Generate dengan OpenAI</div>
+        <div class="form-group" style="margin-bottom:10px">
+          <label class="form-label" for="img_ai_prompt">Prompt Tambahan</label>
+          <textarea name="ai_image_prompt" id="img_ai_prompt" class="form-control" rows="2" placeholder="Contoh: tampilkan dari sudut 3/4 dengan background terang dan fokus pada detail produk"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="img_ai_style">Gaya Visual</label>
+            <input type="text" name="ai_image_style" id="img_ai_style" class="form-control" value="foto produk studio realistis, premium, clean background, pencahayaan hangat">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="img_ai_size">Ukuran</label>
+            <select name="ai_image_size" id="img_ai_size" class="form-control">
+              <option value="1024x1024">Square 1024x1024</option>
+              <option value="1536x1024">Landscape 1536x1024</option>
+              <option value="1024x1536">Portrait 1024x1536</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label" for="img_ai_quality">Kualitas</label>
+          <select name="ai_image_quality" id="img_ai_quality" class="form-control">
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+      </div>
       <div class="form-group" style="display:flex;align-items:center;gap:10px">
         <input type="checkbox" name="remove_image" id="img_remove_image" value="1">
         <label for="img_remove_image" class="form-label" style="margin:0">Hapus foto produk saat disimpan</label>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-outline" onclick="document.getElementById('imageModal').classList.add('hidden')">Batal</button>
-        <button type="submit" class="btn btn-primary">Simpan Foto</button>
+        <button type="submit" name="action" value="generate_item_image" class="btn btn-outline">Generate Foto AI</button>
+        <button type="submit" name="action" value="update_item_image" class="btn btn-primary">Simpan Foto</button>
       </div>
     </form>
   </div>
@@ -499,6 +641,52 @@ const aiUploadedFileId = document.getElementById('menuAiUploadedFileId');
 const aiMappingJson = document.getElementById('menuAiMappingJson');
 let menuAiPreviewData = null;
 let menuAiEntityFieldOptions = {};
+
+const menuImageStylePresets = {
+  coffee: 'foto minuman kopi premium, gelas rapi, foam detail, lighting hangat, meja kayu, studio realistis, clean background',
+  bakery: 'foto roti dan bakery premium, tekstur renyah lembut terlihat jelas, pencahayaan hangat, plating rapi, studio realistis',
+  steak: 'foto steak atau daging premium, tekstur juicy dan grill mark jelas, plating elegan, dramatic warm lighting, studio realistis',
+  dessert: 'foto dessert premium, manis elegan, tekstur creamy detail, plating cantik, soft lighting, studio realistis',
+  general: 'foto produk makanan premium, menggugah selera, clean background, pencahayaan hangat, studio realistis'
+};
+
+function inferMenuPreset(categoryName) {
+  const text = String(categoryName || '').toLowerCase();
+  if (text.includes('kopi') || text.includes('coffee') || text.includes('latte') || text.includes('espresso')) return 'coffee';
+  if (text.includes('bakery') || text.includes('roti') || text.includes('bread') || text.includes('pastry')) return 'bakery';
+  if (text.includes('steak') || text.includes('daging') || text.includes('sapi') || text.includes('meat')) return 'steak';
+  if (text.includes('dessert') || text.includes('cake') || text.includes('kue') || text.includes('sweet')) return 'dessert';
+  return 'general';
+}
+
+function applyAddMenuAiPreset() {
+  const categorySelect = document.getElementById('addCategoryId');
+  const presetSelect = document.getElementById('addAiPreset');
+  const styleInput = document.getElementById('addAiImageStyle');
+  if (!categorySelect || !presetSelect || !styleInput) return;
+
+  const categoryName = categorySelect.options[categorySelect.selectedIndex]?.text || '';
+  const preset = presetSelect.value === 'auto' ? inferMenuPreset(categoryName) : presetSelect.value;
+  styleInput.value = menuImageStylePresets[preset] || menuImageStylePresets.general;
+}
+
+function syncAddMenuAiPrompt() {
+  const name = document.getElementById('addName')?.value?.trim() || '';
+  const desc = document.getElementById('addDesc')?.value?.trim() || '';
+  const promptInput = document.getElementById('addAiImagePrompt');
+  if (!promptInput) return;
+
+  promptInput.value = desc
+    ? `Tampilkan ${name || 'menu ini'} dengan detail: ${desc}`
+    : `Tampilkan ${name || 'menu ini'} sebagai foto produk yang menarik dan realistis.`;
+}
+
+document.getElementById('addCategoryId')?.addEventListener('change', applyAddMenuAiPreset);
+document.getElementById('addAiPreset')?.addEventListener('change', applyAddMenuAiPreset);
+document.getElementById('addName')?.addEventListener('input', syncAddMenuAiPrompt);
+document.getElementById('addDesc')?.addEventListener('input', syncAddMenuAiPrompt);
+applyAddMenuAiPreset();
+syncAddMenuAiPrompt();
 
 function fmtGlobalDelta(delta) {
   if (delta === 0) return '-';
@@ -619,6 +807,10 @@ function openImageModal(id, name, imageUrl) {
   document.getElementById('img_item_name').textContent = name;
   document.getElementById('img_remove_image').checked = false;
   document.getElementById('img_file').value = '';
+  document.getElementById('img_ai_prompt').value = `Tampilkan ${name} sebagai foto produk menu yang menarik dan realistis.`;
+  document.getElementById('img_ai_style').value = 'foto produk studio realistis, premium, clean background, pencahayaan hangat';
+  document.getElementById('img_ai_size').value = '1024x1024';
+  document.getElementById('img_ai_quality').value = 'medium';
 
   const preview = document.getElementById('img_preview');
   preview.innerHTML = imageUrl
