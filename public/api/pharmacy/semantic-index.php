@@ -27,19 +27,36 @@ try {
     foreach ($rows as $row) {
         $index[] = [
             'id' => $row['id'],
-            'text' => implode(' ', [
-                $row['name'],
-                $row['description'],
-                $row['generic_name'],
-                $row['manufacturer'],
-                $row['dosage'],
-            ])
+            'text' => implode(' ', array_filter([
+                $row['name'] ?? '',
+                $row['description'] ?? '',
+                $row['generic_name'] ?? '',
+                $row['manufacturer'] ?? '',
+                $row['dosage'] ?? '',
+            ])),
         ];
     }
 
-    $path = dirname(__DIR__, 3) . '/storage/pharmacy/semantic-index.json';
+    $storageDir = dirname(__DIR__, 3) . '/storage/pharmacy';
 
-    file_put_contents($path, json_encode($index, JSON_PRETTY_PRINT));
+    if (!is_dir($storageDir)) {
+        mkdir($storageDir, 0755, true);
+    }
+
+    if (!is_dir($storageDir)) {
+        throw new RuntimeException('Semantic index directory unavailable.');
+    }
+
+    $path = $storageDir . '/semantic-index.json';
+
+    $result = file_put_contents(
+        $path,
+        json_encode($index, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
+    );
+
+    if ($result === false) {
+        throw new RuntimeException('Failed to write semantic index file.');
+    }
 
     echo json_encode([
         'success' => true,
