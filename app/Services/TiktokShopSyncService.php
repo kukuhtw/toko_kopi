@@ -56,4 +56,94 @@ final class TiktokShopSyncService
             ':sync_status' => $payload['sync_status'] ?? 'mapped',
         ]);
     }
+
+    public function saveOrder(array $payload): void
+    {
+        $orderId = $payload['order_id'] ?? $payload['id'] ?? null;
+
+        if (!$orderId) {
+            throw new \RuntimeException('order_id required.');
+        }
+
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO tiktokshop_orders_sync
+             (order_id, order_status, customer_name, total_amount, raw_payload, synced_at, created_at)
+             VALUES
+             (:order_id, :order_status, :customer_name, :total_amount, :raw_payload, NOW(), NOW())
+             ON DUPLICATE KEY UPDATE
+                order_status = VALUES(order_status),
+                customer_name = VALUES(customer_name),
+                total_amount = VALUES(total_amount),
+                raw_payload = VALUES(raw_payload),
+                synced_at = NOW()'
+        );
+
+        $stmt->execute([
+            ':order_id' => $orderId,
+            ':order_status' => $payload['order_status'] ?? $payload['status'] ?? null,
+            ':customer_name' => $payload['customer_name'] ?? $payload['buyer_name'] ?? null,
+            ':total_amount' => $payload['total_amount'] ?? $payload['payment']['total_amount'] ?? null,
+            ':raw_payload' => json_encode($payload, JSON_UNESCAPED_UNICODE),
+        ]);
+    }
+
+    public function logWebhook(?string $eventName, array $payload): void
+    {
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO tiktokshop_webhook_logs
+             (event_name, raw_payload, created_at)
+             VALUES
+             (:event_name, :raw_payload, NOW())'
+        );
+
+        $stmt->execute([
+            ':event_name' => $eventName,
+            ':raw_payload' => json_encode($payload, JSON_UNESCAPED_UNICODE),
+        ]);
+    }
+
+    public function buildRealtimeStockPayload(int $menuItemId): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT mi.id, mi.name,
+                    tm.tiktok_product_id,
+                    tm.tiktok_sku_id,
+                    COALESCE(SUM(ms.qty), 0) AS total_stock
+             FROM menu_items mi
+             JOIN tiktokshop_product_mapping tm ON tm.menu_item_id = mi.id
+             LEFT JOIN minimarket_inventory_stock ms ON ms.menu_item_id = mi.id
+             WHERE mi.id = :menu_item_id
+             GROUP BY mi.id, mi.name, tm.tiktok_product_id, tm.tiktok_sku_id
+             LIMIT 1'
+        );
+
+        $stmt->execute([
+            ':menu_item_id' => $menuItemId,
+        ]);
+
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$row) {
+            throw new \RuntimeException('TikTok Shop product mapping not found.');
+        }
+
+        return [
+            'product_id' => $row['tiktok_product_id'],
+            'skus' => [
+                [
+                    'sku_id' => $row['tiktok_sku_id'],
+                    'stock_infos' => [
+                        [
+                            'available_stock' => max(0, (int)$row['total_stock']),
+                        ],
+                    ],
+                ],
+            ],
+            'local' => [
+                'menu_item_id' => (int)$row['id'],
+                'name' => $row['name'],
+                'total_stock' => (int)$row['total_stock'],
+            ],
+        ];
+    }
 }
