@@ -249,6 +249,173 @@ Sebelum go live, pastikan:
 
 ---
 
+## 13. Panduan Mengelola Cabang
+
+Cabang adalah unit operasional coffee shop yang memiliki menu, promo, jam buka, alamat, dan pengaturan pembayaran sendiri. Fitur multi cabang membuat satu aplikasi bisa dipakai oleh banyak lokasi bisnis tanpa membuat aplikasi terpisah.
+
+Data cabang yang perlu disiapkan:
+
+1. Nama cabang.
+2. Slug cabang untuk URL order.
+3. Alamat lengkap.
+4. Nomor kontak cabang.
+5. Jam operasional.
+6. Status aktif atau nonaktif.
+7. Mata uang dan timezone.
+8. Pengaturan channel order.
+
+Contoh slug cabang:
+
+```text
+jakarta-selatan
+bandung
+surabaya
+```
+
+Contoh URL order cabang:
+
+```text
+http://localhost/toko_kopi/public/order.php?branch=jakarta-selatan
+```
+
+Saat membuat cabang baru, pastikan slug mudah dibaca, tidak menggunakan spasi, dan konsisten dengan nama cabang. Slug akan dipakai pada link order, link promosi, dan integrasi channel.
+
+---
+
+## 14. Panduan Mengelola Menu, Variant, dan Topping
+
+Menu adalah data utama yang akan dilihat customer. Setiap produk sebaiknya memiliki nama yang jelas, deskripsi singkat, harga, kategori, status aktif, dan foto produk.
+
+Contoh kategori menu:
+
+1. Coffee.
+2. Non Coffee.
+3. Tea.
+4. Bakery.
+5. Snack.
+6. Main Course.
+7. Seasonal Menu.
+
+Variant digunakan untuk pilihan produk. Contoh variant:
+
+| Variant | Keterangan |
+|---------|------------|
+| Hot | Minuman panas |
+| Ice | Minuman dingin |
+| Regular | Ukuran normal |
+| Large | Ukuran besar |
+
+Topping digunakan untuk tambahan item. Contoh topping:
+
+| Topping | Contoh Harga |
+|---------|--------------|
+| Extra Shot | 7000 |
+| Oat Milk | 8000 |
+| Caramel Syrup | 5000 |
+| Cheese Cream | 6000 |
+
+Agar chatbot mudah memahami menu, gunakan nama produk yang sederhana dan tidak terlalu mirip satu sama lain. Misalnya, bedakan nama `Kopi Susu Aren` dan `Kopi Susu Pandan` dengan jelas.
+
+---
+
+## 15. Panduan Customer Portal
+
+Customer Portal adalah halaman mandiri untuk customer. Customer dapat melihat riwayat order, status order, loyalty point, profile, dan melakukan repeat order.
+
+URL Customer Portal:
+
+```text
+http://localhost/toko_kopi/public/customer/login.php
+```
+
+Customer Portal memakai login ringan berbasis kontak dan nomor order. Customer tidak memakai akun admin. Data yang digunakan biasanya email atau nomor WhatsApp yang pernah dipakai saat order.
+
+Fitur Customer Portal:
+
+1. Melihat order history.
+2. Melihat detail order.
+3. Melihat status pembayaran.
+4. Melihat loyalty point.
+5. Mengelola profile customer.
+6. Melakukan repeat order.
+
+Customer Portal penting untuk mengurangi pertanyaan berulang ke admin, terutama pertanyaan status order dan riwayat pembelian.
+
+---
+
+## 16. Panduan Plugin System
+
+Plugin System membuat aplikasi lebih fleksibel. Fitur tambahan dapat dibuat sebagai plugin tanpa mengubah core aplikasi terlalu banyak.
+
+Struktur plugin sederhana:
+
+```text
+plugins/nama-plugin/
+|-- plugin.php
+`-- NamaPlugin.php
+```
+
+Contoh plugin yang tersedia:
+
+1. customer-crm.
+2. loyalty-point.
+3. midtrans-payment.
+4. xendit-payment.
+5. ipaymu-payment.
+6. nicepay-payment.
+7. telegram-channel.
+8. discord-channel.
+9. fonnte-whatsapp.
+10. upselling.
+11. rekomendasi-promo.
+
+Plugin perlu didaftarkan atau diaktifkan melalui konfigurasi plugin. File konfigurasi utama plugin berada di:
+
+```text
+plugins/plugins.json
+```
+
+Sebelum mengaktifkan plugin di production, lakukan pengujian di local atau staging. Pastikan plugin tidak merusak flow order, checkout, payment, dan dashboard.
+
+---
+
+## 17. Panduan Backup dan Maintenance
+
+Backup diperlukan untuk menjaga data order, customer, loyalty, dan konfigurasi aplikasi. Minimal backup yang perlu disiapkan adalah database dan folder upload.
+
+Data yang perlu dibackup:
+
+1. Database MySQL.
+2. Folder uploads.
+3. File .env.
+4. Konfigurasi plugin.
+5. Log penting bila diperlukan.
+
+Contoh backup database:
+
+```bash
+mysqldump -u root -p toko_kopi > backup_toko_kopi.sql
+```
+
+Contoh restore database:
+
+```bash
+mysql -u root -p toko_kopi < backup_toko_kopi.sql
+```
+
+Checklist maintenance rutin:
+
+1. Cek error log.
+2. Cek kapasitas folder uploads.
+3. Cek order gagal.
+4. Cek callback payment gagal.
+5. Cek webhook channel chat.
+6. Cek user admin yang masih aktif.
+7. Ganti password admin secara berkala.
+8. Backup database terjadwal.
+
+---
+
 ## Penutup
 
 Draft ebook ini dapat dikembangkan menjadi panduan lengkap per bab, mencakup setup production, konfigurasi plugin, payment gateway, WhatsApp gateway, customer CRM, loyalty point, FAQ RAG, dan integrasi delivery.
