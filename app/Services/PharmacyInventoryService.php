@@ -70,7 +70,11 @@ class PharmacyInventoryService
 
     public function addStock(array $data, ?int $userId = null): int
     {
-        $this->pdo->beginTransaction();
+        $manageTransaction = !$this->pdo->inTransaction();
+
+        if ($manageTransaction) {
+            $this->pdo->beginTransaction();
+        }
 
         try {
             $stmt = $this->pdo->prepare(
@@ -96,21 +100,30 @@ class PharmacyInventoryService
 
             $this->recordMovement($stockId, (int)$data['branch_id'], (int)$data['menu_item_id'], 'in', (float)$data['stock_qty'], 0, (float)$data['stock_qty'], 'initial_stock', null, 'Initial stock input', $userId);
 
-            $this->pdo->commit();
+            if ($manageTransaction) {
+                $this->pdo->commit();
+            }
+
             return $stockId;
         } catch (\Throwable $e) {
-            $this->pdo->rollBack();
+            if ($manageTransaction && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
             throw $e;
         }
     }
 
-    public function deductFifo(int $branchId, int $menuItemId, float $qty, string $referenceType = 'sale', ?int $referenceId = null, ?int $userId = null): array
+    public function deductFifo(int $branchId, int $menuItemId, float $qty, string $referenceType = 'sale', ?int $referenceId = null, ?int $userId = null, bool $manageTransaction = true): array
     {
         if ($qty <= 0) {
             throw new RuntimeException('Qty must be greater than zero.');
         }
 
-        $this->pdo->beginTransaction();
+        $shouldManageTransaction = $manageTransaction && !$this->pdo->inTransaction();
+
+        if ($shouldManageTransaction) {
+            $this->pdo->beginTransaction();
+        }
 
         try {
             $stmt = $this->pdo->prepare(
@@ -159,10 +172,15 @@ class PharmacyInventoryService
                 $remaining -= $take;
             }
 
-            $this->pdo->commit();
+            if ($shouldManageTransaction) {
+                $this->pdo->commit();
+            }
+
             return $deductions;
         } catch (\Throwable $e) {
-            $this->pdo->rollBack();
+            if ($shouldManageTransaction && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
             throw $e;
         }
     }
