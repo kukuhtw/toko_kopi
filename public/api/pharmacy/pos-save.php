@@ -22,13 +22,38 @@ try {
     $branchId = (int)($payload['branch_id'] ?? 1);
     $invoiceNo = 'POS-' . date('YmdHis');
 
-    $pdo->beginTransaction();
+    $prescriptionRef = trim((string)($payload['prescription_reference'] ?? ''));
+    $pharmacistApproved = (bool)($payload['pharmacist_approved'] ?? false);
+
+    $checkPrescription = $pdo->prepare(
+        'SELECT pm.requires_prescription, mi.name
+         FROM menu_items mi
+         LEFT JOIN pharmacy_product_metadata pm ON pm.menu_item_id = mi.id
+         WHERE mi.id = :menu_item_id
+         LIMIT 1'
+    );
 
     $subtotal = 0;
 
     foreach ($payload['items'] as $item) {
         $subtotal += ((float)$item['qty'] * (float)$item['price']);
+
+        $checkPrescription->execute([
+            ':menu_item_id' => (int)$item['menu_item_id'],
+        ]);
+
+        $product = $checkPrescription->fetch(PDO::FETCH_ASSOC);
+
+        if ($product && (int)($product['requires_prescription'] ?? 0) === 1) {
+            if ($prescriptionRef === '' && !$pharmacistApproved) {
+                throw new RuntimeException(
+                    'Prescription required for product: ' . ($product['name'] ?? 'Unknown Product')
+                );
+            }
+        }
     }
+
+    $pdo->beginTransaction();
 
     $stmt = $pdo->prepare(
         'INSERT INTO pharmacy_pos_sales
@@ -50,7 +75,7 @@ try {
     $saleId = (int)$pdo->lastInsertId();
 
     foreach ($payload['items'] as $item) {
-        $deductions = $service->deductFifo(
+        $service->deductFifo(
             $branchId,
             (int)$item['menu_item_id'],
             (float)$item['qty'],
@@ -82,9 +107,10 @@ try {
         'invoice_no' => $invoiceNo,
         'sale_id' => $saleId,
         'grand_total' => $subtotal,
+        'prescription_verified' => ($prescriptionRef !== '' || $pharmacistApproved),
     ]);
 } catch (Throwable $e) {
-    if (isset($pdo) && $pdo->inTransaction()) {
+    if (isset($pdo) && $pdo instanceof PDO && $pdo->inTransaction()) {
         $pdo->rollBack();
     }
 
