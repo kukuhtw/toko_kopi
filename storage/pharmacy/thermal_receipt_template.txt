@@ -1,0 +1,17 @@
+================================
+        APOTEK KOPIBOT
+================================
+Invoice : {{invoice_no}}
+Date    : {{date}}
+Cashier : {{cashier}}
+--------------------------------
+{{items}}
+--------------------------------
+Subtotal : {{subtotal}}
+Discount : {{discount}}
+GrandTot : {{grand_total}}
+Payment  : {{payment_method}}
+================================
+Terima kasih
+Semoga lekas sembuh
+================================
