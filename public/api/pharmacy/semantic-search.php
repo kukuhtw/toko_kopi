@@ -6,27 +6,39 @@ require_once dirname(__DIR__, 3) . '/app/Config/config.php';
 
 header('Content-Type: application/json');
 
+function pharmacy_synonyms(): array
+{
+    return [
+        'demam' => ['panas', 'meriang', 'suhu tinggi', 'fever'],
+        'panas' => ['demam', 'meriang', 'fever'],
+        'flu' => ['pilek', 'influenza', 'hidung meler', 'bersin'],
+        'pilek' => ['flu', 'hidung meler', 'bersin'],
+        'batuk' => ['cough', 'tenggorokan gatal'],
+        'berdahak' => ['dahak', 'mukus', 'produktif'],
+        'kering' => ['batuk kering', 'tidak berdahak'],
+        'nyeri' => ['sakit', 'pain', 'linu'],
+        'sakit' => ['nyeri', 'pain'],
+        'kepala' => ['pusing', 'migraine', 'migrain'],
+        'lambung' => ['maag', 'asam lambung', 'gastritis', 'perut perih'],
+        'maag' => ['lambung', 'asam lambung', 'gastritis'],
+        'mual' => ['nausea', 'ingin muntah'],
+        'diare' => ['mencret', 'buang air besar cair'],
+        'alergi' => ['gatal', 'biduran', 'ruam'],
+        'gatal' => ['alergi', 'ruam', 'biduran'],
+        'vitamin' => ['suplemen', 'daya tahan tubuh', 'imunitas'],
+        'imun' => ['imunitas', 'daya tahan tubuh', 'vitamin'],
+        'luka' => ['cedera', 'gores', 'lecet'],
+        'antiseptik' => ['luka', 'disinfektan', 'pembersih luka'],
+        'anak' => ['balita', 'bayi', 'pediatric', 'sirup'],
+        'dewasa' => ['adult', 'tablet', 'kapsul'],
+    ];
+}
+
 function normalize_text(string $text): string
 {
     $text = strtolower($text);
     $text = preg_replace('/[^a-z0-9\s]+/u', ' ', $text);
     return trim((string)preg_replace('/\s+/', ' ', (string)$text));
-}
-
-function pharmacy_synonyms(): array
-{
-    return [
-        'demam' => ['panas', 'meriang', 'fever'],
-        'flu' => ['pilek', 'influenza', 'bersin'],
-        'batuk' => ['cough', 'tenggorokan'],
-        'lambung' => ['maag', 'asam lambung'],
-        'maag' => ['lambung', 'gastritis'],
-        'nyeri' => ['sakit', 'pain'],
-        'sakit' => ['nyeri', 'pain'],
-        'vitamin' => ['suplemen', 'imunitas'],
-        'gatal' => ['alergi', 'ruam'],
-        'anak' => ['balita', 'bayi'],
-    ];
 }
 
 function expand_synonyms(string $text): string
@@ -44,7 +56,7 @@ function expand_synonyms(string $text): string
         }
     }
 
-    return implode(' ', $expanded);
+    return implode(' ', array_unique($expanded));
 }
 
 function build_vector(string $text): array
@@ -92,9 +104,15 @@ function typo_score(string $query, string $text): float
     $queryTokens = array_filter(explode(' ', normalize_text($query)));
     $textTokens = array_filter(explode(' ', normalize_text($text)));
 
-    $best = 0.0;
+    if (empty($queryTokens) || empty($textTokens)) {
+        return 0.0;
+    }
+
+    $scores = [];
 
     foreach ($queryTokens as $q) {
+        $best = 0.0;
+
         foreach ($textTokens as $t) {
             $distance = levenshtein($q, $t);
             $maxLen = max(strlen($q), strlen($t));
@@ -104,18 +122,21 @@ function typo_score(string $query, string $text): float
             }
 
             $score = 1 - ($distance / $maxLen);
-
-            if ($score > $best) {
-                $best = $score;
-            }
+            $best = max($best, $score);
         }
+
+        $scores[] = max(0.0, $best);
     }
 
-    return max(0.0, $best);
+    return array_sum($scores) / count($scores);
 }
 
 function openai_embedding(string $text): ?array
 {
+    if (!function_exists('curl_init')) {
+        return null;
+    }
+
     $apiKey = getenv('OPENAI_API_KEY') ?: ($_ENV['OPENAI_API_KEY'] ?? '');
 
     if ($apiKey === '') {
@@ -124,10 +145,15 @@ function openai_embedding(string $text): ?array
 
     $payload = json_encode([
         'model' => getenv('OPENAI_EMBEDDING_MODEL') ?: 'text-embedding-3-small',
-        'input' => $text,
+        'input' => mb_substr($text, 0, 8000),
     ]);
 
     $ch = curl_init('https://api.openai.com/v1/embeddings');
+
+    if ($ch === false) {
+        return null;
+    }
+
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_POST => true,
@@ -148,19 +174,33 @@ function openai_embedding(string $text): ?array
     }
 
     $json = json_decode((string)$response, true);
-    return $json['data'][0]['embedding'] ?? null;
+    $embedding = $json['data'][0]['embedding'] ?? null;
+
+    return is_array($embedding) ? $embedding : null;
 }
 
-function vector_dot(array $a, array $b): float
+function embedding_cosine_similarity(array $a, array $b): float
 {
-    $sum = 0.0;
+    $dot = 0.0;
+    $normA = 0.0;
+    $normB = 0.0;
+
     $count = min(count($a), count($b));
 
     for ($i = 0; $i < $count; $i++) {
-        $sum += ((float)$a[$i]) * ((float)$b[$i]);
+        $va = (float)$a[$i];
+        $vb = (float)$b[$i];
+
+        $dot += $va * $vb;
+        $normA += $va * $va;
+        $normB += $vb * $vb;
     }
 
-    return $sum;
+    if ($normA <= 0 || $normB <= 0) {
+        return 0.0;
+    }
+
+    return $dot / (sqrt($normA) * sqrt($normB));
 }
 
 try {
@@ -199,13 +239,13 @@ try {
         $embeddingScore = 0.0;
 
         if (is_array($queryEmbedding) && is_array($row['openai_embedding'] ?? null)) {
-            $embeddingScore = vector_dot(
+            $embeddingScore = embedding_cosine_similarity(
                 $queryEmbedding,
                 $row['openai_embedding']
             );
         }
 
-        $finalScore = ($localScore * 0.55) + ($typoBoost * 0.20) + ($embeddingScore * 0.25);
+        $finalScore = ($localScore * 0.50) + ($typoBoost * 0.15) + ($embeddingScore * 0.35);
 
         if ($finalScore <= 0.05) {
             continue;
