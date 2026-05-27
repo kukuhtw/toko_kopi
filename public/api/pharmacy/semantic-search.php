@@ -13,9 +13,43 @@ function normalize_text(string $text): string
     return trim((string)preg_replace('/\s+/', ' ', (string)$text));
 }
 
+function pharmacy_synonyms(): array
+{
+    return [
+        'demam' => ['panas', 'meriang', 'fever'],
+        'flu' => ['pilek', 'influenza', 'bersin'],
+        'batuk' => ['cough', 'tenggorokan'],
+        'lambung' => ['maag', 'asam lambung'],
+        'maag' => ['lambung', 'gastritis'],
+        'nyeri' => ['sakit', 'pain'],
+        'sakit' => ['nyeri', 'pain'],
+        'vitamin' => ['suplemen', 'imunitas'],
+        'gatal' => ['alergi', 'ruam'],
+        'anak' => ['balita', 'bayi'],
+    ];
+}
+
+function expand_synonyms(string $text): string
+{
+    $normalized = normalize_text($text);
+    $tokens = array_filter(explode(' ', $normalized));
+    $expanded = $tokens;
+    $dict = pharmacy_synonyms();
+
+    foreach ($tokens as $token) {
+        if (isset($dict[$token])) {
+            foreach ($dict[$token] as $synonym) {
+                $expanded[] = $synonym;
+            }
+        }
+    }
+
+    return implode(' ', $expanded);
+}
+
 function build_vector(string $text): array
 {
-    $tokens = array_filter(explode(' ', normalize_text($text)));
+    $tokens = array_filter(explode(' ', normalize_text(expand_synonyms($text))));
     $vector = [];
 
     foreach ($tokens as $token) {
@@ -53,6 +87,82 @@ function cosine_similarity(array $a, array $b): float
     return $dot / (sqrt($normA) * sqrt($normB));
 }
 
+function typo_score(string $query, string $text): float
+{
+    $queryTokens = array_filter(explode(' ', normalize_text($query)));
+    $textTokens = array_filter(explode(' ', normalize_text($text)));
+
+    $best = 0.0;
+
+    foreach ($queryTokens as $q) {
+        foreach ($textTokens as $t) {
+            $distance = levenshtein($q, $t);
+            $maxLen = max(strlen($q), strlen($t));
+
+            if ($maxLen <= 0) {
+                continue;
+            }
+
+            $score = 1 - ($distance / $maxLen);
+
+            if ($score > $best) {
+                $best = $score;
+            }
+        }
+    }
+
+    return max(0.0, $best);
+}
+
+function openai_embedding(string $text): ?array
+{
+    $apiKey = getenv('OPENAI_API_KEY') ?: ($_ENV['OPENAI_API_KEY'] ?? '');
+
+    if ($apiKey === '') {
+        return null;
+    }
+
+    $payload = json_encode([
+        'model' => getenv('OPENAI_EMBEDDING_MODEL') ?: 'text-embedding-3-small',
+        'input' => $text,
+    ]);
+
+    $ch = curl_init('https://api.openai.com/v1/embeddings');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST => true,
+        CURLOPT_HTTPHEADER => [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . $apiKey,
+        ],
+        CURLOPT_POSTFIELDS => $payload,
+        CURLOPT_TIMEOUT => 30,
+    ]);
+
+    $response = curl_exec($ch);
+    $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($response === false || $status < 200 || $status >= 300) {
+        return null;
+    }
+
+    $json = json_decode((string)$response, true);
+    return $json['data'][0]['embedding'] ?? null;
+}
+
+function vector_dot(array $a, array $b): float
+{
+    $sum = 0.0;
+    $count = min(count($a), count($b));
+
+    for ($i = 0; $i < $count; $i++) {
+        $sum += ((float)$a[$i]) * ((float)$b[$i]);
+    }
+
+    return $sum;
+}
+
 try {
     $query = trim((string)($_GET['q'] ?? ''));
 
@@ -72,16 +182,32 @@ try {
         throw new RuntimeException('Invalid semantic index data.');
     }
 
-    $queryVector = build_vector($query);
+    $expandedQuery = expand_synonyms($query);
+    $queryVector = build_vector($expandedQuery);
+    $queryEmbedding = openai_embedding($expandedQuery);
+
     $results = [];
 
     foreach ($index['rows'] as $row) {
-        $score = cosine_similarity(
+        $localScore = cosine_similarity(
             $queryVector,
             $row['vector'] ?? []
         );
 
-        if ($score <= 0) {
+        $typoBoost = typo_score($expandedQuery, $row['text'] ?? '');
+
+        $embeddingScore = 0.0;
+
+        if (is_array($queryEmbedding) && is_array($row['openai_embedding'] ?? null)) {
+            $embeddingScore = vector_dot(
+                $queryEmbedding,
+                $row['openai_embedding']
+            );
+        }
+
+        $finalScore = ($localScore * 0.55) + ($typoBoost * 0.20) + ($embeddingScore * 0.25);
+
+        if ($finalScore <= 0.05) {
             continue;
         }
 
@@ -90,20 +216,26 @@ try {
             'name' => $row['name'],
             'description' => $row['description'],
             'requires_prescription' => $row['requires_prescription'] ?? 0,
-            'score' => round($score, 5),
+            'local_score' => round($localScore, 5),
+            'typo_score' => round($typoBoost, 5),
+            'embedding_score' => round($embeddingScore, 5),
+            'final_score' => round($finalScore, 5),
         ];
     }
 
     usort($results, static function ($a, $b) {
-        return $b['score'] <=> $a['score'];
+        return $b['final_score'] <=> $a['final_score'];
     });
 
     $results = array_slice($results, 0, 20);
 
     echo json_encode([
         'success' => true,
-        'engine' => 'local-token-vector',
+        'engine' => is_array($queryEmbedding)
+            ? 'openai-embedding-hybrid-search'
+            : 'local-vector-hybrid-search',
         'query' => $query,
+        'expanded_query' => $expandedQuery,
         'results' => $results,
     ]);
 } catch (Throwable $e) {
