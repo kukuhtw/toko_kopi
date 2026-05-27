@@ -51,6 +51,7 @@ function docsCatalog(): array
         'instalasi',
         'lisensi',
         'plugin-system',
+        'woocommerce-vs-ai-agent-commerce',
         'tutorial-membuat-plugin',
         'faq-rag-and-complaints',
         'moka-connect-private-solution',
@@ -477,8 +478,8 @@ function docsBrandRemarkHtml(): string
     return <<<HTML
 <section class="docs-brand-remark-wrap">
   <div class="docs-brand-remark">
-    <div class="docs-brand-remark-kicker">&#9749; AI Agent Coffee Shop Commerce Platform</div>
-    <p>Platform AI untuk otomatisasi order, customer service, loyalty customer, FAQ RAG, complaint ticketing, POS connector, Customer CRM, Customer Portal, dan manajemen multi cabang coffee shop.</p>
+    <div class="docs-brand-remark-kicker">AI Agent Commerce Platform</div>
+    <p>Platform AI untuk otomatisasi order, customer service, loyalty customer, FAQ RAG, complaint ticketing, POS connector, delivery connector, Customer CRM, Customer Portal, dan manajemen multi cabang untuk bisnis kuliner, pharmacy, mart, fresh market, dan retail.</p>
     <div class="docs-brand-remark-grid">
       <div>
         <h3>&#128640; Features</h3>
@@ -490,16 +491,16 @@ function docsBrandRemarkHtml(): string
           <li>Order via Website &amp; Chat Apps</li>
           <li>Variant Product &amp; Topping Support</li>
           <li>Loyalty Point, Customer CRM, dan Customer Portal</li>
-          <li>FAQ RAG, Complaint Ticketing, dan POS Connector</li>
-          <li>Multi Currency, Tax &amp; Timezone</li>
+          <li>FAQ RAG, Complaint Ticketing, POS Connector, dan Delivery Connector</li>
+          <li>Menu Templates: Coffee, Bakery, Fruit, Meat, Veggie, Pharmacy, dan Mart</li>
           <li>AI Customer Interaction Automation</li>
         </ul>
       </div>
       <div>
         <h3>&#128187; Tech Stack</h3>
         <p>PHP Native &bull; MySQL &bull; OpenAI &bull; Anthropic<br>WhatsApp Gateway &bull; REST API &bull; LLM AI &bull; RAG Lokal</p>
-        <h3>&#9749; Suitable For</h3>
-        <p>Coffee Shop &bull; Cafe &bull; Restaurant &bull; Bakery &bull; Beverage Store</p>
+        <h3>Suitable For</h3>
+        <p>Coffee Shop &bull; Cafe &bull; Restaurant &bull; Bakery &bull; Pharmacy &bull; Mini Mart &bull; Retail Mart &bull; Fresh Market</p>
       </div>
       <div>
         <h3>Dibuat &amp; Dikembangkan oleh</h3>
@@ -571,336 +572,57 @@ function docsPageShell(string $title, string $bodyClass, string $mainContent, st
       backdrop-filter: blur(8px);
       border-bottom: 1px solid var(--doc-border);
     }
-    .docs-brand {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 10px;
-      color: var(--doc-accent-strong);
-      font-weight: 700;
-    }
-    .docs-brand a,
-    .docs-actions a {
-      color: inherit;
-      text-decoration: none;
-    }
-    .docs-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-    }
-    .docs-link-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 9px 14px;
-      border-radius: 999px;
-      background: #fff;
-      border: 1px solid var(--doc-border);
-      color: var(--doc-accent-strong);
-      font-size: 0.88rem;
-      font-weight: 600;
-    }
-    .docs-shell {
-      max-width: 1320px;
-      margin: 0 auto;
-      padding: 28px 20px 48px;
-      display: grid;
-      grid-template-columns: minmax(0, 260px) minmax(0, 1fr) minmax(0, 240px);
-      gap: 22px;
-    }
-    .docs-brand-remark-wrap {
-      max-width: 1320px;
-      margin: 0 auto;
-      padding: 24px 20px 0;
-    }
-    .docs-brand-remark {
-      background: linear-gradient(135deg, rgba(91, 56, 31, 0.98), rgba(139, 94, 60, 0.96));
-      color: #fff8f1;
-      border-radius: 28px;
-      border: 1px solid rgba(255, 232, 204, 0.18);
-      box-shadow: 0 18px 38px rgba(91, 61, 40, 0.16);
-      padding: 28px;
-    }
-    .docs-brand-remark-kicker {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 14px;
-      border-radius: 999px;
-      background: rgba(255, 222, 173, 0.14);
-      border: 1px solid rgba(255, 222, 173, 0.22);
-      font-size: 0.8rem;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
-    .docs-brand-remark > p {
-      margin: 16px 0 0;
-      max-width: 760px;
-      line-height: 1.75;
-      color: rgba(255, 248, 241, 0.92);
-    }
-    .docs-brand-remark-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 18px;
-      margin-top: 22px;
-    }
-    .docs-brand-remark-grid > div {
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 20px;
-      padding: 18px 18px 16px;
-    }
-    .docs-brand-remark-grid h3 {
-      margin: 0 0 10px;
-      font-size: 0.95rem;
-      color: #ffe0ab;
-    }
-    .docs-brand-remark-grid p,
-    .docs-brand-remark-grid li {
-      color: rgba(255, 248, 241, 0.92);
-      line-height: 1.7;
-      font-size: 0.92rem;
-    }
-    .docs-brand-remark-grid ul {
-      margin: 0;
-      padding-left: 18px;
-    }
-    .docs-brand-remark-grid a {
-      color: #ffe0ab;
-    }
-    .docs-card {
-      background: var(--doc-surface);
-      border: 1px solid var(--doc-border);
-      border-radius: 22px;
-      box-shadow: 0 12px 30px rgba(91, 61, 40, 0.08);
-    }
-    .docs-sidebar,
-    .docs-toc {
-      padding: 20px;
-      position: sticky;
-      top: 82px;
-      align-self: start;
-    }
-    .docs-sidebar h2,
-    .docs-toc h2 {
-      margin: 0 0 14px;
-      font-size: 0.95rem;
-      color: var(--doc-accent-strong);
-    }
-    .docs-sidebar nav,
-    .docs-toc nav {
-      display: grid;
-      gap: 8px;
-    }
-    .docs-sidebar nav a,
-    .docs-toc nav a {
-      text-decoration: none;
-      color: var(--doc-text-soft);
-      padding: 10px 12px;
-      border-radius: 12px;
-      transition: background 0.2s ease, color 0.2s ease;
-      font-size: 0.9rem;
-      line-height: 1.45;
-    }
-    .docs-sidebar nav a:hover,
-    .docs-sidebar nav a.is-active,
-    .docs-toc nav a:hover {
-      background: rgba(139, 94, 60, 0.09);
-      color: var(--doc-accent-strong);
-    }
-    .docs-toc nav a.toc-level-3 {
-      padding-left: 22px;
-      font-size: 0.85rem;
-    }
-    .docs-main {
-      padding: 28px 30px 34px;
-      overflow: hidden;
-    }
-    .docs-kicker {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 16px;
-      padding: 7px 13px;
-      border-radius: 999px;
-      background: rgba(200, 146, 42, 0.12);
-      color: var(--doc-accent-strong);
-      font-weight: 700;
-      font-size: 0.78rem;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
-    .docs-main h1,
-    .docs-main h2,
-    .docs-main h3,
-    .docs-main h4,
-    .docs-main h5,
-    .docs-main h6 {
-      color: var(--doc-accent-strong);
-      line-height: 1.2;
-      scroll-margin-top: 96px;
-    }
-    .docs-main h1 { font-size: clamp(2rem, 4vw, 2.7rem); margin: 0 0 18px; }
-    .docs-main h2 { font-size: 1.45rem; margin: 32px 0 12px; }
-    .docs-main h3 { font-size: 1.15rem; margin: 24px 0 10px; }
-    .docs-main p,
-    .docs-main li,
-    .docs-main blockquote {
-      color: var(--doc-text);
-      line-height: 1.75;
-      font-size: 0.96rem;
-    }
-    .docs-main p { margin: 0 0 14px; }
-    .docs-main ul,
-    .docs-main ol {
-      margin: 0 0 16px 20px;
-      padding: 0;
-    }
+    .docs-brand { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; color: var(--doc-accent-strong); font-weight: 700; }
+    .docs-brand a, .docs-actions a { color: inherit; text-decoration: none; }
+    .docs-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .docs-link-chip { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 999px; background: #fff; border: 1px solid var(--doc-border); color: var(--doc-accent-strong); font-size: 0.88rem; font-weight: 600; }
+    .docs-shell { max-width: 1320px; margin: 0 auto; padding: 28px 20px 48px; display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr) minmax(0, 240px); gap: 22px; }
+    .docs-brand-remark-wrap { max-width: 1320px; margin: 0 auto; padding: 24px 20px 0; }
+    .docs-brand-remark { background: linear-gradient(135deg, rgba(91, 56, 31, 0.98), rgba(139, 94, 60, 0.96)); color: #fff8f1; border-radius: 28px; border: 1px solid rgba(255, 232, 204, 0.18); box-shadow: 0 18px 38px rgba(91, 61, 40, 0.16); padding: 28px; }
+    .docs-brand-remark-kicker { display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px; border-radius: 999px; background: rgba(255, 255, 255, 0.13); border: 1px solid rgba(255, 255, 255, 0.2); color: #ffe2ad; font-size: 0.8rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+    .docs-brand-remark p { color: rgba(255, 248, 241, 0.9); line-height: 1.75; }
+    .docs-brand-remark-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 20px; }
+    .docs-brand-remark-grid > div { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.13); border-radius: 18px; padding: 18px; }
+    .docs-brand-remark h3 { margin: 0 0 10px; color: #ffe2ad; font-size: 0.98rem; }
+    .docs-brand-remark ul { margin: 0; padding-left: 19px; }
+    .docs-brand-remark li { color: rgba(255, 248, 241, 0.92); line-height: 1.65; font-size: 0.9rem; }
+    .docs-brand-remark li + li { margin-top: 4px; }
+    .docs-brand-remark a { color: #ffe2ad; text-decoration: none; }
+    .docs-card { background: rgba(255, 253, 249, 0.95); border: 1px solid var(--doc-border); border-radius: 22px; box-shadow: 0 14px 36px rgba(91, 61, 40, 0.08); }
+    .docs-sidebar, .docs-toc { position: sticky; top: 82px; align-self: start; padding: 20px; }
+    .docs-sidebar h2, .docs-toc h2 { margin: 0 0 14px; color: var(--doc-accent-strong); font-size: 1rem; }
+    .docs-sidebar nav, .docs-toc nav { display: grid; gap: 8px; }
+    .docs-sidebar a, .docs-toc a { display: block; padding: 9px 11px; border-radius: 12px; color: var(--doc-text-soft); text-decoration: none; font-size: 0.9rem; line-height: 1.35; }
+    .docs-sidebar a:hover, .docs-sidebar a.is-active, .docs-toc a:hover { background: rgba(139, 94, 60, 0.09); color: var(--doc-accent-strong); }
+    .toc-level-3 { margin-left: 12px; font-size: 0.84rem !important; }
+    .docs-main { padding: 34px 38px 42px; min-width: 0; }
+    .docs-kicker { display: inline-flex; margin-bottom: 12px; padding: 7px 12px; border-radius: 999px; background: rgba(139, 94, 60, 0.1); color: var(--doc-accent-strong); font-size: 0.78rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+    .docs-main h1 { margin: 0 0 16px; color: var(--doc-accent-strong); font-size: clamp(1.8rem, 4vw, 2.8rem); line-height: 1.15; }
+    .docs-main h2 { margin: 34px 0 14px; color: var(--doc-accent-strong); font-size: 1.5rem; }
+    .docs-main h3 { margin: 26px 0 10px; color: var(--doc-accent-strong); font-size: 1.14rem; }
+    .docs-main p { color: var(--doc-text); line-height: 1.78; margin: 0 0 16px; }
+    .docs-main ul, .docs-main ol { margin: 0 0 16px 20px; padding: 0; }
     .docs-main li + li { margin-top: 6px; }
-    .docs-main hr {
-      border: 0;
-      border-top: 1px solid var(--doc-border);
-      margin: 26px 0;
-    }
-    .docs-main code {
-      font-family: Consolas, "Courier New", monospace;
-      background: rgba(139, 94, 60, 0.1);
-      color: var(--doc-accent-strong);
-      padding: 0.15rem 0.4rem;
-      border-radius: 8px;
-      font-size: 0.9em;
-    }
-    .docs-main pre {
-      margin: 18px 0 22px;
-      padding: 18px 20px;
-      background: var(--doc-code-bg);
-      color: var(--doc-code-text);
-      border-radius: 18px;
-      overflow: auto;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-    .docs-main pre code {
-      background: transparent;
-      color: inherit;
-      padding: 0;
-      border-radius: 0;
-      display: block;
-      white-space: pre;
-    }
-    .docs-main blockquote {
-      margin: 18px 0;
-      padding: 14px 18px;
-      border-left: 4px solid rgba(139, 94, 60, 0.4);
-      background: rgba(139, 94, 60, 0.07);
-      border-radius: 0 16px 16px 0;
-    }
-    .docs-main a {
-      color: var(--doc-accent);
-      text-decoration: none;
-      font-weight: 600;
-    }
+    .docs-main hr { border: 0; border-top: 1px solid var(--doc-border); margin: 26px 0; }
+    .docs-main code { font-family: Consolas, "Courier New", monospace; background: rgba(139, 94, 60, 0.1); color: var(--doc-accent-strong); padding: 0.15rem 0.4rem; border-radius: 8px; font-size: 0.9em; }
+    .docs-main pre { margin: 18px 0 22px; padding: 18px 20px; background: var(--doc-code-bg); color: var(--doc-code-text); border-radius: 18px; overflow: auto; border: 1px solid rgba(255, 255, 255, 0.05); }
+    .docs-main pre code { background: transparent; color: inherit; padding: 0; border-radius: 0; display: block; white-space: pre; }
+    .docs-main blockquote { margin: 18px 0; padding: 14px 18px; border-left: 4px solid rgba(139, 94, 60, 0.4); background: rgba(139, 94, 60, 0.07); border-radius: 0 16px 16px 0; }
+    .docs-main a { color: var(--doc-accent); text-decoration: none; font-weight: 600; }
     .docs-main a:hover { text-decoration: underline; }
-    .doc-table-wrap {
-      overflow: auto;
-      margin: 18px 0 22px;
-      border: 1px solid var(--doc-border);
-      border-radius: 18px;
-      background: #fff;
-    }
-    .doc-table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 520px;
-    }
-    .doc-table th,
-    .doc-table td {
-      padding: 12px 14px;
-      border-bottom: 1px solid rgba(85, 56, 33, 0.08);
-      text-align: left;
-      vertical-align: top;
-      font-size: 0.92rem;
-    }
-    .doc-table th {
-      background: rgba(139, 94, 60, 0.08);
-      color: var(--doc-accent-strong);
-      font-weight: 700;
-    }
+    .doc-table-wrap { overflow: auto; margin: 18px 0 22px; border: 1px solid var(--doc-border); border-radius: 18px; background: #fff; }
+    .doc-table { width: 100%; border-collapse: collapse; min-width: 520px; }
+    .doc-table th, .doc-table td { padding: 12px 14px; border-bottom: 1px solid rgba(85, 56, 33, 0.08); text-align: left; vertical-align: top; font-size: 0.92rem; }
+    .doc-table th { background: rgba(139, 94, 60, 0.08); color: var(--doc-accent-strong); font-weight: 700; }
     .doc-table tr:last-child td { border-bottom: 0; }
-    .docs-empty {
-      padding: 36px;
-      text-align: center;
-      color: var(--doc-text-soft);
-    }
-    .docs-listing {
-      display: grid;
-      gap: 16px;
-    }
-    .docs-listing-item {
-      padding: 20px 22px;
-      border-radius: 20px;
-      border: 1px solid var(--doc-border);
-      background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255,248,241,0.98));
-    }
-    .docs-listing-item h3 {
-      margin: 0 0 8px;
-      color: var(--doc-accent-strong);
-      font-size: 1.05rem;
-    }
-    .docs-listing-item p {
-      margin: 0 0 14px;
-      color: var(--doc-text-soft);
-      line-height: 1.7;
-    }
-    .docs-listing-item a {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      text-decoration: none;
-      color: var(--doc-accent-strong);
-      font-weight: 700;
-    }
-    @media (max-width: 1100px) {
-      .docs-brand-remark-grid {
-        grid-template-columns: minmax(0, 1fr);
-      }
-      .docs-shell {
-        grid-template-columns: minmax(0, 1fr);
-      }
-      .docs-sidebar,
-      .docs-toc {
-        position: static;
-      }
-      .docs-toc {
-        order: 3;
-      }
-    }
-    @media (max-width: 720px) {
-      .docs-brand-remark-wrap {
-        padding: 18px 14px 0;
-      }
-      .docs-brand-remark {
-        padding: 22px 18px;
-        border-radius: 22px;
-      }
-      .docs-topbar {
-        padding: 14px 16px;
-        align-items: flex-start;
-        flex-direction: column;
-      }
-      .docs-shell {
-        padding: 20px 14px 36px;
-      }
-      .docs-main {
-        padding: 22px 18px 26px;
-      }
-      .docs-actions {
-        width: 100%;
-      }
-    }
+    .docs-empty { padding: 36px; text-align: center; color: var(--doc-text-soft); }
+    .docs-listing { display: grid; gap: 16px; }
+    .docs-listing-item { padding: 20px 22px; border-radius: 20px; border: 1px solid var(--doc-border); background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255,248,241,0.98)); }
+    .docs-listing-item h3 { margin: 0 0 8px; color: var(--doc-accent-strong); font-size: 1.05rem; }
+    .docs-listing-item p { margin: 0 0 14px; color: var(--doc-text-soft); line-height: 1.7; }
+    .docs-listing-item a { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: var(--doc-accent-strong); font-weight: 700; }
+    @media (max-width: 1100px) { .docs-brand-remark-grid { grid-template-columns: minmax(0, 1fr); } .docs-shell { grid-template-columns: minmax(0, 1fr); } .docs-sidebar, .docs-toc { position: static; } .docs-toc { order: 3; } }
+    @media (max-width: 720px) { .docs-brand-remark-wrap { padding: 18px 14px 0; } .docs-brand-remark { padding: 22px 18px; border-radius: 22px; } .docs-topbar { padding: 14px 16px; align-items: flex-start; flex-direction: column; } .docs-shell { padding: 20px 14px 36px; } .docs-main { padding: 22px 18px 26px; } .docs-actions { width: 100%; } }
   </style>
 </head>
 <body class="{$bodyClass}">
@@ -998,7 +720,7 @@ function docsRenderIndexPage(): string
   <section class="docs-card docs-main">
     <div class="docs-kicker">Dokumentasi Developer</div>
     <h1>Dokumentasi HTML KopiBot AI</h1>
-    <p>Semua file di folder <code>/docs</code> sekarang punya versi HTML yang lebih nyaman dibaca di browser. Konten sumbernya tetap Markdown, jadi dokumentasi tetap satu sumber dan lebih mudah dirawat, termasuk update terbaru untuk FAQ RAG, complaint automation, integrasi Moka Connect, integrasi GoSend, loyalty, Customer CRM, dan Customer Portal.</p>
+    <p>Semua file di folder <code>/docs</code> sekarang punya versi HTML yang lebih nyaman dibaca di browser. Konten sumbernya tetap Markdown, jadi dokumentasi tetap satu sumber dan lebih mudah dirawat, termasuk update terbaru untuk AI Agent Commerce multi-vertical, perbandingan dengan WooCommerce, FAQ RAG, complaint automation, integrasi Moka Connect, integrasi GoSend, loyalty, Customer CRM, dan Customer Portal.</p>
     <div class="docs-listing">
       {$listing}
     </div>
@@ -1011,6 +733,7 @@ function docsRenderIndexPage(): string
       <a href="instalasi.php">Panduan Instalasi</a>
       <a href="lisensi.php">Lisensi AGPL + Commercial</a>
       <a href="plugin-system.php">Plugin System</a>
+      <a href="woocommerce-vs-ai-agent-commerce.php">WooCommerce vs AI Agent Commerce</a>
       <a href="faq-rag-and-complaints.php">FAQ RAG &amp; Complaint Handling</a>
       <a href="moka-connect-private-solution.php">Moka Connect / Private Solution</a>
       <a href="gosend-delivery.php">GoSend Delivery</a>
