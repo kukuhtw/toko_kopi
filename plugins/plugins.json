@@ -89,6 +89,9 @@
     "coffee-template": {
         "active": true
     },
+    "pharmacy-template": {
+        "active": true
+    },
     "ipaymu-payment": {
         "active": true
     },
