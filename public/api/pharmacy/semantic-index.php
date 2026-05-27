@@ -58,7 +58,7 @@ function expand_synonyms(string $text): string
         }
     }
 
-    return implode(' ', $expanded);
+    return implode(' ', array_unique($expanded));
 }
 
 function build_vector(string $text): array
@@ -80,6 +80,10 @@ function build_vector(string $text): array
 
 function openai_embedding(string $text): ?array
 {
+    if (!function_exists('curl_init')) {
+        return null;
+    }
+
     $apiKey = getenv('OPENAI_API_KEY') ?: ($_ENV['OPENAI_API_KEY'] ?? '');
 
     if ($apiKey === '') {
@@ -88,10 +92,15 @@ function openai_embedding(string $text): ?array
 
     $payload = json_encode([
         'model' => getenv('OPENAI_EMBEDDING_MODEL') ?: 'text-embedding-3-small',
-        'input' => $text,
+        'input' => mb_substr($text, 0, 8000),
     ]);
 
     $ch = curl_init('https://api.openai.com/v1/embeddings');
+
+    if ($ch === false) {
+        return null;
+    }
+
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_POST => true,
@@ -112,7 +121,9 @@ function openai_embedding(string $text): ?array
     }
 
     $json = json_decode((string)$response, true);
-    return $json['data'][0]['embedding'] ?? null;
+    $embedding = $json['data'][0]['embedding'] ?? null;
+
+    return is_array($embedding) ? $embedding : null;
 }
 
 try {
