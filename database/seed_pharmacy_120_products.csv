@@ -1,0 +1,20 @@
+category,product_name,generic_name,dosage,manufacturer,requires_prescription,default_price
+Obat Demam & Nyeri,Paracetamol 500mg,Paracetamol,500mg,Kimia Farma,0,12000
+Obat Demam & Nyeri,Ibuprofen 200mg,Ibuprofen,200mg,Tempo Scan,0,18000
+Obat Demam & Nyeri,Asam Mefenamat 500mg,Mefenamic Acid,500mg,Hexpharm,1,22000
+Alergi & Flu,Cetirizine 10mg,Cetirizine,10mg,Kimia Farma,0,15000
+Alergi & Flu,Loratadine 10mg,Loratadine,10mg,Kalbe,0,17000
+Antibiotik,Amoxicillin 500mg,Amoxicillin,500mg,Hexpharm,1,28000
+Antibiotik,Cefixime 100mg,Cefixime,100mg,Sanbe,1,45000
+Lambung & Pencernaan,Omeprazole 20mg,Omeprazole,20mg,Kalbe,0,23000
+Lambung & Pencernaan,Antasida DOEN,Antacid,Tablet,Kimia Farma,0,9000
+Batuk & Tenggorokan,OBH Combi,Dextromethorphan,Syrup,Combiphar,0,22000
+Vitamin & Suplemen,Vitamin C 1000mg,Vitamin C,1000mg,Blackmores,0,65000
+Vitamin & Suplemen,Enervon-C,Vitamin C + B Complex,Tablet,DLBS,0,28000
+Antiseptik & Luka,Betadine Solution,Povidone Iodine,15ml,Mundipharma,0,19000
+Kulit & Alergi,Hydrocortisone Cream,Hydrocortisone,10g,Kimia Farma,1,24000
+Penyakit Kronis,Metformin 500mg,Metformin,500mg,Hexpharm,1,26000
+Penyakit Kronis,Amlodipine 5mg,Amlodipine,5mg,Kalbe,1,18000
+Alat Kesehatan,Thermometer Digital,Thermometer,Unit,Omron,0,85000
+Ibu & Anak,Minyak Telon,Telon Oil,60ml,Konicare,0,25000
+Kebersihan & Personal Care,Hand Sanitizer,Alcohol Gel,60ml,Dettol,0,18000
