@@ -1,0 +1,131 @@
+category,product_name,variant_name,sku,barcode,brand,unit,pack_size,has_expiry,low_stock_threshold,default_stock,purchase_price,selling_price
+"Beras & Sembako","Beras Ramos 5kg","Regular","MM-0001","8991000000001","Beras","kg","Beras Ramos 5kg",1,5,20,5250,6562
+"Beras & Sembako","Beras Pandan Wangi 5kg","Regular","MM-0002","8991000000002","Beras","kg","Beras Pandan Wangi 5kg",1,5,20,5500,6875
+"Beras & Sembako","Beras Setra Ramos 10kg","Regular","MM-0003","8991000000003","Beras","kg","Beras Setra Ramos 10kg",1,5,20,5750,7187
+"Beras & Sembako","Telur Ayam 1kg","Regular","MM-0004","8991000000004","Telur","kg","Telur Ayam 1kg",1,5,20,6000,7500
+"Beras & Sembako","Tepung Terigu 1kg","Regular","MM-0005","8991000000005","Tepung","kg","Tepung Terigu 1kg",1,5,20,6250,7812
+"Beras & Sembako","Tepung Beras 500g","Regular","MM-0006","8991000000006","Tepung","pcs","Tepung Beras 500g",1,5,20,6500,8125
+"Beras & Sembako","Kecap Manis 600ml","Regular","MM-0007","8991000000007","Kecap","bottle","Kecap Manis 600ml",1,5,20,6750,8437
+"Beras & Sembako","Saus Sambal 340ml","Regular","MM-0008","8991000000008","Saus","bottle","Saus Sambal 340ml",1,5,20,7000,8750
+"Beras & Sembako","Sarden Kaleng 425g","Regular","MM-0009","8991000000009","Sarden","pcs","Sarden Kaleng 425g",1,5,20,7250,9062
+"Beras & Sembako","Kornet Sapi 198g","Regular","MM-0010","8991000000010","Kornet","pcs","Kornet Sapi 198g",1,5,20,7500,9375
+"Minyak Gula Garam Bumbu","Minyak Goreng 1L","Regular","MM-0011","8991000000011","Minyak","bottle","Minyak Goreng 1L",1,5,20,7750,9687
+"Minyak Gula Garam Bumbu","Minyak Goreng 2L","Regular","MM-0012","8991000000012","Minyak","bottle","Minyak Goreng 2L",1,5,20,8000,10000
+"Minyak Gula Garam Bumbu","Gula Pasir 1kg","Regular","MM-0013","8991000000013","Gula","kg","Gula Pasir 1kg",1,5,20,8250,10312
+"Minyak Gula Garam Bumbu","Garam Dapur 500g","Regular","MM-0014","8991000000014","Garam","pcs","Garam Dapur 500g",1,5,20,8500,10625
+"Minyak Gula Garam Bumbu","Merica Bubuk 100g","Regular","MM-0015","8991000000015","Merica","pcs","Merica Bubuk 100g",1,5,20,8750,10937
+"Minyak Gula Garam Bumbu","Ketumbar Bubuk 100g","Regular","MM-0016","8991000000016","Ketumbar","pcs","Ketumbar Bubuk 100g",1,5,20,9000,11250
+"Minyak Gula Garam Bumbu","Bumbu Nasi Goreng Sachet","Regular","MM-0017","8991000000017","Bumbu","pcs","Bumbu Nasi Goreng Sachet",1,5,20,9250,11562
+"Minyak Gula Garam Bumbu","Bumbu Rendang Sachet","Regular","MM-0018","8991000000018","Bumbu","pcs","Bumbu Rendang Sachet",1,5,20,9500,11875
+"Minyak Gula Garam Bumbu","Bumbu Soto Sachet","Regular","MM-0019","8991000000019","Bumbu","pcs","Bumbu Soto Sachet",1,5,20,9750,12187
+"Minyak Gula Garam Bumbu","Penyedap Rasa 250g","Regular","MM-0020","8991000000020","Penyedap","pcs","Penyedap Rasa 250g",1,5,20,10000,12500
+"Mie Instan & Pasta","Mie Goreng Instan","Regular","MM-0021","8991000000021","Mie","pcs","Mie Goreng Instan",1,5,20,10250,12812
+"Mie Instan & Pasta","Mie Kuah Ayam Bawang","Regular","MM-0022","8991000000022","Mie","pcs","Mie Kuah Ayam Bawang",1,5,20,10500,13125
+"Mie Instan & Pasta","Mie Kuah Soto","Regular","MM-0023","8991000000023","Mie","pcs","Mie Kuah Soto",1,5,20,10750,13437
+"Mie Instan & Pasta","Mie Kari Ayam","Regular","MM-0024","8991000000024","Mie","pcs","Mie Kari Ayam",1,5,20,11000,13750
+"Mie Instan & Pasta","Mie Jumbo Goreng","Regular","MM-0025","8991000000025","Mie","pcs","Mie Jumbo Goreng",1,5,20,11250,14062
+"Mie Instan & Pasta","Spaghetti 225g","Regular","MM-0026","8991000000026","Spaghetti","pcs","Spaghetti 225g",1,5,20,11500,14375
+"Mie Instan & Pasta","Macaroni 200g","Regular","MM-0027","8991000000027","Macaroni","pcs","Macaroni 200g",1,5,20,11750,14687
+"Mie Instan & Pasta","Bihun Jagung 175g","Regular","MM-0028","8991000000028","Bihun","pcs","Bihun Jagung 175g",1,5,20,12000,15000
+"Mie Instan & Pasta","Kwetiau Kering 200g","Regular","MM-0029","8991000000029","Kwetiau","pcs","Kwetiau Kering 200g",1,5,20,12250,15312
+"Mie Instan & Pasta","Mie Telur 200g","Regular","MM-0030","8991000000030","Mie","pcs","Mie Telur 200g",1,5,20,12500,15625
+"Snack & Biskuit","Keripik Kentang 68g","Regular","MM-0031","8991000000031","Keripik","pcs","Keripik Kentang 68g",1,5,20,12750,15937
+"Snack & Biskuit","Chiki Ball 55g","Regular","MM-0032","8991000000032","Chiki","pcs","Chiki Ball 55g",1,5,20,13000,16250
+"Snack & Biskuit","Wafer Coklat 120g","Regular","MM-0033","8991000000033","Wafer","pcs","Wafer Coklat 120g",1,5,20,13250,16562
+"Snack & Biskuit","Biskuit Kelapa 300g","Regular","MM-0034","8991000000034","Biskuit","pcs","Biskuit Kelapa 300g",1,5,20,13500,16875
+"Snack & Biskuit","Biskuit Sandwich 150g","Regular","MM-0035","8991000000035","Biskuit","pcs","Biskuit Sandwich 150g",1,5,20,13750,17187
+"Snack & Biskuit","Kacang Atom 100g","Regular","MM-0036","8991000000036","Kacang","pcs","Kacang Atom 100g",1,5,20,14000,17500
+"Snack & Biskuit","Kacang Kulit 200g","Regular","MM-0037","8991000000037","Kacang","pcs","Kacang Kulit 200g",1,5,20,14250,17812
+"Snack & Biskuit","Popcorn Caramel 80g","Regular","MM-0038","8991000000038","Popcorn","pcs","Popcorn Caramel 80g",1,5,20,14500,18125
+"Snack & Biskuit","Permen Mint 50g","Regular","MM-0039","8991000000039","Permen","pcs","Permen Mint 50g",1,5,20,14750,18437
+"Snack & Biskuit","Coklat Bar 35g","Regular","MM-0040","8991000000040","Coklat","pcs","Coklat Bar 35g",1,5,20,15000,18750
+"Minuman Botol & Kaleng","Air Mineral 600ml","Regular","MM-0041","8991000000041","Air","bottle","Air Mineral 600ml",1,5,20,15250,19062
+"Minuman Botol & Kaleng","Air Mineral 1.5L","Regular","MM-0042","8991000000042","Air","bottle","Air Mineral 1.5L",1,5,20,15500,19375
+"Minuman Botol & Kaleng","Teh Botol 350ml","Regular","MM-0043","8991000000043","Teh","bottle","Teh Botol 350ml",1,5,20,15750,19687
+"Minuman Botol & Kaleng","Teh Kotak 300ml","Regular","MM-0044","8991000000044","Teh","bottle","Teh Kotak 300ml",1,5,20,16000,20000
+"Minuman Botol & Kaleng","Soda Kaleng 330ml","Regular","MM-0045","8991000000045","Soda","bottle","Soda Kaleng 330ml",1,5,20,16250,20312
+"Minuman Botol & Kaleng","Minuman Isotonik 500ml","Regular","MM-0046","8991000000046","Minuman","bottle","Minuman Isotonik 500ml",1,5,20,16500,20625
+"Minuman Botol & Kaleng","Jus Jeruk Botol 350ml","Regular","MM-0047","8991000000047","Jus","bottle","Jus Jeruk Botol 350ml",1,5,20,16750,20937
+"Minuman Botol & Kaleng","Kopi Susu Botol 220ml","Regular","MM-0048","8991000000048","Kopi","bottle","Kopi Susu Botol 220ml",1,5,20,17000,21250
+"Minuman Botol & Kaleng","Susu UHT Coklat 250ml","Regular","MM-0049","8991000000049","Susu","bottle","Susu UHT Coklat 250ml",1,5,20,17250,21562
+"Minuman Botol & Kaleng","Energy Drink 250ml","Regular","MM-0050","8991000000050","Energy","bottle","Energy Drink 250ml",1,5,20,17500,21875
+"Kopi Teh Susu Bubuk","Kopi Sachet 10pcs","Regular","MM-0051","8991000000051","Kopi","pcs","Kopi Sachet 10pcs",1,5,20,17750,22187
+"Kopi Teh Susu Bubuk","Kopi Hitam Bubuk 200g","Regular","MM-0052","8991000000052","Kopi","pcs","Kopi Hitam Bubuk 200g",1,5,20,18000,22500
+"Kopi Teh Susu Bubuk","Kopi Susu Sachet 10pcs","Regular","MM-0053","8991000000053","Kopi","pcs","Kopi Susu Sachet 10pcs",1,5,20,18250,22812
+"Kopi Teh Susu Bubuk","Teh Celup 25pcs","Regular","MM-0054","8991000000054","Teh","pcs","Teh Celup 25pcs",1,5,20,18500,23125
+"Kopi Teh Susu Bubuk","Teh Melati 40g","Regular","MM-0055","8991000000055","Teh","pcs","Teh Melati 40g",1,5,20,18750,23437
+"Kopi Teh Susu Bubuk","Susu Bubuk Full Cream 400g","Regular","MM-0056","8991000000056","Susu","pcs","Susu Bubuk Full Cream 400g",1,5,20,19000,23750
+"Kopi Teh Susu Bubuk","Susu Bubuk Coklat 400g","Regular","MM-0057","8991000000057","Susu","pcs","Susu Bubuk Coklat 400g",1,5,20,19250,24062
+"Kopi Teh Susu Bubuk","Krimer Kental Manis 370g","Regular","MM-0058","8991000000058","Krimer","pcs","Krimer Kental Manis 370g",1,5,20,19500,24375
+"Kopi Teh Susu Bubuk","Coklat Bubuk 200g","Regular","MM-0059","8991000000059","Coklat","pcs","Coklat Bubuk 200g",1,5,20,19750,24687
+"Kopi Teh Susu Bubuk","Gula Aren Sachet 10pcs","Regular","MM-0060","8991000000060","Gula","pcs","Gula Aren Sachet 10pcs",1,5,20,20000,25000
+"Susu Yogurt Dairy","Susu UHT Plain 1L","Regular","MM-0061","8991000000061","Susu","bottle","Susu UHT Plain 1L",1,5,20,20250,25312
+"Susu Yogurt Dairy","Susu UHT Coklat 1L","Regular","MM-0062","8991000000062","Susu","bottle","Susu UHT Coklat 1L",1,5,20,20500,25625
+"Susu Yogurt Dairy","Yogurt Drink 250ml","Regular","MM-0063","8991000000063","Yogurt","bottle","Yogurt Drink 250ml",1,5,20,20750,25937
+"Susu Yogurt Dairy","Yogurt Cup 100g","Regular","MM-0064","8991000000064","Yogurt","pcs","Yogurt Cup 100g",1,5,20,21000,26250
+"Susu Yogurt Dairy","Keju Cheddar 165g","Regular","MM-0065","8991000000065","Keju","pcs","Keju Cheddar 165g",1,5,20,21250,26562
+"Susu Yogurt Dairy","Mentega 200g","Regular","MM-0066","8991000000066","Mentega","pcs","Mentega 200g",1,5,20,21500,26875
+"Susu Yogurt Dairy","Margarine 200g","Regular","MM-0067","8991000000067","Margarine","pcs","Margarine 200g",1,5,20,21750,27187
+"Susu Yogurt Dairy","Susu Evaporasi 380g","Regular","MM-0068","8991000000068","Susu","pcs","Susu Evaporasi 380g",1,5,20,22000,27500
+"Susu Yogurt Dairy","Whipping Cream 200ml","Regular","MM-0069","8991000000069","Whipping","bottle","Whipping Cream 200ml",1,5,20,22250,27812
+"Susu Yogurt Dairy","Puding Susu Cup","Regular","MM-0070","8991000000070","Puding","pcs","Puding Susu Cup",1,5,20,22500,28125
+"Frozen Food","Nugget Ayam 500g","Regular","MM-0071","8991000000071","Nugget","pcs","Nugget Ayam 500g",1,5,20,22750,28437
+"Frozen Food","Sosis Ayam 375g","Regular","MM-0072","8991000000072","Sosis","pcs","Sosis Ayam 375g",1,5,20,23000,28750
+"Frozen Food","Bakso Sapi 500g","Regular","MM-0073","8991000000073","Bakso","pcs","Bakso Sapi 500g",1,5,20,23250,29062
+"Frozen Food","Kentang Goreng Frozen 500g","Regular","MM-0074","8991000000074","Kentang","pcs","Kentang Goreng Frozen 500g",1,5,20,23500,29375
+"Frozen Food","Siomay Frozen 250g","Regular","MM-0075","8991000000075","Siomay","pcs","Siomay Frozen 250g",1,5,20,23750,29687
+"Frozen Food","Dimsum Frozen 250g","Regular","MM-0076","8991000000076","Dimsum","pcs","Dimsum Frozen 250g",1,5,20,24000,30000
+"Frozen Food","Chicken Karage 400g","Regular","MM-0077","8991000000077","Chicken","pcs","Chicken Karage 400g",1,5,20,24250,30312
+"Frozen Food","Roti Maryam Frozen","Regular","MM-0078","8991000000078","Roti","pcs","Roti Maryam Frozen",1,5,20,24500,30625
+"Frozen Food","Cireng Frozen 300g","Regular","MM-0079","8991000000079","Cireng","pcs","Cireng Frozen 300g",1,5,20,24750,30937
+"Frozen Food","Otak Otak Frozen 250g","Regular","MM-0080","8991000000080","Otak","pcs","Otak Otak Frozen 250g",1,5,20,25000,31250
+"Roti & Bakery Packaged","Roti Tawar 400g","Regular","MM-0081","8991000000081","Roti","pcs","Roti Tawar 400g",1,5,20,25250,31562
+"Roti & Bakery Packaged","Roti Gandum 400g","Regular","MM-0082","8991000000082","Roti","pcs","Roti Gandum 400g",1,5,20,25500,31875
+"Roti & Bakery Packaged","Roti Sobek Coklat","Regular","MM-0083","8991000000083","Roti","pcs","Roti Sobek Coklat",1,5,20,25750,32187
+"Roti & Bakery Packaged","Roti Isi Keju","Regular","MM-0084","8991000000084","Roti","pcs","Roti Isi Keju",1,5,20,26000,32500
+"Roti & Bakery Packaged","Roti Isi Coklat","Regular","MM-0085","8991000000085","Roti","pcs","Roti Isi Coklat",1,5,20,26250,32812
+"Roti & Bakery Packaged","Donat Pack 4pcs","Regular","MM-0086","8991000000086","Donat","pcs","Donat Pack 4pcs",1,5,20,26500,33125
+"Roti & Bakery Packaged","Kue Bolu Slice","Regular","MM-0087","8991000000087","Kue","pcs","Kue Bolu Slice",1,5,20,26750,33437
+"Roti & Bakery Packaged","Brownies Pack","Regular","MM-0088","8991000000088","Brownies","pcs","Brownies Pack",1,5,20,27000,33750
+"Roti & Bakery Packaged","Croissant Pack","Regular","MM-0089","8991000000089","Croissant","pcs","Croissant Pack",1,5,20,27250,34062
+"Roti & Bakery Packaged","Selai Strawberry 250g","Regular","MM-0090","8991000000090","Selai","pcs","Selai Strawberry 250g",1,5,20,27500,34375
+"Personal Care","Sabun Mandi Batang","Regular","MM-0091","8991000000091","Sabun","pcs","Sabun Mandi Batang",0,5,20,27750,34687
+"Personal Care","Sabun Cair 450ml","Regular","MM-0092","8991000000092","Sabun","bottle","Sabun Cair 450ml",0,5,20,28000,35000
+"Personal Care","Shampoo 170ml","Regular","MM-0093","8991000000093","Shampoo","bottle","Shampoo 170ml",0,5,20,28250,35312
+"Personal Care","Pasta Gigi 190g","Regular","MM-0094","8991000000094","Pasta","pcs","Pasta Gigi 190g",0,5,20,28500,35625
+"Personal Care","Sikat Gigi","Regular","MM-0095","8991000000095","Sikat","pcs","Sikat Gigi",0,5,20,28750,35937
+"Personal Care","Deodorant Roll On","Regular","MM-0096","8991000000096","Deodorant","pcs","Deodorant Roll On",0,5,20,29000,36250
+"Personal Care","Tisu Basah","Regular","MM-0097","8991000000097","Tisu","pcs","Tisu Basah",0,5,20,29250,36562
+"Personal Care","Tisu Wajah","Regular","MM-0098","8991000000098","Tisu","pcs","Tisu Wajah",0,5,20,29500,36875
+"Personal Care","Cotton Bud 100pcs","Regular","MM-0099","8991000000099","Cotton","pcs","Cotton Bud 100pcs",0,5,20,29750,37187
+"Personal Care","Hand Sanitizer 100ml","Regular","MM-0100","8991000000100","Hand","bottle","Hand Sanitizer 100ml",0,5,20,30000,37500
+"Household Cleaning","Deterjen Bubuk 800g","Regular","MM-0101","8991000000101","Deterjen","pcs","Deterjen Bubuk 800g",0,5,20,30250,37812
+"Household Cleaning","Deterjen Cair 800ml","Regular","MM-0102","8991000000102","Deterjen","bottle","Deterjen Cair 800ml",0,5,20,30500,38125
+"Household Cleaning","Pewangi Pakaian 800ml","Regular","MM-0103","8991000000103","Pewangi","bottle","Pewangi Pakaian 800ml",0,5,20,30750,38437
+"Household Cleaning","Sabun Cuci Piring 750ml","Regular","MM-0104","8991000000104","Sabun","bottle","Sabun Cuci Piring 750ml",0,5,20,31000,38750
+"Household Cleaning","Pembersih Lantai 800ml","Regular","MM-0105","8991000000105","Pembersih","bottle","Pembersih Lantai 800ml",0,5,20,31250,39062
+"Household Cleaning","Karbol 800ml","Regular","MM-0106","8991000000106","Karbol","bottle","Karbol 800ml",0,5,20,31500,39375
+"Household Cleaning","Pemutih Pakaian 500ml","Regular","MM-0107","8991000000107","Pemutih","bottle","Pemutih Pakaian 500ml",0,5,20,31750,39687
+"Household Cleaning","Spons Cuci Piring","Regular","MM-0108","8991000000108","Spons","pcs","Spons Cuci Piring",0,5,20,32000,40000
+"Household Cleaning","Kantong Sampah","Regular","MM-0109","8991000000109","Kantong","pcs","Kantong Sampah",0,5,20,32250,40312
+"Household Cleaning","Tisu Dapur","Regular","MM-0110","8991000000110","Tisu","pcs","Tisu Dapur",0,5,20,32500,40625
+"Baby & Family Care","Popok Bayi S","Regular","MM-0111","8991000000111","Popok","pcs","Popok Bayi S",1,5,20,32750,40937
+"Baby & Family Care","Popok Bayi M","Regular","MM-0112","8991000000112","Popok","pcs","Popok Bayi M",1,5,20,33000,41250
+"Baby & Family Care","Popok Bayi L","Regular","MM-0113","8991000000113","Popok","pcs","Popok Bayi L",1,5,20,33250,41562
+"Baby & Family Care","Minyak Telon 60ml","Regular","MM-0114","8991000000114","Minyak","bottle","Minyak Telon 60ml",1,5,20,33500,41875
+"Baby & Family Care","Bedak Bayi 100g","Regular","MM-0115","8991000000115","Bedak","pcs","Bedak Bayi 100g",1,5,20,33750,42187
+"Baby & Family Care","Sabun Bayi 200ml","Regular","MM-0116","8991000000116","Sabun","bottle","Sabun Bayi 200ml",1,5,20,34000,42500
+"Baby & Family Care","Shampoo Bayi 200ml","Regular","MM-0117","8991000000117","Shampoo","bottle","Shampoo Bayi 200ml",1,5,20,34250,42812
+"Baby & Family Care","Bubur Bayi Sachet","Regular","MM-0118","8991000000118","Bubur","pcs","Bubur Bayi Sachet",1,5,20,34500,43125
+"Baby & Family Care","Susu Formula 400g","Regular","MM-0119","8991000000119","Susu","pcs","Susu Formula 400g",1,5,20,34750,43437
+"Baby & Family Care","Tisu Bayi Refill","Regular","MM-0120","8991000000120","Tisu","pcs","Tisu Bayi Refill",1,5,20,35000,43750
+"Stationery & Small Utilities","Pulpen Biru","Regular","MM-0121","8991000000121","Pulpen","pcs","Pulpen Biru",0,5,20,35250,44062
+"Stationery & Small Utilities","Pulpen Hitam","Regular","MM-0122","8991000000122","Pulpen","pcs","Pulpen Hitam",0,5,20,35500,44375
+"Stationery & Small Utilities","Pensil 2B","Regular","MM-0123","8991000000123","Pensil","pcs","Pensil 2B",0,5,20,35750,44687
+"Stationery & Small Utilities","Penghapus","Regular","MM-0124","8991000000124","Penghapus","pcs","Penghapus",0,5,20,36000,45000
+"Stationery & Small Utilities","Buku Tulis 38 Lembar","Regular","MM-0125","8991000000125","Buku","pcs","Buku Tulis 38 Lembar",0,5,20,36250,45312
+"Stationery & Small Utilities","Lem Kertas","Regular","MM-0126","8991000000126","Lem","pcs","Lem Kertas",0,5,20,36500,45625
+"Stationery & Small Utilities","Baterai AA 2pcs","Regular","MM-0127","8991000000127","Baterai","pcs","Baterai AA 2pcs",0,5,20,36750,45937
+"Stationery & Small Utilities","Baterai AAA 2pcs","Regular","MM-0128","8991000000128","Baterai","pcs","Baterai AAA 2pcs",0,5,20,37000,46250
+"Stationery & Small Utilities","Lampu LED 9W","Regular","MM-0129","8991000000129","Lampu","pcs","Lampu LED 9W",0,5,20,37250,46562
+"Stationery & Small Utilities","Kabel Charger USB","Regular","MM-0130","8991000000130","Kabel","pcs","Kabel Charger USB",0,5,20,37500,46875
