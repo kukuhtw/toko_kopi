@@ -1,7 +1,7 @@
 # Panduan Instalasi KopiBot
 
-> ## AI Agent Coffee Shop Commerce Platform
-> Platform AI untuk otomatisasi order, customer service, loyalty customer, Customer CRM, Customer Portal, dan manajemen multi cabang coffee shop.
+> ## AI Agent Commerce Platform
+> Platform AI untuk otomatisasi order, customer service, loyalty customer, Customer CRM, Customer Portal, dan manajemen multi cabang untuk berbagai bisnis seperti kuliner, bakery, pharmacy, mart, fresh market, dan retail.
 >
 > Dibuat dan dikembangkan oleh: **Kukuh TW**
 >
@@ -15,7 +15,9 @@
 >
 > Copyright 2026 Kukuh TW. All rights reserved.
 
-Panduan ini mencakup dua cara instalasi: **Web Installer** dan **Manual**. Dokumentasi ini juga menandai komponen yang saat ini aktif secara default, termasuk plugin `loyalty-point`, `customer-crm`, dan portal customer self-service.
+Panduan ini mencakup dua cara instalasi: **Web Installer** dan **Manual**. Walaupun nama folder dan database default masih menggunakan `toko_kopi`, aplikasi sudah diarahkan menjadi platform AI Agent Commerce multi-vertical. Satu codebase dapat dipakai untuk coffee shop, cafe, restoran, bakery, toko buah, fresh meat market, toko sayur, pharmacy, mini mart, retail mart, dan specialty store.
+
+Dokumentasi ini juga menandai komponen yang saat ini aktif secara default, termasuk plugin `loyalty-point`, `customer-crm`, portal customer self-service, serta plugin pendukung commerce seperti payment gateway, channel chat, POS connector, delivery connector, FAQ RAG, dan complaint handling.
 
 ---
 
@@ -44,6 +46,8 @@ Web Installer menangani pembuatan database, konfigurasi `.env`, dan akun admin s
 C:\xampp\htdocs\toko_kopi\
 ```
 
+Nama folder boleh tetap `toko_kopi` untuk kompatibilitas awal. Untuk white-label atau vertical bisnis lain, nama folder bisa diganti menjadi nama brand, misalnya `ai_commerce`, `pharmacy_agent`, atau `mart_agent`.
+
 **2. Buka Web Installer di browser**
 
 ```text
@@ -58,7 +62,7 @@ http://localhost/toko_kopi/public/install.php
 - Langkah 4 - Import Skema: wizard mengimpor `database/schema.sql` dan `database/seed.sql`.
 - Langkah 5 - Selesai: file `.env` dibuat dan akun default siap digunakan.
 
-> Catatan: schema dasar diimpor dari `database/schema.sql`. Beberapa plugin juga membawa schema-nya sendiri, misalnya `plugins/customer-crm/schema.sql`, yang akan dipastikan saat plugin dimuat aplikasi.
+> Catatan: schema dasar diimpor dari `database/schema.sql`. Beberapa plugin juga membawa schema sendiri, misalnya `plugins/customer-crm/schema.sql`, yang akan dipastikan saat plugin dimuat aplikasi.
 
 **4. Hapus file installer setelah selesai**
 
@@ -98,6 +102,8 @@ mysql -u root -p toko_kopi < database/schema.sql
 mysql -u root -p toko_kopi < database/seed.sql
 ```
 
+> Nama database boleh diganti mengikuti brand atau vertical bisnis, misalnya `ai_commerce_pharmacy`, `ai_commerce_mart`, atau `ai_commerce_bakery`. Pastikan nilai `DB_NAME` di `.env` sama dengan database yang dibuat.
+
 > Jika plugin tertentu membutuhkan schema tambahan, aplikasi akan melakukan bootstrap schema plugin saat plugin aktif. Untuk `customer-crm`, referensinya ada di `plugins/customer-crm/schema.sql`.
 
 ### Langkah 3 - Konfigurasi `.env`
@@ -121,112 +127,34 @@ APP_ENV=development
 BASE_URL=http://localhost/toko_kopi/public
 ```
 
-`LLM API Key` tidak diisi di `.env`. Key disimpan di tabel `app_settings` dan dikelola lewat dashboard Super Admin.
-
-### Langkah 4 - Permission Folder
-
-Pastikan folder berikut dapat ditulis oleh web server:
-
-| Folder | Kegunaan |
-|--------|----------|
-| `uploads/` | Foto menu dan promo yang diunggah |
-| `storage/logs/` | PHP error log aplikasi |
-
-Pada Windows + XAMPP, biasanya permission ini sudah cukup karena Apache berjalan dengan user lokal yang sama. Jika ada masalah, beri permission tulis ke folder tersebut.
-
-### Langkah 5 - Verifikasi Apache dan mod_rewrite
-
-1. Buka **XAMPP Control Panel**
-2. Pastikan Apache dan MySQL berstatus **Running**
-3. Buka `C:\xampp\apache\conf\httpd.conf`
-4. Cari baris berikut:
-
-```text
-#LoadModule rewrite_module modules/mod_rewrite.so
-```
-
-5. Hapus tanda `#` jika masih ada, lalu restart Apache.
-
-### Langkah 6 - Akses Aplikasi
-
-| URL | Keterangan |
-|-----|------------|
-| `http://localhost/toko_kopi/public/` | Landing page |
-| `http://localhost/toko_kopi/public/login.php` | Login admin |
-| `http://localhost/toko_kopi/public/chat.php` | Demo chat |
-| `http://localhost/toko_kopi/public/order.php?branch={slug}` | Halaman order per cabang |
-| `http://localhost/toko_kopi/public/customer/login.php` | Login Customer Portal |
-| `http://localhost/toko_kopi/public/customer/` | Overview Customer Portal |
+LLM API key tidak diisi di `.env`, tetapi dikelola lewat dashboard Super Admin agar bisa dikonfigurasi per deployment.
 
 ---
 
-## Akun Default
+## Konfigurasi Business Vertical Setelah Instalasi
 
-| Role | Email | Password |
-|------|-------|----------|
-| Super Admin | admin@tokokopi.com | password |
-| Admin Jakarta Selatan | admin.jaksel@tokokopi.com | password |
-| Admin Bandung | admin.bandung@tokokopi.com | password |
-| Admin Surabaya | admin.surabaya@tokokopi.com | password |
+Setelah instalasi selesai, admin dapat menyesuaikan aplikasi sesuai jenis bisnis:
 
-Ganti semua password setelah login pertama.
+| Vertical | Konfigurasi Awal yang Disarankan |
+|----------|----------------------------------|
+| Coffee shop / cafe | Aktifkan template coffee, topping, variant size, promo, loyalty, payment gateway, delivery |
+| Bakery / kuliner | Aktifkan template bakery, katalog produk, promo bundle, loyalty, customer portal |
+| Fruit store / fresh market | Aktifkan template fruit, meat, veggie, delivery, customer CRM, promo harian |
+| Pharmacy | Gunakan katalog produk kesehatan, FAQ RAG, complaint handler, customer CRM, payment gateway, delivery |
+| Mini mart / retail mart | Gunakan katalog banyak item, promo engine, POS connector, payment gateway, customer portal |
 
----
-
-## Verifikasi Instalasi
-
-Setelah instalasi, lakukan pengecekan berikut:
-
-1. Landing page terbuka tanpa error.
-2. Login berhasil dengan akun default.
-3. Dashboard super admin bisa diakses.
-4. Chat demo merespons pesan di `/chat.php`.
-5. Menu tampil setelah seed data berhasil diimport.
-6. Customer Portal bisa dibuka di `/customer/login.php`.
-7. Dashboard branch menampilkan menu `Customer CRM` dan `Loyalty Member` untuk role `branch_admin`.
+Plugin dapat diaktifkan melalui `plugins/plugins.json` atau lewat mekanisme dashboard bila sudah tersedia pada deployment terkait.
 
 ---
 
-## Instalasi di Server Production
+## Catatan Production
 
-Lihat `.env.prod.example` untuk acuan production. Contoh nilai inti:
+Untuk production, pastikan:
 
-```ini
-APP_ENV=production
-BASE_URL=https://yourdomain.com/toko_kopi/public
-DB_PASS=password_yang_kuat
-```
-
-Checklist sebelum go-live:
-
-- Hapus `public/install.php`
-- Set `APP_ENV=production`
-- Ganti semua password akun default
-- Pastikan `.env` tidak dapat diakses publik
-- Aktifkan HTTPS
-- Pastikan `uploads/` dan `storage/logs/` hanya bisa ditulis oleh user yang tepat
-
----
-
-## Troubleshooting
-
-**Halaman tampil 404 atau tidak ditemukan**  
-Aktifkan `mod_rewrite` Apache dan restart Apache.
-
-**Error koneksi database**  
-Periksa nilai `DB_HOST`, `DB_USER`, `DB_PASS`, dan pastikan MySQL sedang berjalan.
-
-**Folder `uploads/` tidak bisa ditulis**  
-Periksa permission folder dan pastikan Apache punya akses tulis.
-
-**Chat tidak merespons**  
-Pastikan `database/seed.sql` berhasil diimport sehingga minimal ada satu cabang dan menu aktif.
-
-**LLM tidak berfungsi**  
-Isi API key lewat dashboard Super Admin. Key disimpan di tabel `app_settings`, bukan di `.env`.
-
-**Menu CRM atau loyalty tidak muncul di dashboard branch**  
-Pastikan plugin `customer-crm` dan `loyalty-point` aktif di `plugins/plugins.json`.
-
-**Customer Portal tidak bisa login**  
-Gunakan email atau WhatsApp yang dipakai saat order, lalu cocokkan dengan nomor order yang valid. Customer Portal memakai verifikasi ringan berbasis data order, bukan akun admin.
+- `public/install.php` sudah dihapus.
+- `.env` tidak masuk ke repository publik.
+- Payment gateway memakai credential production yang benar.
+- Delivery connector memakai endpoint partner yang sudah disetujui.
+- POS connector seperti Moka atau integrasi lain sudah melalui UAT.
+- Data customer, order, dan loyalty dilindungi dengan akses role-based.
+- Pharmacy dan mart sebaiknya memiliki validasi katalog, kebijakan produk, dan SOP operasional internal sebelum go-live.
