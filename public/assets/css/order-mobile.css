@@ -4,80 +4,71 @@
 
 @media (max-width: 768px) {
 
-  /* Extra bottom padding so content isn't hidden behind the cart bar */
+  /* Clip stray overflow — fixed children (cart bar, chatbot) are
+     viewport-relative so they are not affected by this. */
   .order-page {
     padding: 10px 10px 80px;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
   }
 
-  /* Compact hero */
-  .branch-hero {
-    padding: 16px;
-    margin-bottom: 12px;
-    border-radius: 12px;
-  }
+  /* ── Branch hero ── */
+  .branch-hero { padding: 16px; margin-bottom: 12px; border-radius: 12px; }
   .branch-hero h1 { font-size: 1.25rem; margin-bottom: 4px; }
   .branch-hero p  { font-size: .84rem; }
-
-  /* Branch hero buttons — smaller, tighter */
   .home-link { font-size: .78rem; padding: 8px 11px; }
 
-  /* Filter bar */
+  /* ── Filter bar ── */
   .menu-filters { padding: 10px 12px; margin-bottom: 10px; }
   .menu-search  { padding: 9px 12px; font-size: .9rem; margin-bottom: 10px; }
 
-  /* Category tabs — horizontal scroll, no wrap */
-  .cat-tabs {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    padding-bottom: 3px;
-    gap: 6px;
-  }
-  .cat-tabs::-webkit-scrollbar { display: none; }
-  .cat-tab { flex-shrink: 0; font-size: .8rem; padding: 5px 12px; }
+  /* Category tabs — wrap so ALL categories show without any swipe needed */
+  .cat-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+  .cat-tab  { font-size: .8rem; padding: 5px 12px; white-space: nowrap; }
 
-  /* Menu cards */
-  .menu-card { padding: 10px 12px; gap: 10px; margin-bottom: 8px; }
-  .menu-card-img {
-    width: 60px;
-    height: 60px;
-    font-size: 1.6rem;
-    border-radius: 8px;
-    flex-shrink: 0;
-  }
+  /* ── Menu cards ── */
+  /* align-start keeps the thumbnail at the top on multi-variant cards */
+  .menu-card { padding: 10px 12px; gap: 10px; margin-bottom: 8px; align-items: flex-start; }
+  .menu-card-img  { width: 60px; height: 60px; font-size: 1.6rem; border-radius: 8px; flex-shrink: 0; }
+  /* overflow:hidden ensures long descriptions don't widen the card */
+  .menu-card-info { overflow: hidden; }
   .menu-card-name { font-size: .92rem; }
   .menu-card-desc { font-size: .79rem; }
   .menu-card-price { font-size: .88rem; }
 
-  /* Bigger touch targets for qty buttons */
-  .qty-btn {
-    width: 36px;
-    height: 36px;
-    font-size: 1.15rem;
-    border-width: 2px;
-  }
+  /* Bigger touch targets for +/− buttons */
+  .qty-btn    { width: 36px; height: 36px; font-size: 1.15rem; border-width: 2px; }
   .qty-display { font-size: .95rem; }
 
-  /* Customize button */
   .customize-btn { padding: 8px 14px; font-size: .82rem; margin-top: 8px; }
 
-  /* Cart box: shown normally below menu on mobile, no sticky */
+  /* Cart box below menu, not sticky */
   .cart-box { position: static; }
 
-  /* Raise chatbot float above the cart bar */
+  /* Chatbot float above the cart bar */
   .chatbot-float { bottom: 78px; right: 14px; width: 50px; height: 50px; font-size: 1.3rem; }
+
+  /* ── Cart item rows: long names truncate, price doesn't wrap ── */
+  .cart-item-row { gap: 8px; }
+  .cart-item-row span:first-child {
+    flex: 1; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .cart-item-row span:last-child { flex-shrink: 0; }
+
+  /* ── Loyalty section: stack input above buttons on narrow screens ── */
+  #loyaltyBox > div:not([id]) { flex-wrap: wrap; }
+  #loyaltyBox > div:not([id]) .form-control { min-width: 0; flex: 1 1 100%; margin-bottom: 6px; }
+  #loyaltyApplyBtn, #loyaltyClearBtn { flex: 1; min-width: 0; }
 
   /* ── Floating mobile cart bar ── */
   #mobileCartBar {
     position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    bottom: 0; left: 0; right: 0;
     background: var(--coffee-dark);
     color: #fff;
     padding: 10px 16px;
-    /* respect iPhone home-bar notch */
     padding-bottom: max(10px, env(safe-area-inset-bottom));
     display: flex;
     align-items: center;
@@ -97,16 +88,12 @@
 
   #mobileCartBarBtn {
     background: var(--coffee-brown);
-    color: #fff;
-    border: none;
+    color: #fff; border: none;
     border-radius: 999px;
     padding: 10px 18px;
-    font-size: .88rem;
-    font-weight: 700;
-    cursor: pointer;
-    white-space: nowrap;
-    flex-shrink: 0;
-    transition: background .15s;
+    font-size: .88rem; font-weight: 700;
+    cursor: pointer; white-space: nowrap;
+    flex-shrink: 0; transition: background .15s;
   }
   #mobileCartBarBtn:active { background: var(--coffee-medium); }
 }

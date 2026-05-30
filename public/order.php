@@ -975,6 +975,7 @@ function renderCart() {
             mobileBar.classList.remove('visible');
         }
     }
+    saveCartToStorage();
 }
 
 function updateItemNote(key, value) {
@@ -1313,6 +1314,7 @@ async function placeOrder() {
 
             document.getElementById('orderSuccess').classList.remove('hidden');
             cart = {};
+            clearCartFromStorage();
             loyaltyRedeemedPoints = 0;
             loyaltyRedeemedDiscount = 0;
             renderCart();
@@ -1516,9 +1518,42 @@ function saveCustomerProfile(name, email, whatsapp, address, postal) {
     } catch {}
 }
 
+// ── Cart persistence (localStorage) ──────────────────────────────────────────
+const CART_KEY     = 'cart_branch_' + BRANCH_ID;
+const CART_MAX_AGE = 24 * 60 * 60 * 1000; // 24 jam
+
+function saveCartToStorage() {
+    try {
+        if (Object.keys(cart).length > 0) {
+            localStorage.setItem(CART_KEY, JSON.stringify({ cart, savedAt: Date.now() }));
+        } else {
+            localStorage.removeItem(CART_KEY);
+        }
+    } catch {}
+}
+
+function loadCartFromStorage() {
+    try {
+        const raw = localStorage.getItem(CART_KEY);
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        if (!data?.cart || Date.now() - data.savedAt > CART_MAX_AGE) {
+            localStorage.removeItem(CART_KEY);
+            return;
+        }
+        cart = data.cart;
+    } catch {}
+}
+
+function clearCartFromStorage() {
+    try { localStorage.removeItem(CART_KEY); } catch {}
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 buildCatTabs();
+loadCartFromStorage();
 renderMenu();
+renderCart();
 </script>
 </body>
 </html>
