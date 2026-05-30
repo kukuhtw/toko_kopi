@@ -1,269 +1,117 @@
-/* Mobile improvements for public/order.php. This file only overrides layout styles and keeps existing content intact. */
+/* ============================================================
+   order-mobile.css — Mobile UX improvements for order page
+   ============================================================ */
+
 @media (max-width: 768px) {
-  html,
-  body {
-    width: 100%;
-    max-width: 100%;
-    overflow-x: hidden;
-  }
 
+  /* Extra bottom padding so content isn't hidden behind the cart bar */
   .order-page {
-    width: 100%;
-    max-width: 100%;
-    padding: 10px;
-    box-sizing: border-box;
+    padding: 10px 10px 80px;
   }
 
-  .order-layout {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 14px;
-  }
-
+  /* Compact hero */
   .branch-hero {
-    padding: 22px 16px;
-    margin-bottom: 14px;
-    border-radius: 18px;
-    box-sizing: border-box;
+    padding: 16px;
+    margin-bottom: 12px;
+    border-radius: 12px;
   }
+  .branch-hero h1 { font-size: 1.25rem; margin-bottom: 4px; }
+  .branch-hero p  { font-size: .84rem; }
 
-  .branch-hero-top {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 16px;
-  }
+  /* Branch hero buttons — smaller, tighter */
+  .home-link { font-size: .78rem; padding: 8px 11px; }
 
-  .branch-hero-top > div:first-child {
-    min-width: 0;
-  }
+  /* Filter bar */
+  .menu-filters { padding: 10px 12px; margin-bottom: 10px; }
+  .menu-search  { padding: 9px 12px; font-size: .9rem; margin-bottom: 10px; }
 
-  .branch-hero h1 {
-    font-size: 1.95rem;
-    line-height: 1.15;
-    margin: 0 0 12px;
-    word-break: break-word;
-  }
-
-  .branch-hero p {
-    font-size: 1rem;
-    line-height: 1.4;
-    margin: 4px 0;
-    word-break: break-word;
-  }
-
-  .branch-hero-top > div:last-child {
-    width: 100%;
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 10px !important;
-    justify-content: stretch !important;
-  }
-
-  .home-link {
-    justify-content: center;
-    min-width: 0;
-    width: 100%;
-    padding: 12px 14px;
-    font-size: .92rem;
-    box-sizing: border-box;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .menu-filters {
-    padding: 12px;
-    margin-bottom: 14px;
-    border-radius: 16px;
-    overflow: hidden;
-    box-sizing: border-box;
-  }
-
-  .menu-search {
-    min-height: 48px;
-    padding: 12px 14px;
-    font-size: 1rem;
-  }
-
+  /* Category tabs — horizontal scroll, no wrap */
   .cat-tabs {
-    display: flex;
     flex-wrap: nowrap;
-    gap: 10px;
     overflow-x: auto;
-    overflow-y: hidden;
-    padding: 2px 2px 8px;
-    margin: 0 -2px;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
-  }
-
-  .cat-tabs::-webkit-scrollbar {
-    display: none;
-  }
-
-  .cat-tab {
-    flex: 0 0 auto;
-    padding: 9px 14px;
-    font-size: .95rem;
-    border-radius: 999px;
-  }
-
-  .cat-tab .cnt {
-    padding: 1px 8px;
-    font-size: .78rem;
-  }
-
-  .cat-header {
-    font-size: 1.1rem;
-    margin: 0 0 10px;
-  }
-
-  .menu-card {
-    width: 100%;
-    max-width: 100%;
-    padding: 14px;
-    gap: 12px;
-    align-items: center;
-    box-sizing: border-box;
-    overflow: hidden;
-  }
-
-  .menu-card-img {
-    width: 74px;
-    height: 74px;
-    flex: 0 0 74px;
-    font-size: 1.7rem;
-  }
-
-  .menu-card-info {
-    min-width: 0;
-    flex: 1 1 auto;
-  }
-
-  .menu-card-name {
-    font-size: 1.15rem;
-    line-height: 1.18;
-    margin-bottom: 5px;
-    overflow-wrap: anywhere;
-  }
-
-  .menu-card-desc {
-    white-space: normal;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    font-size: .95rem;
-    line-height: 1.35;
-    margin-bottom: 7px;
-  }
-
-  .menu-card-price {
-    font-size: 1.08rem;
-  }
-
-  .qty-ctrl {
+    padding-bottom: 3px;
     gap: 6px;
   }
+  .cat-tabs::-webkit-scrollbar { display: none; }
+  .cat-tab { flex-shrink: 0; font-size: .8rem; padding: 5px 12px; }
 
+  /* Menu cards */
+  .menu-card { padding: 10px 12px; gap: 10px; margin-bottom: 8px; }
+  .menu-card-img {
+    width: 60px;
+    height: 60px;
+    font-size: 1.6rem;
+    border-radius: 8px;
+    flex-shrink: 0;
+  }
+  .menu-card-name { font-size: .92rem; }
+  .menu-card-desc { font-size: .79rem; }
+  .menu-card-price { font-size: .88rem; }
+
+  /* Bigger touch targets for qty buttons */
   .qty-btn {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
+    font-size: 1.15rem;
+    border-width: 2px;
   }
+  .qty-display { font-size: .95rem; }
 
-  .cart-box {
-    position: static;
-    width: 100%;
-    max-width: 100%;
-  }
+  /* Customize button */
+  .customize-btn { padding: 8px 14px; font-size: .82rem; margin-top: 8px; }
 
-  .cart-box .card {
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-  }
+  /* Cart box: shown normally below menu on mobile, no sticky */
+  .cart-box { position: static; }
 
-  .cart-items-list {
-    max-height: none;
-  }
+  /* Raise chatbot float above the cart bar */
+  .chatbot-float { bottom: 78px; right: 14px; width: 50px; height: 50px; font-size: 1.3rem; }
 
-  .cart-item-row {
-    gap: 10px;
+  /* ── Floating mobile cart bar ── */
+  #mobileCartBar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--coffee-dark);
+    color: #fff;
+    padding: 10px 16px;
+    /* respect iPhone home-bar notch */
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    z-index: 200;
+    box-shadow: 0 -3px 18px rgba(0,0,0,.32);
+    transform: translateY(110%);
+    transition: transform .26s cubic-bezier(.4,0,.2,1);
+    -webkit-tap-highlight-color: transparent;
   }
+  #mobileCartBar.visible { transform: translateY(0); }
 
-  .checkout-form .form-control,
-  .checkout-form textarea,
-  .checkout-form input {
-    max-width: 100%;
-    box-sizing: border-box;
-  }
+  #mobileCartBarInfo { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+  #mobileCartBarCount { font-size: .75rem; opacity: .72; }
+  #mobileCartBarTotal { font-size: 1.05rem; font-weight: 700; }
 
-  .fulfillment-option {
-    padding: 11px 12px;
+  #mobileCartBarBtn {
+    background: var(--coffee-brown);
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 10px 18px;
+    font-size: .88rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background .15s;
   }
-
-  .topping-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .profile-banner {
-    align-items: flex-start;
-  }
-
-  .chatbot-float {
-    right: 16px;
-    bottom: 16px;
-    width: 52px;
-    height: 52px;
-  }
+  #mobileCartBarBtn:active { background: var(--coffee-medium); }
 }
 
-@media (max-width: 420px) {
-  .order-page {
-    padding: 6px;
-  }
-
-  .branch-hero {
-    padding: 20px 14px;
-    border-radius: 16px;
-  }
-
-  .branch-hero h1 {
-    font-size: 1.75rem;
-  }
-
-  .branch-hero-top > div:last-child {
-    grid-template-columns: 1fr;
-  }
-
-  .home-link {
-    font-size: .9rem;
-  }
-
-  .menu-card {
-    padding: 12px;
-    gap: 10px;
-  }
-
-  .menu-card-img {
-    width: 66px;
-    height: 66px;
-    flex-basis: 66px;
-  }
-
-  .menu-card-name {
-    font-size: 1.06rem;
-  }
-
-  .menu-card-desc {
-    font-size: .9rem;
-  }
-
-  .menu-card-price {
-    font-size: 1rem;
-  }
-
-  .qty-btn {
-    width: 30px;
-    height: 30px;
-  }
+/* Desktop: hide the mobile bar entirely */
+@media (min-width: 769px) {
+  #mobileCartBar { display: none; }
 }

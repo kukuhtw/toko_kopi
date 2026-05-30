@@ -388,6 +388,16 @@ $categories = array_values($catMap);
 
 <a href="<?= BASE_URL ?>/chat.php?branch=<?= $branch['id'] ?>" class="chatbot-float" title="<?= htmlspecialchars($t['chat_bot']) ?>">💬</a>
 
+<div id="mobileCartBar">
+  <div id="mobileCartBarInfo">
+    <span id="mobileCartBarCount"></span>
+    <span id="mobileCartBarTotal"></span>
+  </div>
+  <button id="mobileCartBarBtn" onclick="document.querySelector('.cart-box').scrollIntoView({behavior:'smooth',block:'start'})">
+    🛒 <?= $isEnglish ? 'View Cart' : 'Lihat Keranjang' ?>
+  </button>
+</div>
+
 <div id="orderSuccess" class="modal-overlay hidden">
   <div class="modal-box" style="text-align:center">
     <div style="font-size:3rem;margin-bottom:16px">✅</div>
@@ -951,6 +961,20 @@ function renderCart() {
         btn.style.display = 'flex';
     }
     document.getElementById('cartTotal').textContent = fmt(total);
+
+    // Update floating mobile cart bar
+    const mobileBar = document.getElementById('mobileCartBar');
+    if (mobileBar) {
+        if (keys.length > 0) {
+            const itemCount = Object.values(cart).reduce((s, i) => s + i.qty, 0);
+            document.getElementById('mobileCartBarCount').textContent =
+                itemCount + (LANGUAGE === 'en' ? ' item(s)' : ' item');
+            document.getElementById('mobileCartBarTotal').textContent = fmt(total);
+            mobileBar.classList.add('visible');
+        } else {
+            mobileBar.classList.remove('visible');
+        }
+    }
 }
 
 function updateItemNote(key, value) {
