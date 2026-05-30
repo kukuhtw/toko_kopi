@@ -100,6 +100,7 @@ $categories = array_values($catMap);
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Order Online — <?= htmlspecialchars($branch['name']) ?></title>
   <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/app.css">
+    <?= HookManager::applyFilters('site.head_styles', '') ?>
     <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/order-mobile.css">
   <?= HookManager::applyFilters('site.head_styles', '') ?>
   <style>
