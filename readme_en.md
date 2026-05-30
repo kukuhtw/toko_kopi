@@ -4,6 +4,10 @@
 >
 > KopiBot is an AI commerce platform for automating orders, customer service, customer loyalty, Customer CRM, Customer Portal, chat channel integration, payment gateway integration, delivery connector, POS connector, and multi-branch management for different types of businesses.
 >
+> **Documentation Language:**
+> - [Indonesian README](README.md)
+> - [French README](readme_fr.md)
+>
 > This application was originally developed for coffee shops, then expanded into an AI Agent Commerce platform that can be used for culinary businesses, bakeries, beverage stores, fruit shops, fresh meat stores, vegetable stores, pharmacies, mini marts, retail marts, and other store models that need chat-based ordering, product catalogs, promotions, loyalty, checkout, delivery, and external system integration.
 >
 > ### Features
