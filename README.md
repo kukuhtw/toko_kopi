@@ -3,6 +3,10 @@
 > ## AI Agent Commerce Platform
 > Platform AI commerce untuk otomatisasi order, customer service, loyalty customer, Customer CRM, Customer Portal, integrasi channel chat, payment gateway, delivery connector, POS connector, dan manajemen multi cabang untuk berbagai jenis bisnis.
 >
+> **Documentation Language:**
+> - [English README](README_EN.md)
+> - [French README](README_FR.md)
+>
 > Aplikasi ini awalnya dikembangkan untuk coffee shop, lalu diperluas menjadi AI Agent Commerce yang dapat dipakai untuk bisnis kuliner, bakery, beverage, toko buah, fresh meat, sayuran, pharmacy, mini mart, retail mart, dan model toko lain yang membutuhkan order berbasis chat, katalog produk, promo, loyalty, checkout, delivery, dan integrasi sistem eksternal.
 >
 > ### Features
