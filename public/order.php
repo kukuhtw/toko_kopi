@@ -101,7 +101,7 @@ $categories = array_values($catMap);
   <title>Order Online — <?= htmlspecialchars($branch['name']) ?></title>
   <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/app.css">
     <?= HookManager::applyFilters('site.head_styles', '') ?>
-    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/order-mobile.css">
+  
   
   <style>
     body { background:var(--coffee-cream); }
@@ -261,6 +261,7 @@ $categories = array_values($catMap);
       .branch-hero-top { flex-direction:column; align-items:flex-start; }
     }
   </style>
+      <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/order-mobile.css">
 </head>
 <body>
 <div class="order-page">
