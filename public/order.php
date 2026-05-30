@@ -102,7 +102,7 @@ $categories = array_values($catMap);
   <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/app.css">
     <?= HookManager::applyFilters('site.head_styles', '') ?>
     <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/order-mobile.css">
-  <?= HookManager::applyFilters('site.head_styles', '') ?>
+  
   <style>
     body { background:var(--coffee-cream); }
     .order-page  { max-width:1100px; margin:0 auto; padding:20px; }
