@@ -17,6 +17,8 @@ require_once __DIR__ . '/TikTokDashboardQuery.php';
 require_once __DIR__ . '/TikTokOAuthService.php';
 require_once __DIR__ . '/TikTokWhatsAppNotifier.php';
 require_once __DIR__ . '/TikTokLiveAnalyticsService.php';
+require_once __DIR__ . '/TikTokCommentAnalyzer.php';
+require_once __DIR__ . '/TikTokLiveCopilot.php';
 require_once __DIR__ . '/TikTokShopLivePlugin.php';
 
 return [
