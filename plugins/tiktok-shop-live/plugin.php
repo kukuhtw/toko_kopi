@@ -6,6 +6,8 @@ require_once __DIR__ . '/TikTokShopLiveRepository.php';
 require_once __DIR__ . '/TikTokShopLiveClient.php';
 require_once __DIR__ . '/TikTokOpenApiClient.php';
 require_once __DIR__ . '/TikTokShopLiveService.php';
+require_once __DIR__ . '/TikTokProductMapper.php';
+require_once __DIR__ . '/TikTokInternalOrderMapper.php';
 require_once __DIR__ . '/TikTokProductSyncService.php';
 require_once __DIR__ . '/TikTokOrderImportService.php';
 require_once __DIR__ . '/TikTokOAuthService.php';
