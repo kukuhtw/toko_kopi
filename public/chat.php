@@ -15,6 +15,11 @@
   $branches    = $branchModel->getActive();
   $currency = 'IDR';
   $language = 'id';
+  $publicAppName = trim((string) HookManager::applyFilters('site.app_name', APP_NAME));
+  $publicEmoji = trim((string) HookManager::applyFilters('site.brand_emoji', '☕'));
+  $publicTagline = trim((string) HookManager::applyFilters('site.tagline', 'Chat dengan tim kami'));
+  $assistantNameDefault = $publicAppName !== '' ? 'Asisten ' . $publicAppName : 'Asisten Toko';
+  $assistantStatusDefault = 'Online';
 
   // Start session for chat identification
   $sessionId   = session_id();
@@ -59,8 +64,8 @@
       'enabled' => false,
       'theme' => 'default',
       'brand_icon' => '☕',
-      'assistant_name' => 'Kopi Bot',
-      'assistant_status' => 'Online',
+      'assistant_name' => $assistantNameDefault,
+      'assistant_status' => $assistantStatusDefault,
       'welcome_prompt' => 'Ketik menu, promo, rekomendasi, atau checkout.',
       'quick_actions' => [],
       'menu_items' => $chatMenuItems,
@@ -68,9 +73,13 @@
       'branch_slug' => (string)($selectedBranch['slug'] ?? ''),
   ], $selectedBranchId, $selectedBranch ?? []);
   $webChatHeadHtml = HookManager::applyFilters('webchat.head_html', '', $webChatConfig, $selectedBranchId, $selectedBranch ?? []);
+  $chatBrandIcon = $publicEmoji !== '' ? $publicEmoji : (string)($webChatConfig['brand_icon'] ?? '☕');
+  $chatAssistantName = (string)($webChatConfig['assistant_name'] ?? $assistantNameDefault);
+  $chatAssistantStatus = (string)($webChatConfig['assistant_status'] ?? $assistantStatusDefault);
   ?>
   <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/app.css">
   <?= HookManager::applyFilters('site.head_styles', '') ?>
+  <title>Chat — <?= htmlspecialchars($publicAppName !== '' ? $publicAppName : 'Toko') ?></title>
   <?= $webChatHeadHtml ?>
   <style>
     body { margin:0; background:var(--coffee-cream); }
@@ -875,9 +884,58 @@ const DEBUG_MODE  = <?= isset($_GET['debug']) && $_GET['debug'] === '1' ? 'true'
 const CHAT_CURRENCY = <?= json_encode($currency, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_INVALID_UTF8_SUBSTITUTE) ?>;
 const CHAT_LANGUAGE = <?= json_encode($language, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_INVALID_UTF8_SUBSTITUTE) ?>;
 const WEBCHAT_CONFIG = <?= json_encode($webChatConfig, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_INVALID_UTF8_SUBSTITUTE) ?: '{}' ?>;
+const PUBLIC_APP_NAME = <?= json_encode($publicAppName, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+const PUBLIC_TAGLINE = <?= json_encode($publicTagline, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+const BRAND_ICON = <?= json_encode($chatBrandIcon, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+const ASSISTANT_NAME = <?= json_encode($chatAssistantName, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+const ASSISTANT_STATUS = <?= json_encode($chatAssistantStatus, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 
 // ── Global storage key (same user across branches) ────────────
 const STORAGE_KEY = 'toko_kopi_user';
+
+function syncPublicBranding() {
+  document.title = `Chat — ${PUBLIC_APP_NAME || 'Toko'}`;
+
+  const identityIcon = document.querySelector('.identity-card .brand .icon');
+  if (identityIcon) identityIcon.textContent = BRAND_ICON || '☕';
+
+  const startBtn = document.getElementById('startChatBtn');
+  if (startBtn) startBtn.textContent = `Mulai Chat ${BRAND_ICON || '☕'}`;
+
+  const headerAvatar = document.querySelector('.chat-header-avatar');
+  if (headerAvatar) headerAvatar.textContent = BRAND_ICON || '☕';
+
+  const headerStatus = document.querySelector('.chat-header-info span');
+  if (headerStatus) headerStatus.textContent = `${ASSISTANT_NAME || 'Asisten Toko'} · ${ASSISTANT_STATUS || 'Online'}`;
+
+  const noBranchIcon = document.querySelector('.no-branch-selected > div');
+  if (noBranchIcon) noBranchIcon.textContent = BRAND_ICON || '☕';
+
+  const noBranchTitle = document.querySelector('.no-branch-selected h3');
+  if (noBranchTitle) noBranchTitle.textContent = `${PUBLIC_APP_NAME || 'Toko'} Chat`;
+
+  const sidebarTitle = document.querySelector('.branch-sidebar h2');
+  if (sidebarTitle) sidebarTitle.textContent = `${BRAND_ICON || '☕'} Pilih Cabang`;
+}
+
+function syncLatestGreetingBranding() {
+  const bubbles = document.querySelectorAll('.message-wrap.bot .message-bubble');
+  const lastBubble = bubbles.length ? bubbles[bubbles.length - 1] : null;
+  if (!lastBubble) return;
+  const plain = lastBubble.textContent || '';
+  if (!/Kopi Bot|Ada yang bisa saya bantu|Selamat datang di/i.test(plain)) return;
+  lastBubble.innerHTML = lastBubble.innerHTML
+    .replace(/Kopi Bot/g, ASSISTANT_NAME || 'Asisten Toko')
+    .replace(/â˜•|☕/g, BRAND_ICON || '☕');
+}
+
+function observeGreetingBranding() {
+  const target = document.getElementById('chatMessages');
+  if (!target || target.dataset.brandObserver === '1') return;
+  const observer = new MutationObserver(() => syncLatestGreetingBranding());
+  observer.observe(target, { childList: true, subtree: true });
+  target.dataset.brandObserver = '1';
+}
 
 // ── Identity state ────────────────────────────────────────────
 let chatUser = null;  // { name, wa, email }
@@ -899,6 +957,8 @@ let activeProductDetail = null;
 
 // ── On load: check if identity already saved in localStorage ──
 window.addEventListener('DOMContentLoaded', () => {
+  syncPublicBranding();
+  observeGreetingBranding();
   if (!BRANCH_ID) return;
 
   const productSheetClose = document.querySelector('#chatProductSheet .chat-cart-sheet-close');
@@ -1034,6 +1094,7 @@ function showChatReady(sendWelcome) {
     const greeting = `Halo, <strong>${escapeHtml(chatUser.name)}</strong>! 👋 Selamat datang di <strong>${BRANCH_NAME}</strong>!<br><br>` +
       `Saya Kopi Bot, siap membantu pesananmu. Ketik <strong>menu</strong> untuk melihat pilihan kami, atau langsung sebutkan pesananmu! ☕`;
     appendRawMessage(greeting, 'bot');
+    syncLatestGreetingBranding();
     renderQuickActions();
 
     // Register name+email silently via first chat ping

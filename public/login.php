@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <title>Login — Toko Kopi</title>
   <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/app.css">
   <?= HookManager::applyFilters('site.head_styles', '') ?>
-  <title><?= htmlspecialchars($publicAppName) ?> Login</title>
+  <title>Login — <?= htmlspecialchars($publicAppName) ?></title>
   <style>
     .login-logo > h1,
     .login-logo > p { display:none; }

@@ -164,13 +164,18 @@ $heroSummaryId = $publicTagline !== ''
 $heroSummaryEn = $publicTagline !== ''
     ? $publicTagline . ' This landing page automatically reflects the latest installed profile.'
     : $businessProfile['summary_en'] . ' This landing page automatically reflects the latest installed profile.';
+$heroHeadingId = sprintf('Chatbot Pemesanan Otomatis<br>untuk <span>%s</span>', htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'));
+$heroHeadingEn = sprintf('Automated Order Chatbot<br>for <span>%s</span>', htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'));
+$heroRemarkTitle = sprintf('%s AI Commerce Platform', $siteName);
+$footerTaglineId = sprintf('Chatbot Pemesanan untuk %s', $siteName);
+$footerTaglineEn = sprintf('AI Order Chatbot for %s', $siteName);
 ?>
 <!DOCTYPE html>
 <html lang="id" id="root-html">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><?= htmlspecialchars($siteName) ?> — <?= htmlspecialchars($businessProfile['label_id']) ?></title>
+  <title><?= htmlspecialchars($siteName) ?> — AI Commerce Platform</title>
   <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/app.css">
   <?= HookManager::applyFilters('site.head_styles', '') ?>
   <style>
@@ -454,7 +459,7 @@ $heroSummaryEn = $publicTagline !== ''
 <!-- Hero -->
 <section class="hero">
   <div class="hero-badge" data-t-id="<?= htmlspecialchars($publicBrandEmoji) ?> Siap Deploy · Multi-Cabang · Tanpa Biaya Langganan" data-t-en="<?= htmlspecialchars($publicBrandEmoji) ?> Ready to Deploy · Multi-Branch · No Monthly Fees"><?= htmlspecialchars($publicBrandEmoji) ?> Siap Deploy · Multi-Cabang · Tanpa Biaya Langganan</div>
-  <h1 id="hero-h1">Chatbot Pemesanan Otomatis<br>untuk <span><?= htmlspecialchars($siteName) ?></span></h1>
+  <h1 id="hero-h1"><?= $heroHeadingId ?></h1>
   <p data-t-id="Terima pesanan kapan saja lewat Website &amp; WhatsApp — tanpa jaga kasir, tanpa biaya bulanan. Dirilis sebagai open source di bawah GNU Affero General Public License v3.0 (AGPL-3.0)."
      data-t-en="Accept orders anytime via Website &amp; WhatsApp — no cashier needed, no monthly fees. Released as open source under the GNU Affero General Public License v3.0 (AGPL-3.0).">Terima pesanan kapan saja lewat Website &amp; WhatsApp — tanpa jaga kasir, tanpa biaya bulanan. Dirilis sebagai open source di bawah GNU Affero General Public License v3.0 (AGPL-3.0).</p>
   <p class="hero-theme-tagline"
@@ -474,7 +479,7 @@ $heroSummaryEn = $publicTagline !== ''
   <div class="hero-remark">
     <div class="hero-remark-head">
       <div class="hero-remark-chip">&#9749; Product Remark</div>
-      <div class="hero-remark-title">AI Agent Coffee Shop Commerce Platform</div>
+      <div class="hero-remark-title"><?= htmlspecialchars($heroRemarkTitle) ?></div>
     </div>
     <p class="hero-remark-desc"><?= htmlspecialchars($publicTagline !== '' ? $publicTagline : 'Platform AI untuk otomatisasi order, customer service, loyalty customer, FAQ RAG, complaint ticketing, connector POS, dan manajemen multi cabang.') ?></p>
     <div class="hero-remark-grid">
@@ -501,7 +506,7 @@ $heroSummaryEn = $publicTagline !== ''
         <p>PHP Native &bull; MySQL &bull; OpenAI &bull; Anthropic</p>
         <p>WhatsApp Gateway &bull; REST API &bull; LLM AI</p>
         <h3 style="margin-top:14px">&#9749; Suitable For</h3>
-        <p>Coffee Shop &bull; Cafe &bull; Restaurant &bull; Bakery &bull; Beverage Store</p>
+        <p><?= htmlspecialchars($businessProfile['label_en'] ?? $businessProfile['label_id']) ?> &bull; Multi Branch &bull; Web Ordering</p>
       </div>
       <div class="hero-remark-card">
         <h3>Dibuat &amp; Dikembangkan oleh</h3>
@@ -1193,8 +1198,8 @@ $heroSummaryEn = $publicTagline !== ''
 
 <!-- Footer -->
 <footer class="footer">
-  <p>© <?= date('Y') ?> KopiBot AI —
-    <span data-t-id="Chatbot Pemesanan untuk Toko Kopi Indonesia" data-t-en="AI Order Chatbot for Coffee Shops">Chatbot Pemesanan untuk Toko Kopi Indonesia</span>
+  <p>© <?= date('Y') ?> <?= htmlspecialchars($siteName) ?> AI —
+    <span data-t-id="<?= htmlspecialchars($footerTaglineId, ENT_QUOTES, 'UTF-8') ?>" data-t-en="<?= htmlspecialchars($footerTaglineEn, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($footerTaglineId) ?></span>
     &nbsp;·&nbsp;
     <a href="<?= BASE_URL ?>/login.php" style="color:rgba(255,255,255,.5)" data-t-id="Admin Login" data-t-en="Admin Login">Admin Login</a>
     &nbsp;·&nbsp;
@@ -1205,8 +1210,8 @@ $heroSummaryEn = $publicTagline !== ''
 <script>
 (function () {
     var HERO = {
-        id: 'Chatbot Pemesanan Otomatis<br>untuk <span>Toko Kopi</span> Kamu',
-        en: 'Automated Order Chatbot<br>for Your <span>Coffee Shop</span>'
+        id: <?= json_encode($heroHeadingId, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>,
+        en: <?= json_encode($heroHeadingEn, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>
     };
 
     var current = localStorage.getItem('kopibot_lang') || 'id';

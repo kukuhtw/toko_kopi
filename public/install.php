@@ -65,6 +65,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'step3_save') {
         $appName = trim($_POST['app_name'] ?? 'AI Agent Commerce');
+        $brandEmoji = mb_substr(strip_tags((string)($_POST['brand_emoji'] ?? '')), 0, 8);
+        $tagline = mb_substr(strip_tags((string)($_POST['tagline'] ?? '')), 0, 120);
         $baseUrl = rtrim(trim($_POST['base_url'] ?? ''), '/');
         $appEnv = in_array($_POST['app_env'] ?? 'production', ['development', 'production'], true) ? $_POST['app_env'] : 'production';
 
@@ -72,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = 'Nama aplikasi dan Base URL wajib diisi.';
             $step = 3;
         } else {
-            $_SESSION['app'] = compact('appName', 'baseUrl', 'appEnv');
+            $_SESSION['app'] = compact('appName', 'brandEmoji', 'tagline', 'baseUrl', 'appEnv');
             header('Location: install.php?step=4');
             exit;
         }
@@ -111,6 +113,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $_SESSION['plugins'] = $selected;
         $_SESSION['catalog_template'] = $catalogTemplate;
+        if (isset($_SESSION['app']) && is_array($_SESSION['app'])) {
+            $_SESSION['app'] = applyTemplateBrandingDefaults($_SESSION['app'], $catalogTemplate);
+        }
         header('Location: install.php?step=6');
         exit;
     }
@@ -355,6 +360,9 @@ function persistInstalledAppSettings(PDO $pdo, array $app, string $catalogTempla
     try {
         $settings = [
             'app_name'         => (string)($app['appName'] ?? 'AI Agent Commerce'),
+            'theme_app_name'   => (string)($app['appName'] ?? 'AI Agent Commerce'),
+            'theme_brand_emoji'=> (string)($app['brandEmoji'] ?? ''),
+            'theme_tagline'    => (string)($app['tagline'] ?? ''),
             'business_type'    => inferBusinessTypeFromTemplate($catalogTemplate),
             'catalog_template' => $catalogTemplate,
             'base_url'         => (string)($app['baseUrl'] ?? ''),
@@ -369,6 +377,9 @@ function persistInstalledAppSettings(PDO $pdo, array $app, string $catalogTempla
 
         $descriptions = [
             'app_name'         => 'Nama brand hasil instalasi',
+            'theme_app_name'   => 'Nama brand untuk plugin theme hasil instalasi',
+            'theme_brand_emoji'=> 'Emoji/icon brand untuk plugin theme hasil instalasi',
+            'theme_tagline'    => 'Tagline bisnis untuk plugin theme hasil instalasi',
             'business_type'    => 'Tipe bisnis utama hasil instalasi',
             'catalog_template' => 'Template katalog yang dipilih saat instalasi',
             'base_url'         => 'Base URL aplikasi hasil instalasi',
@@ -528,13 +539,85 @@ function renderStep2(array $errors): string
 function renderStep3(array $errors): string
 {
     $saved = $_SESSION['app'] ?? [];
+    $catalogTemplate = (string)($_SESSION['catalog_template'] ?? 'keep-seed');
+    if (is_array($saved)) {
+        $saved = applyTemplateBrandingDefaults($saved, $catalogTemplate, false);
+    }
     $err = renderErrors($errors);
     $autoUrl = detectBaseUrl();
+    $brandEmoji = htmlspecialchars((string)($saved['brandEmoji'] ?? '☕'));
     $appName = htmlspecialchars((string)($saved['appName'] ?? 'AI Agent Commerce'));
+    $tagline = htmlspecialchars((string)($saved['tagline'] ?? ''));
     $baseUrl = htmlspecialchars((string)($saved['baseUrl'] ?? $autoUrl));
     $devSel = ($saved['appEnv'] ?? 'production') === 'development' ? 'selected' : '';
     $prodSel = ($saved['appEnv'] ?? 'production') === 'production' ? 'selected' : '';
-    return "<div class=\"card\"><h2>Langkah 3 — Pengaturan Aplikasi</h2>{$err}<form method=\"POST\"><input type=\"hidden\" name=\"action\" value=\"step3_save\"><div class=\"form-group\"><label>Nama Brand / Toko</label><input type=\"text\" name=\"app_name\" class=\"form-control\" value=\"{$appName}\" required placeholder=\"AI Commerce Mart\"><small>Contoh: KopiBot Cafe, Fresh Mart AI, Pharmacy Agent, Bakery Commerce.</small></div><div class=\"form-group\"><label>Base URL</label><input type=\"url\" name=\"base_url\" class=\"form-control\" value=\"{$baseUrl}\" required><small>URL lengkap ke folder <code>public/</code>. Contoh: <code>http://localhost/toko_kopi/public</code></small></div><div class=\"form-group\"><label>Lingkungan</label><select name=\"app_env\" class=\"form-control\"><option value=\"production\" {$prodSel}>Production</option><option value=\"development\" {$devSel}>Development (tampilkan error)</option></select></div><div class=\"form-nav\"><a href=\"install.php?step=2\" class=\"btn btn-secondary\">&larr; Kembali</a><button type=\"submit\" class=\"btn\">Lanjut &rarr;</button></div></form></div>";
+    $templateLabel = htmlspecialchars(getCatalogTemplateInfo($catalogTemplate)['name']);
+    return "<div class=\"card\"><h2>Langkah 3 — Pengaturan Aplikasi</h2>{$err}<form method=\"POST\"><input type=\"hidden\" name=\"action\" value=\"step3_save\"><div class=\"form-row\"><div class=\"form-group\" style=\"max-width:120px\"><label>Icon Toko</label><input type=\"text\" id=\"brand_emoji\" name=\"brand_emoji\" class=\"form-control\" value=\"{$brandEmoji}\" placeholder=\"☕\" maxlength=\"8\" style=\"font-size:1.2rem;text-align:center\"><small>Satu emoji/icon brand.</small></div><div class=\"form-group\" style=\"flex:1\"><label>Nama Brand / Toko</label><input type=\"text\" id=\"app_name\" name=\"app_name\" class=\"form-control\" value=\"{$appName}\" required placeholder=\"AI Commerce Mart\"><small>Contoh: KopiBot Cafe, Fresh Mart AI, Pharmacy Agent, Bakery Commerce.</small></div></div><div class=\"form-group\"><label>Tagline Bisnis</label><input type=\"text\" id=\"tagline\" name=\"tagline\" class=\"form-control\" value=\"{$tagline}\" placeholder=\"Premium Coffee Experience\" maxlength=\"120\"><small>Akan dipakai juga di halaman Tema & Branding setelah instalasi.</small></div><div class=\"alert alert-success\" style=\"font-size:.82rem\">Default branding akan menyesuaikan template bisnis yang dipilih. Template saat ini: <strong>{$templateLabel}</strong>.</div><div style=\"margin:-2px 0 18px\"><div style=\"font-size:.75rem;font-weight:700;color:#8b6f47;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px\">Preview Sidebar Logo</div><div id=\"brand-preview\" style=\"background:#2c1a0e;color:#fff;display:inline-block;padding:18px 22px;border-radius:12px;min-width:290px;box-shadow:0 8px 24px rgba(44,26,14,.16)\"><div style=\"display:flex;align-items:flex-start;gap:8px\"><span id=\"preview-emoji\" style=\"font-size:1.15rem;line-height:1.2\">{$brandEmoji}</span><div><div id=\"preview-name\" style=\"font-size:1.08rem;font-weight:700;line-height:1.2\">{$appName}</div><div id=\"preview-tagline\" style=\"font-size:.68rem;color:rgba(255,255,255,.45);margin-top:4px;font-weight:400;letter-spacing:.3px;display:" . (($saved['tagline'] ?? '') !== '' ? 'block' : 'none') . "\">{$tagline}</div></div></div></div></div><div class=\"form-group\"><label>Base URL</label><input type=\"url\" name=\"base_url\" class=\"form-control\" value=\"{$baseUrl}\" required><small>URL lengkap ke folder <code>public/</code>. Contoh: <code>http://localhost/toko_kopi/public</code></small></div><div class=\"form-group\"><label>Lingkungan</label><select name=\"app_env\" class=\"form-control\"><option value=\"production\" {$prodSel}>Production</option><option value=\"development\" {$devSel}>Development (tampilkan error)</option></select></div><div class=\"form-nav\"><a href=\"install.php?step=2\" class=\"btn btn-secondary\">&larr; Kembali</a><button type=\"submit\" class=\"btn\">Lanjut &rarr;</button></div></form><script>(function(){function escH(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}function buildNameHtml(name){var words=name.split(/\\s+/).filter(Boolean);if(!words.length){return 'Toko <span style=\"color:#d4a574\">Kopi</span>';}var last=words.pop();return (words.length?escH(words.join(' '))+' ':'')+'<span style=\"color:#d4a574\">'+escH(last)+'</span>';}function updateBrandPreview(){var emoji=document.getElementById('brand_emoji').value.trim()||'☕';var name=document.getElementById('app_name').value.trim()||'Toko Kopi';var tagline=document.getElementById('tagline').value.trim();document.getElementById('preview-emoji').textContent=emoji;document.getElementById('preview-name').innerHTML=buildNameHtml(name);var taglineEl=document.getElementById('preview-tagline');taglineEl.textContent=tagline;taglineEl.style.display=tagline!==''?'block':'none';}['brand_emoji','app_name','tagline'].forEach(function(id){var el=document.getElementById(id);if(el){el.addEventListener('input',updateBrandPreview);}});updateBrandPreview();})();</script></div>";
+}
+
+function applyTemplateBrandingDefaults(array $app, string $catalogTemplate, bool $replaceGeneric = true): array
+{
+    $defaults = getBrandingDefaultsForTemplate($catalogTemplate);
+    $currentName = trim((string)($app['appName'] ?? ''));
+    $currentEmoji = trim((string)($app['brandEmoji'] ?? ''));
+    $currentTagline = trim((string)($app['tagline'] ?? ''));
+
+    $genericNames = ['AI Agent Commerce', 'AI Commerce Mart', 'Toko Kopi'];
+    $genericEmojis = ['', '☕'];
+    $genericTaglines = ['', 'Premium Coffee Experience'];
+
+    if ($currentName === '' || ($replaceGeneric && in_array($currentName, $genericNames, true))) {
+        $app['appName'] = $defaults['appName'];
+    }
+    if ($currentEmoji === '' || ($replaceGeneric && in_array($currentEmoji, $genericEmojis, true))) {
+        $app['brandEmoji'] = $defaults['brandEmoji'];
+    }
+    if ($currentTagline === '' || ($replaceGeneric && in_array($currentTagline, $genericTaglines, true))) {
+        $app['tagline'] = $defaults['tagline'];
+    }
+
+    return $app;
+}
+
+function getBrandingDefaultsForTemplate(string $catalogTemplate): array
+{
+    return match ($catalogTemplate) {
+        'bakery-template' => [
+            'appName' => 'Bakery Commerce',
+            'brandEmoji' => '🥐',
+            'tagline' => 'Freshly Baked Every Day',
+        ],
+        'fruit-template' => [
+            'appName' => 'Fresh Fruit Market',
+            'brandEmoji' => '🍎',
+            'tagline' => 'Buah Segar, Cepat Sampai',
+        ],
+        'meat-veggie-template' => [
+            'appName' => 'Fresh Market',
+            'brandEmoji' => '🥬',
+            'tagline' => 'Belanja Bahan Segar Jadi Mudah',
+        ],
+        'pharmacy-template' => [
+            'appName' => 'Apotek Digital',
+            'brandEmoji' => '💊',
+            'tagline' => 'Obat, Vitamin, dan Alat Kesehatan Siap Order',
+        ],
+        'minimarket-template' => [
+            'appName' => 'Smart Mart',
+            'brandEmoji' => '🛒',
+            'tagline' => 'Belanja Harian Lebih Praktis',
+        ],
+        'indonesian-resto-template' => [
+            'appName' => 'Resto Nusantara',
+            'brandEmoji' => '🍽️',
+            'tagline' => 'Menu Favorit Nusantara, Siap Dipesan',
+        ],
+        default => [
+            'appName' => 'Toko Kopi',
+            'brandEmoji' => '☕',
+            'tagline' => 'Premium Coffee Experience',
+        ],
+    };
 }
 
 function renderStep4(array $errors): string
@@ -555,7 +638,11 @@ function renderStep5(array $errors): string
     $templateCards = '';
     foreach (getCatalogTemplateOptions() as $option) {
         $checked = $catalogTemplate === $option['slug'] ? 'checked' : '';
-        $templateCards .= '<label style="display:block;border:1px solid #e0d4c8;border-radius:10px;padding:14px 16px;margin-bottom:10px;cursor:pointer;background:#fff"><div style="display:flex;gap:12px"><input type="radio" name="catalog_template" value="' . htmlspecialchars($option['slug']) . '" ' . $checked . ' style="margin-top:3px"><div><div style="font-weight:700;color:#6f4e37">' . htmlspecialchars($option['name']) . '</div><div style="font-size:.82rem;color:#8b6f47;margin-top:4px">' . htmlspecialchars($option['description']) . '</div><div style="font-size:.78rem;color:#a08a72;margin-top:6px">Contoh produk: ' . htmlspecialchars($option['examples']) . '</div></div></div></label>';
+        $brand = getBrandingDefaultsForTemplate((string)$option['slug']);
+        $previewEmoji = htmlspecialchars((string)($brand['brandEmoji'] ?? '☕'));
+        $previewName = htmlspecialchars((string)($brand['appName'] ?? 'Toko Kopi'));
+        $previewTagline = htmlspecialchars((string)($brand['tagline'] ?? ''));
+        $templateCards .= '<label style="display:block;border:1px solid ' . ($checked ? '#a0522d' : '#e0d4c8') . ';border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer;background:' . ($checked ? '#fff8f3' : '#fff') . ';box-shadow:' . ($checked ? '0 0 0 3px rgba(160,82,45,.08)' : 'none') . '"><div style="display:flex;gap:12px"><input type="radio" name="catalog_template" value="' . htmlspecialchars($option['slug']) . '" ' . $checked . ' style="margin-top:3px"><div style="flex:1"><div style="font-weight:700;color:#6f4e37">' . htmlspecialchars($option['name']) . '</div><div style="font-size:.82rem;color:#8b6f47;margin-top:4px">' . htmlspecialchars($option['description']) . '</div><div style="font-size:.78rem;color:#a08a72;margin-top:6px">Contoh produk: ' . htmlspecialchars($option['examples']) . '</div><div style="margin-top:10px"><div style="font-size:.68rem;font-weight:700;color:#8b6f47;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Preview Branding</div><div style="background:#2c1a0e;color:#fff;display:inline-block;min-width:230px;padding:12px 14px;border-radius:10px;box-shadow:0 6px 18px rgba(44,26,14,.12)"><div style="display:flex;align-items:flex-start;gap:8px"><span style="font-size:1rem;line-height:1.2">' . $previewEmoji . '</span><div><div style="font-size:.94rem;font-weight:700;line-height:1.2">' . $previewName . '</div><div style="font-size:.66rem;color:rgba(255,255,255,.48);margin-top:4px;letter-spacing:.2px">' . $previewTagline . '</div></div></div></div></div></div></div></label>';
     }
     $cards = '';
     foreach ($plugins as $plugin) {
@@ -565,7 +652,7 @@ function renderStep5(array $errors): string
     if ($cards === '') {
         $cards = '<div class="alert alert-warning">Belum ada plugin yang ditemukan di folder <code>plugins/</code>.</div>';
     }
-    return "<div class=\"card\"><h2>Langkah 5 — Pilih Contoh Data Produk & Plugin</h2>{$err}<p>Pilih contoh data produk/menu yang paling mendekati jenis bisnis. Template menu yang sudah ada akan diaktifkan sebagai plugin agar admin tahu dataset mana yang dipakai.</p><h3 style=\"color:#6f4e37;margin:18px 0 10px\">Contoh Data Produk / Menu</h3><form method=\"POST\"><input type=\"hidden\" name=\"action\" value=\"step5_save_plugins\">{$templateCards}<h3 style=\"color:#6f4e37;margin:22px 0 10px\">Plugin Aktif</h3><p style=\"font-size:.88rem;color:#8b6f47\">Payment, channel, CRM, FAQ, POS, delivery, dan fitur lain dapat dipilih sesuai kebutuhan.</p><div style=\"margin-top:18px\">{$cards}</div><div class=\"form-nav\"><a href=\"install.php?step=4\" class=\"btn btn-secondary\">&larr; Kembali</a><button type=\"submit\" class=\"btn\">Lanjut &rarr;</button></div></form></div>";
+    return "<div class=\"card\"><h2>Langkah 5 — Pilih Contoh Data Produk & Plugin</h2>{$err}<p>Pilih contoh data produk/menu yang paling mendekati jenis bisnis. Template menu yang sudah ada akan diaktifkan sebagai plugin agar admin tahu dataset mana yang dipakai.</p><h3 style=\"color:#6f4e37;margin:18px 0 10px\">Contoh Data Produk / Menu</h3><p style=\"font-size:.85rem;color:#8b6f47;margin-bottom:12px\">Setiap kartu menampilkan preview branding default yang akan dipakai installer jika nama toko, icon, dan tagline masih memakai nilai generik.</p><form method=\"POST\"><input type=\"hidden\" name=\"action\" value=\"step5_save_plugins\">{$templateCards}<h3 style=\"color:#6f4e37;margin:22px 0 10px\">Plugin Aktif</h3><p style=\"font-size:.88rem;color:#8b6f47\">Payment, channel, CRM, FAQ, POS, delivery, dan fitur lain dapat dipilih sesuai kebutuhan.</p><div style=\"margin-top:18px\">{$cards}</div><div class=\"form-nav\"><a href=\"install.php?step=4\" class=\"btn btn-secondary\">&larr; Kembali</a><button type=\"submit\" class=\"btn\">Lanjut &rarr;</button></div></form></div>";
 }
 
 function renderStep6(array $errors): string
@@ -578,7 +665,7 @@ function renderStep6(array $errors): string
     $templateInfo = getCatalogTemplateInfo($catalogTemplate);
     $err = renderErrors($errors);
     $dbSummary = sprintf('%s:%s / %s (user: %s)', htmlspecialchars($db['dbHost'] ?? ''), htmlspecialchars($db['dbPort'] ?? ''), htmlspecialchars($db['dbName'] ?? ''), htmlspecialchars($db['dbUser'] ?? ''));
-    return "<div class=\"card\"><h2>Langkah 6 — Jalankan Instalasi</h2>{$err}<table class=\"summary-table\"><tr><th>Database</th><td>{$dbSummary}</td></tr><tr><th>Base URL</th><td>" . htmlspecialchars($app['baseUrl'] ?? '') . "</td></tr><tr><th>Lingkungan</th><td>" . htmlspecialchars($app['appEnv'] ?? '') . "</td></tr><tr><th>Nama Toko</th><td>" . htmlspecialchars($app['appName'] ?? '') . "</td></tr><tr><th>Admin Email</th><td>" . htmlspecialchars($admin['adminEmail'] ?? '') . "</td></tr><tr><th>Template Produk</th><td>" . htmlspecialchars($templateInfo['name']) . "<br><small>" . htmlspecialchars($templateInfo['examples']) . "</small></td></tr><tr><th>Plugin Aktif</th><td>" . htmlspecialchars(implode(', ', $plugins ?: ['Tidak ada'])) . "</td></tr></table><p>Proses ini akan:</p><ul><li>Membuat database otomatis bila belum ada</li><li>Membuat semua tabel dari <code>database/schema.sql</code></li><li>Mengisi data awal dari <code>database/seed.sql</code></li><li>Mencatat pilihan template produk/menu agar plugin template terkait aktif</li><li>Membuat akun super admin</li><li>Menulis file <code>.env</code></li><li>Menulis file <code>plugins/plugins.json</code></li><li>Membuat <code>storage/installed.lock</code></li></ul><div class=\"alert alert-warning\"><strong>Catatan:</strong> Plugin template seperti coffee, bakery, fruit, meat & veggie saat ini berfungsi sebagai template reset/seed yang dapat dijalankan dari dashboard/plugin flow. Installer memilih dan mengaktifkan plugin yang sesuai agar bisnis vertical langsung jelas setelah instalasi.</div><form method=\"POST\"><input type=\"hidden\" name=\"action\" value=\"run_install\"><div class=\"form-nav\"><a href=\"install.php?step=5\" class=\"btn btn-secondary\">&larr; Kembali</a><button type=\"submit\" class=\"btn btn-success\">&#9889; Jalankan Instalasi</button></div></form></div>";
+    return "<div class=\"card\"><h2>Langkah 6 — Jalankan Instalasi</h2>{$err}<table class=\"summary-table\"><tr><th>Database</th><td>{$dbSummary}</td></tr><tr><th>Base URL</th><td>" . htmlspecialchars($app['baseUrl'] ?? '') . "</td></tr><tr><th>Lingkungan</th><td>" . htmlspecialchars($app['appEnv'] ?? '') . "</td></tr><tr><th>Icon Toko</th><td>" . htmlspecialchars($app['brandEmoji'] ?? '☕') . "</td></tr><tr><th>Nama Toko</th><td>" . htmlspecialchars($app['appName'] ?? '') . "</td></tr><tr><th>Tagline</th><td>" . htmlspecialchars($app['tagline'] ?? '-') . "</td></tr><tr><th>Admin Email</th><td>" . htmlspecialchars($admin['adminEmail'] ?? '') . "</td></tr><tr><th>Template Produk</th><td>" . htmlspecialchars($templateInfo['name']) . "<br><small>" . htmlspecialchars($templateInfo['examples']) . "</small></td></tr><tr><th>Plugin Aktif</th><td>" . htmlspecialchars(implode(', ', $plugins ?: ['Tidak ada'])) . "</td></tr></table><p>Proses ini akan:</p><ul><li>Membuat database otomatis bila belum ada</li><li>Membuat semua tabel dari <code>database/schema.sql</code></li><li>Mengisi data awal dari <code>database/seed.sql</code></li><li>Menyimpan branding toko ke <code>Tema &amp; Branding</code></li><li>Mencatat pilihan template produk/menu agar plugin template terkait aktif</li><li>Membuat akun super admin</li><li>Menulis file <code>.env</code></li><li>Menulis file <code>plugins/plugins.json</code></li><li>Membuat <code>storage/installed.lock</code></li></ul><div class=\"alert alert-warning\"><strong>Catatan:</strong> Plugin template seperti coffee, bakery, fruit, meat & veggie saat ini berfungsi sebagai template reset/seed yang dapat dijalankan dari dashboard/plugin flow. Installer memilih dan mengaktifkan plugin yang sesuai agar bisnis vertical langsung jelas setelah instalasi.</div><form method=\"POST\"><input type=\"hidden\" name=\"action\" value=\"run_install\"><div class=\"form-nav\"><a href=\"install.php?step=5\" class=\"btn btn-secondary\">&larr; Kembali</a><button type=\"submit\" class=\"btn btn-success\">&#9889; Jalankan Instalasi</button></div></form></div>";
 }
 
 function detectBaseUrl(): string
