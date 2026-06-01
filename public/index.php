@@ -42,17 +42,129 @@
  */
 declare(strict_types=1);
 require_once dirname(__DIR__) . '/app/Config/config.php';
+use App\Config\Database;
 use App\Models\BranchModel;
 use App\Plugin\HookManager;
+
+$businessProfiles = [
+    'toko' => [
+        'label_id' => 'Toko / Retail',
+        'label_en' => 'Store / Retail',
+        'summary_id' => 'Cocok untuk katalog produk umum, order chat, promo, dan pengelolaan pelanggan.',
+        'summary_en' => 'Ideal for general product catalogs, chat ordering, promos, and customer management.',
+        'icon' => '🏬',
+    ],
+    'coffee shop' => [
+        'label_id' => 'Coffee Shop / Kafe',
+        'label_en' => 'Coffee Shop / Cafe',
+        'summary_id' => 'Siap untuk menu minuman, camilan, loyalty, dan order omnichannel.',
+        'summary_en' => 'Ready for beverage menus, snacks, loyalty, and omnichannel ordering.',
+        'icon' => '☕',
+    ],
+    'bakery' => [
+        'label_id' => 'Bakery / Toko Roti',
+        'label_en' => 'Bakery / Bread Shop',
+        'summary_id' => 'Pas untuk katalog roti, pastry, preorder, dan promo bundling harian.',
+        'summary_en' => 'Great for breads, pastries, preorders, and daily bundle promos.',
+        'icon' => '🥐',
+    ],
+    'toko buah' => [
+        'label_id' => 'Toko Buah / Jus',
+        'label_en' => 'Fruit Store / Juice',
+        'summary_id' => 'Mendukung produk segar, paket buah, jus, dan pengiriman cepat.',
+        'summary_en' => 'Supports fresh produce, fruit packs, juices, and fast delivery.',
+        'icon' => '🍎',
+    ],
+    'fresh market' => [
+        'label_id' => 'Fresh Market',
+        'label_en' => 'Fresh Market',
+        'summary_id' => 'Cocok untuk daging, sayur, bahan segar, dan katalog dengan banyak varian.',
+        'summary_en' => 'Ideal for meat, vegetables, fresh ingredients, and large variant catalogs.',
+        'icon' => '🥬',
+    ],
+    'apotek' => [
+        'label_id' => 'Apotek / Toko Kesehatan',
+        'label_en' => 'Pharmacy / Health Store',
+        'summary_id' => 'Siap untuk vitamin, obat OTC, alat kesehatan, dan katalog apotek.',
+        'summary_en' => 'Ready for vitamins, OTC medicine, health devices, and pharmacy catalogs.',
+        'icon' => '💊',
+    ],
+    'mart' => [
+        'label_id' => 'Mart / Minimarket',
+        'label_en' => 'Mart / Mini Market',
+        'summary_id' => 'Bagus untuk retail harian, convenience goods, dan checkout cepat.',
+        'summary_en' => 'Great for daily retail, convenience goods, and fast checkout.',
+        'icon' => '🛒',
+    ],
+    'restaurant' => [
+        'label_id' => 'Restaurant / Resto',
+        'label_en' => 'Restaurant',
+        'summary_id' => 'Mendukung menu makanan berat, meja, delivery, dan alur kitchen.',
+        'summary_en' => 'Supports full meals, table service, delivery, and kitchen workflows.',
+        'icon' => '🍽️',
+    ],
+];
+
+$templateLabels = [
+    'keep-seed'                 => ['id' => 'Seed default', 'en' => 'Default seed'],
+    'coffee-template'           => ['id' => 'Coffee template', 'en' => 'Coffee template'],
+    'bakery-template'           => ['id' => 'Bakery template', 'en' => 'Bakery template'],
+    'fruit-template'            => ['id' => 'Fruit template', 'en' => 'Fruit template'],
+    'meat-veggie-template'      => ['id' => 'Fresh market template', 'en' => 'Fresh market template'],
+    'pharmacy-template'         => ['id' => 'Pharmacy template', 'en' => 'Pharmacy template'],
+    'indonesian-resto-template' => ['id' => 'Resto Indonesia template', 'en' => 'Indonesian resto template'],
+    'minimarket-template'       => ['id' => 'Minimarket template', 'en' => 'Minimarket template'],
+];
+
 $branchModel = new BranchModel();
 $branches    = $branchModel->getActive();
+$appSettings = [];
+
+try {
+    $rows = Database::getInstance()
+        ->query('SELECT setting_key, setting_val FROM app_settings')
+        ->fetchAll(\PDO::FETCH_ASSOC);
+    $appSettings = array_column($rows, 'setting_val', 'setting_key');
+} catch (\Throwable $e) {
+    $appSettings = [];
+}
+
+$primaryBranch = $branches[0] ?? null;
+$primaryBranchSettings = $primaryBranch ? $branchModel->getAllSettings((int) $primaryBranch['id']) : [];
+
+$siteName = trim((string) ($appSettings['app_name'] ?? APP_NAME));
+if ($siteName === '') {
+    $siteName = 'Toko Kopi';
+}
+
+$businessType = trim((string) ($appSettings['business_type'] ?? ($primaryBranchSettings['business_type'] ?? 'coffee shop')));
+if (!isset($businessProfiles[$businessType])) {
+    $businessType = 'toko';
+}
+
+$catalogTemplate = (string) ($appSettings['catalog_template'] ?? 'keep-seed');
+$businessProfile = $businessProfiles[$businessType];
+$templateProfile = $templateLabels[$catalogTemplate] ?? ['id' => $catalogTemplate, 'en' => $catalogTemplate];
+$branchCount = count($branches);
+$defaultLanguage = strtoupper((string) ($appSettings['app_language'] ?? 'id'));
+$currency = (string) ($appSettings['app_currency'] ?? 'IDR');
+$installedAt = (string) ($appSettings['installed_at'] ?? '');
+$installedLabel = $installedAt !== '' && strtotime($installedAt) !== false
+    ? date('d M Y H:i', strtotime($installedAt))
+    : 'Siap digunakan';
+$heroBadgeId = sprintf('%s Profil Terpasang · %d Cabang Aktif · %s', $businessProfile['icon'], $branchCount, $templateProfile['id']);
+$heroBadgeEn = sprintf('%s Installed Profile · %d Active Branches · %s', $businessProfile['icon'], $branchCount, $templateProfile['en']);
+$heroTitleId = sprintf('Platform AI Commerce untuk %s', $siteName);
+$heroTitleEn = sprintf('AI Commerce Platform for %s', $siteName);
+$heroSummaryId = $businessProfile['summary_id'] . ' Landing page ini otomatis menampilkan profil hasil instalasi terbaru.';
+$heroSummaryEn = $businessProfile['summary_en'] . ' This landing page automatically reflects the latest installed profile.';
 ?>
 <!DOCTYPE html>
 <html lang="id" id="root-html">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>KopiBot AI — Chatbot Pemesanan untuk Toko Kopi</title>
+  <title><?= htmlspecialchars($siteName) ?> — <?= htmlspecialchars($businessProfile['label_id']) ?></title>
   <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/app.css">
   <?= HookManager::applyFilters('site.head_styles', '') ?>
   <style>
@@ -147,6 +259,21 @@ $branches    = $branchModel->getActive();
     .hero-remark-card li + li { margin-top:4px; }
     .hero-remark-card a { color:#ffe2ad; text-decoration:none; }
     .hero-remark-card a:hover { text-decoration:underline; }
+    .profile-summary {
+      display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin-top:18px;
+    }
+    .profile-summary-item {
+      background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12);
+      border-radius:16px; padding:16px 18px;
+    }
+    .profile-summary-label {
+      display:block; font-size:.74rem; letter-spacing:.06em; text-transform:uppercase;
+      color:rgba(255,255,255,.66); margin-bottom:8px;
+    }
+    .profile-summary-value {
+      color:#fff3d8; font-size:1rem; font-weight:700; line-height:1.45;
+      word-break:break-word;
+    }
 
     /* ── SECTION ── */
     .section { padding:72px 20px; }
@@ -293,6 +420,7 @@ $branches    = $branchModel->getActive();
       .nav { padding:14px 20px; }
       .hero-remark { padding:20px 16px; border-radius:20px; }
       .hero-remark-grid { grid-template-columns:1fr; }
+      .profile-summary { grid-template-columns:1fr; }
       .step:not(:last-child)::after { display:none; }
       .promo-detail { grid-template-columns:1fr; }
       .oss-panel { grid-template-columns:1fr; padding:24px; }
@@ -372,6 +500,44 @@ $branches    = $branchModel->getActive();
         <p>&#128279; <a href="https://github.com/kukuhtw/toko_kopi" target="_blank" rel="noopener">github.com/kukuhtw/toko_kopi</a></p>
         <p>&#127760; <a href="https://botlelang.com/toko_kopi" target="_blank">botlelang.com/toko_kopi</a></p>
         <p style="margin-top:10px">&copy; 2026 Kukuh TW. All rights reserved.</p>
+      </div>
+    </div>
+    <p class="hero-remark-desc" style="margin-top:18px">
+      Profil hasil instalasi terbaru untuk <strong><?= htmlspecialchars($siteName) ?></strong> ditampilkan di bawah ini.
+      Link GitHub repository utama tetap tersedia untuk referensi source code dan update.
+    </p>
+    <div class="profile-summary">
+      <div class="profile-summary-item">
+        <span class="profile-summary-label">Nama Toko</span>
+        <div class="profile-summary-value"><?= htmlspecialchars($siteName) ?></div>
+      </div>
+      <div class="profile-summary-item">
+        <span class="profile-summary-label">Business Type</span>
+        <div class="profile-summary-value"><?= htmlspecialchars($businessProfile['label_id']) ?></div>
+      </div>
+      <div class="profile-summary-item">
+        <span class="profile-summary-label">Template Aktif</span>
+        <div class="profile-summary-value"><?= htmlspecialchars($templateProfile['id']) ?></div>
+      </div>
+      <div class="profile-summary-item">
+        <span class="profile-summary-label">Base URL</span>
+        <div class="profile-summary-value"><?= htmlspecialchars(BASE_URL) ?></div>
+      </div>
+      <div class="profile-summary-item">
+        <span class="profile-summary-label">Cabang Aktif</span>
+        <div class="profile-summary-value"><?= (int) $branchCount ?></div>
+      </div>
+      <div class="profile-summary-item">
+        <span class="profile-summary-label">Bahasa Default</span>
+        <div class="profile-summary-value"><?= htmlspecialchars($defaultLanguage) ?></div>
+      </div>
+      <div class="profile-summary-item">
+        <span class="profile-summary-label">Mata Uang</span>
+        <div class="profile-summary-value"><?= htmlspecialchars($currency) ?></div>
+      </div>
+      <div class="profile-summary-item">
+        <span class="profile-summary-label">Terpasang</span>
+        <div class="profile-summary-value"><?= htmlspecialchars($installedLabel) ?></div>
       </div>
     </div>
   </div>

@@ -230,11 +230,17 @@ function runInstallation(): array
         $errors[] = 'Gagal menulis file .env. Pastikan folder root dapat ditulis.';
     }
 
+    $catalogTemplate = $_SESSION['catalog_template'] ?? 'keep-seed';
+
+    $settingsError = persistInstalledAppSettings($pdo, $app, $catalogTemplate);
+    if ($settingsError !== null) {
+        $errors[] = $settingsError;
+    }
+
     if (!writePluginsConfig($plugins)) {
         $errors[] = 'Gagal menulis file plugins/plugins.json.';
     }
 
-    $catalogTemplate = $_SESSION['catalog_template'] ?? 'keep-seed';
     if ($catalogTemplate !== 'keep-seed') {
         $bootstrapError = bootstrapInstallerTemplateRuntime($db);
         if ($bootstrapError !== null) {
@@ -342,6 +348,54 @@ function bootstrapInstallerTemplateRuntime(array $db): ?string
     $bootstrapped = true;
 
     return null;
+}
+
+function persistInstalledAppSettings(PDO $pdo, array $app, string $catalogTemplate): ?string
+{
+    try {
+        $settings = [
+            'app_name'         => (string)($app['appName'] ?? 'AI Agent Commerce'),
+            'business_type'    => inferBusinessTypeFromTemplate($catalogTemplate),
+            'catalog_template' => $catalogTemplate,
+            'base_url'         => (string)($app['baseUrl'] ?? ''),
+            'installed_at'     => date('c'),
+        ];
+
+        $stmt = $pdo->prepare(
+            'INSERT INTO app_settings (setting_key, setting_val, description, updated_at)
+             VALUES (?, ?, ?, NOW())
+             ON DUPLICATE KEY UPDATE setting_val = VALUES(setting_val), description = VALUES(description), updated_at = NOW()'
+        );
+
+        $descriptions = [
+            'app_name'         => 'Nama brand hasil instalasi',
+            'business_type'    => 'Tipe bisnis utama hasil instalasi',
+            'catalog_template' => 'Template katalog yang dipilih saat instalasi',
+            'base_url'         => 'Base URL aplikasi hasil instalasi',
+            'installed_at'     => 'Waktu instalasi terakhir',
+        ];
+
+        foreach ($settings as $key => $value) {
+            $stmt->execute([$key, $value, $descriptions[$key] ?? '']);
+        }
+    } catch (PDOException $e) {
+        return 'Gagal menyimpan profil aplikasi hasil instalasi: ' . $e->getMessage();
+    }
+
+    return null;
+}
+
+function inferBusinessTypeFromTemplate(string $catalogTemplate): string
+{
+    return match ($catalogTemplate) {
+        'bakery-template'           => 'bakery',
+        'fruit-template'            => 'toko buah',
+        'meat-veggie-template'      => 'fresh market',
+        'pharmacy-template'         => 'apotek',
+        'indonesian-resto-template' => 'restaurant',
+        'minimarket-template'       => 'mart',
+        default                     => 'coffee shop',
+    };
 }
 
 function buildEnvContent(array $db, array $app): string
