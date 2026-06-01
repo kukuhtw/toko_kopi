@@ -263,7 +263,10 @@ Vertical plugin dapat dikombinasikan dengan:
 | `chat.message_received` | action | Pesan diterima |
 | `chat.before_ai` | filter | Sebelum LLM dipanggil |
 | `chat.after_ai` | filter | Setelah AI reply |
+| `chat.intent_detected` | action | Intent utama sudah dideteksi (setelah `detectAll` + heuristik) |
 | `llm.providers` | filter | Tambah provider AI |
+| `intent.detect` | filter | Override intent tunggal dari plugin; jika diisi, `detectAll()` mengembalikan array berisi satu intent ini |
+| `intent.patterns` | filter | Tambah/modifikasi keyword pattern untuk semua intent; dipakai oleh `scoreAllIntents()` sehingga pattern plugin otomatis masuk ke multi-intent scoring |
 | `faq.search` | filter | Modifikasi FAQ retrieval |
 
 ### Dashboard Hooks

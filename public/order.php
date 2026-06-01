@@ -99,14 +99,14 @@ $categories = array_values($catMap);
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Order Online — <?= htmlspecialchars($branch['name']) ?></title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/app.css">
     <?= HookManager::applyFilters('site.head_styles', '') ?>
   
   
   <style>
     body { background:var(--coffee-cream); }
-    .order-page  { max-width:1100px; margin:0 auto; padding:20px; }
-    .order-layout { display:grid; grid-template-columns:1fr 380px; gap:24px; align-items:start; }
+    .order-page { max-width:1100px; margin:0 auto; padding:16px 12px 90px; }
 
     /* Branch hero */
     .branch-hero { background:var(--coffee-dark); color:#fff; padding:32px; border-radius:var(--radius-lg); margin-bottom:24px; }
@@ -256,8 +256,6 @@ $categories = array_values($catMap);
     .chatbot-float:hover { transform:scale(1.1); }
 
     @media(max-width:768px) {
-      .order-layout { grid-template-columns:1fr; }
-      .cart-box     { position:static; }
       .branch-hero-top { flex-direction:column; align-items:flex-start; }
     }
   </style>
@@ -280,10 +278,10 @@ $categories = array_values($catMap);
     </div>
   </div>
 
-  <div class="order-layout">
+  <div class="row g-3 align-items-start">
 
     <!-- ── Menu column ── -->
-    <div>
+    <div class="col-12 col-md-8">
       <div class="menu-filters">
         <input type="search" id="menuSearch" class="menu-search"
                placeholder="🔍 <?= htmlspecialchars($t['search_menu']) ?>" autocomplete="off"
@@ -298,7 +296,7 @@ $categories = array_values($catMap);
     </div>
 
     <!-- ── Cart column ── -->
-    <div class="cart-box">
+    <div class="col-12 col-md-4 cart-box">
       <div class="card">
         <div class="card-title">🛒 <?= htmlspecialchars($t['cart_title']) ?></div>
         <div class="cart-items-list" id="cartList">

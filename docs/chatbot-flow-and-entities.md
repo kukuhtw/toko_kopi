@@ -5,7 +5,9 @@ Dokumen ini menjelaskan alur end-to-end chat customer dan titik penerapan entity
 ## Ringkasan
 
 - `ChatbotEngine` adalah entry point utama flow chat.
-- `IntentDetector` atau `LlmIntentDetector` menentukan intent percakapan.
+- `IntentDetector` atau `LlmIntentDetector` mendeteksi **semua** intent dalam satu pesan via `detectAll()`, diurutkan berdasarkan skor relevansi.
+- `filterIntents()` membersihkan noise: `out_of_scope` dan `small_talk` dibuang jika ada intent actionable lain.
+- `dispatchAll()` menjalankan setiap intent secara berurutan; state dan `conv_context` diwariskan antar dispatch, lalu semua reply digabung menjadi satu response.
 - `ChatEntityExtractor` mengekstrak entity terstruktur dari isi chat:
   - `product`
   - `qty`
@@ -25,37 +27,71 @@ flowchart TD
     B --> C[Hook: chat.before_ai]
     C --> D[ChatEntityExtractor]
     C --> E[IntentDetector / LlmIntentDetector]
+
+    E --> E1["detectAll() → intents[]"]
+    E1 --> E2["Heuristik pada intents[0]\nnormalize · followUp · preferCart · preferMenu"]
+    E2 --> E3["filterIntents()\nbuang out_of_scope & small_talk jika ada intent lain"]
+
     D --> F[Context Builder]
-    E --> F
-    F --> G{Dispatch Skill}
+    E3 --> F
 
-    G --> H[MenuSkill]
-    G --> I[PromoSkill]
-    G --> J[CartSkill]
-    G --> K[CheckoutSkill]
+    F --> G{Jumlah intent}
+    G -->|= 1| H["dispatch(context)"]
+    G -->|> 1| I["dispatchAll(intents, context)\nloop: state & conv_context diwariskan"]
 
-    H --> H1[MenuModel.searchRelevantByName]
-    H --> H2[MenuRagResponder]
-    H --> H3[Budget Filter by effective_price]
+    H --> Skill
+    I --> Skill
 
-    I --> I1[PromoModel.getActiveForBranch]
-    I --> I2[PromoRagResponder]
+    Skill{Skill Handler}
+    Skill --> SMenu[MenuSkill]
+    Skill --> SPromo[PromoSkill]
+    Skill --> SCart[CartSkill]
+    Skill --> SCheckout[CheckoutSkill]
 
-    J --> J1[Resolve product from extracted entities]
-    J --> J2[Resolve variant]
-    J --> J3[Resolve toppings]
-    J --> J4[CartModel mutations]
+    SMenu --> M1[MenuModel.searchRelevantByName]
+    SMenu --> M2[MenuRagResponder]
+    SPromo --> P1[PromoModel.getActiveForBranch]
+    SPromo --> P2[PromoRagResponder]
+    SCart --> C1[CartModel mutations]
 
-    H1 --> L[(Menu + Variant + Topping Data)]
-    H2 --> L
-    I1 --> M[(Promo Data)]
-    J4 --> N[(Cart Data)]
+    M1 --> DB[(Menu + Variant + Topping)]
+    P1 --> DB2[(Promo Data)]
+    C1 --> DB3[(Cart Data)]
 
-    N --> O[Reply Message]
-    H --> O
-    I --> O
-    K --> O
+    SMenu --> O[Reply Message]
+    SPromo --> O
+    SCart --> O
+    SCheckout --> O
+    I -->|"gabung semua reply\n(\\n\\n)"| O
 ```
+
+## Multi-Intent Detection
+
+Sejak versi terbaru, satu pesan customer dapat memicu dan memproses **lebih dari satu intent** sekaligus.
+
+### Contoh
+
+| Pesan Customer | Intent Terdeteksi | Hasil |
+|---|---|---|
+| `pesan 2 latte dan ada promo apa?` | `tambah_item`, `tanya_promo` | Latte masuk cart + info promo ditampilkan |
+| `harga espresso berapa dan mau pesan 1` | `tanya_harga`, `tambah_item` | Harga dijawab + item masuk cart |
+| `lihat cart dan checkout sekarang` | `lihat_cart`, `checkout` | Summary cart + flow checkout dimulai |
+
+### Aturan Prioritas & Filter
+
+1. Heuristik (`normalizePendingStateIntent`, `applyFollowUpHeuristics`, dll.) hanya diterapkan ke **intent pertama** (skor tertinggi).
+2. `filterIntents()` membuang `out_of_scope` jika ada intent valid lain, dan membuang `small_talk` jika ada intent actionable.
+3. Dalam **blocking states** (`awaiting_name`, `awaiting_variant`, `awaiting_confirmation`, dll.), `detectAll()` otomatis mengembalikan satu intent saja — perilaku lama tetap terjaga.
+4. State hasil dispatch intent pertama **diwariskan** ke dispatch intent berikutnya.
+
+### Komponen Kunci
+
+| Komponen | File | Peran |
+|---|---|---|
+| `detectAll()` | `IntentDetectorInterface` | Kontrak multi-intent untuk semua detector |
+| `scoreAllIntents()` | `IntentDetector` | Scoring semua keyword, return `string[]` |
+| `filterIntents()` | `ChatbotEngine` | Bersihkan noise intent |
+| `dispatchAll()` | `ChatbotEngine` | Loop dispatch + state propagation |
 
 ## Detail Entity Extraction
 

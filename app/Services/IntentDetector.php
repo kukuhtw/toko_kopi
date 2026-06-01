@@ -122,6 +122,13 @@ class IntentDetector implements IntentDetectorInterface
         ],
     ];
 
+    private const BLOCKING_STATES = [
+        'awaiting_name', 'awaiting_email', 'awaiting_wa',
+        'awaiting_fulfillment', 'awaiting_table', 'awaiting_address', 'awaiting_postal',
+        'awaiting_confirmation', 'awaiting_variant', 'awaiting_toppings',
+        'awaiting_remove_variant', 'awaiting_item_notes',
+    ];
+
     public function detect(string $message, array $context = []): string
     {
         $lower = mb_strtolower(trim($message), 'UTF-8');
@@ -143,7 +150,29 @@ class IntentDetector implements IntentDetectorInterface
             return 'tanya_status_order';
         }
 
-        return $this->scoreMessage($lower);
+        return $this->scoreAllIntents($lower)[0] ?? 'out_of_scope';
+    }
+
+    public function detectAll(string $message, array $context = []): array
+    {
+        $lower = mb_strtolower(trim($message), 'UTF-8');
+        $state = $context['state'] ?? 'idle';
+
+        // In blocking states, single-intent only (existing flow handles it)
+        if (in_array($state, self::BLOCKING_STATES, true)) {
+            return [$this->detect($message, $context)];
+        }
+
+        $customIntent = HookManager::applyFilters('intent.detect', '', $message, $context);
+        if (is_string($customIntent) && trim($customIntent) !== '') {
+            return [trim($customIntent)];
+        }
+
+        if ($this->looksLikeOrderHistoryQuestion($lower)) {
+            return ['tanya_status_order'];
+        }
+
+        return $this->scoreAllIntents($lower);
     }
 
     private function detectConfirmation(string $lower): string
@@ -162,7 +191,7 @@ class IntentDetector implements IntentDetectorInterface
             return 'clear_cart';
         }
 
-        if ($this->scoreMessage($lower) === 'komplain_customer') {
+        if ($this->scoreAllIntents($lower)[0] === 'komplain_customer') {
             return 'komplain_customer';
         }
 
@@ -211,7 +240,8 @@ class IntentDetector implements IntentDetectorInterface
         ) === 1;
     }
 
-    private function scoreMessage(string $lower): string
+    /** Return all matching intents sorted by score descending. Falls back to ['out_of_scope']. */
+    private function scoreAllIntents(string $lower): array
     {
         $patterns = HookManager::applyFilters('intent.patterns', self::$patterns);
         $scores = [];
@@ -226,9 +256,11 @@ class IntentDetector implements IntentDetectorInterface
                 $scores[$intent] = $score;
             }
         }
-        if (empty($scores)) { return 'out_of_scope'; }
+        if (empty($scores)) {
+            return ['out_of_scope'];
+        }
         arsort($scores);
-        return array_key_first($scores);
+        return array_keys($scores);
     }
 
     private function detectCheckoutField(string $lower, string $state): string
@@ -238,7 +270,7 @@ class IntentDetector implements IntentDetectorInterface
             'hapus_item', 'pakai_promo', 'tambah_item', 'ubah_item', 'komplain_customer', 'faq_customer',
         ];
 
-        $scored = $this->scoreMessage($lower);
+        $scored = $this->scoreAllIntents($lower)[0];
         if (in_array($scored, $escapeIntents, true)) {
             return $scored;
         }

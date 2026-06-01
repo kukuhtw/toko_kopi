@@ -308,7 +308,9 @@ class OrderStatusSkill implements SkillInterface
 
 ## 12. Skill Router
 
-Skill Router bertugas memilih skill yang paling cocok berdasarkan pesan customer.
+Skill Router bertugas memilih skill yang paling cocok berdasarkan intent yang terdeteksi.
+
+Engine KopiBot (`ChatbotEngine`) mendukung **multi-intent** — satu pesan customer dapat memicu lebih dari satu intent dan setiap intent di-dispatch ke skill yang sesuai secara berurutan. Reply dari setiap skill digabung menjadi satu response.
 
 ```php
 <?php
@@ -322,10 +324,11 @@ class SkillRouter
         $this->skills[] = $skill;
     }
 
+    /** Pilih satu skill berdasarkan satu intent. */
     public function handle(array $context): array
     {
         foreach ($this->skills as $skill) {
-            if ($skill->canHandle($context)) {
+            if ($skill->canHandle($context['intent'] ?? '')) {
                 return $skill->handle($context);
             }
         }
@@ -334,6 +337,30 @@ class SkillRouter
             'success' => false,
             'intent' => 'fallback',
             'reply' => 'Maaf, saya belum memahami pertanyaan Anda. Apakah ingin melihat menu, membuat order, cek promo, atau cek status order?'
+        ];
+    }
+
+    /**
+     * Dispatch semua intent secara berurutan.
+     * State hasil dispatch sebelumnya diwariskan ke dispatch berikutnya.
+     */
+    public function handleAll(array $intents, array $context): array
+    {
+        $replies      = [];
+        $currentState = $context['state'] ?? 'idle';
+
+        foreach ($intents as $intent) {
+            $ctx = array_merge($context, ['intent' => $intent, 'state' => $currentState]);
+            $result = $this->handle($ctx);
+            if (!empty(trim($result['reply'] ?? ''))) {
+                $replies[] = $result['reply'];
+            }
+            $currentState = $result['new_state'] ?? $currentState;
+        }
+
+        return [
+            'success' => !empty($replies),
+            'reply'   => implode("\n\n", $replies),
         ];
     }
 }
@@ -347,13 +374,18 @@ class SkillRouter
 flowchart TD
     A[Pesan customer] --> B[Normalize message]
     B --> C[Build context]
-    C --> D[Skill Router]
-    D --> E{Skill cocok?}
-    E -->|Ya| F[Jalankan skill]
-    E -->|Tidak| G[Fallback ke LLM atau FAQ]
-    F --> H[Return response]
-    G --> H
-    H --> I[Kirim jawaban ke customer]
+    C --> D["detectAll() → intents[]"]
+    D --> E["filterIntents()\nbuang out_of_scope & small_talk\njika ada intent lain"]
+    E --> F{Jumlah intent}
+    F -->|= 1| G[Skill Router\nhandle single]
+    F -->|> 1| H["Skill Router\nhandleAll loop\nstate diwariskan"]
+    G --> I{Skill cocok?}
+    I -->|Ya| J[Jalankan skill]
+    I -->|Tidak| K[Fallback ke LLM atau FAQ]
+    J --> L[Reply]
+    K --> L
+    H --> L
+    L --> M[Gabung semua reply → kirim ke customer]
 ```
 
 ---

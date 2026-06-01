@@ -75,6 +75,11 @@ SYS;
         $this->fallback = new \App\Services\IntentDetector();
     }
 
+    public function detectAll(string $message, array $context = []): array
+    {
+        return $this->fallback->detectAll($message, $context);
+    }
+
     public function detect(string $message, array $context = []): string
     {
         $state = $context['state'] ?? 'idle';

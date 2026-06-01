@@ -51,6 +51,12 @@ class LlmIntentDetector implements IntentDetectorInterface
         $this->fallback = new IntentDetector();
     }
 
+    public function detectAll(string $message, array $context = []): array
+    {
+        // LLM only classifies a single intent; delegate multi-intent scoring to rule-based
+        return $this->fallback->detectAll($message, $context);
+    }
+
     public function detect(string $message, array $context = []): string
     {
         // Still use rule-based for checkout data-collection states

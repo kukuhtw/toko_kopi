@@ -99,22 +99,25 @@ class ChatbotEngine
         $message = (string) HookManager::applyFilters('chat.before_ai', $message, $branchId, $channel);
         $entities = $this->entityExtractor->extract($message, $currency);
 
-        $intent = $this->detector->detect($message, [
-            'state' => $conversation['state'],
-            'branch_id' => $branchId,
-            'channel' => $channel,
-            'customer_id' => (int)($customer['id'] ?? 0),
+        $detectorContext = [
+            'state'           => $conversation['state'],
+            'branch_id'       => $branchId,
+            'channel'         => $channel,
+            'customer_id'     => (int)($customer['id'] ?? 0),
             'conversation_id' => (int)($conversation['id'] ?? 0),
-            'conv_context' => $convCtx,
-        ]);
-        $intent = $this->normalizePendingStateIntent($intent, $message, (string)($conversation['state'] ?? 'idle'));
-        $intent = $this->applyFollowUpHeuristics($intent, $message, $convCtx);
-        $intent = $this->preferCheckoutEditIntent($intent, $message, $conversation['state']);
-        $intent = $this->preferActiveCartIntent($intent, $message, $cartItems, $convCtx);
-        $intent = $this->preferMenuSelectionIntent($intent, $message, $convCtx);
-        if ($intent === 'out_of_scope' && SmallTalkSkill::isSmallTalk($message)) {
-            $intent = 'small_talk';
+            'conv_context'    => $convCtx,
+        ];
+        $intents    = $this->detector->detectAll($message, $detectorContext);
+        $intents[0] = $this->normalizePendingStateIntent($intents[0], $message, (string)($conversation['state'] ?? 'idle'));
+        $intents[0] = $this->applyFollowUpHeuristics($intents[0], $message, $convCtx);
+        $intents[0] = $this->preferCheckoutEditIntent($intents[0], $message, $conversation['state']);
+        $intents[0] = $this->preferActiveCartIntent($intents[0], $message, $cartItems, $convCtx);
+        $intents[0] = $this->preferMenuSelectionIntent($intents[0], $message, $convCtx);
+        if ($intents[0] === 'out_of_scope' && SmallTalkSkill::isSmallTalk($message)) {
+            $intents[0] = 'small_talk';
         }
+        $intents = $this->filterIntents($intents);
+        $intent  = $intents[0];
 
         // Action: intent sudah dideteksi
         HookManager::doAction('chat.intent_detected', $intent, $message, $branchId);
@@ -141,7 +144,9 @@ class ChatbotEngine
             'conv_context'     => $convCtx,
         ];
 
-        $result = $this->dispatch($context);
+        $result = count($intents) > 1
+            ? $this->dispatchAll($intents, $context)
+            : $this->dispatch($context);
 
         if ($greeting) {
             $result['reply_message'] = $greeting . "\n\n" . ($result['reply_message'] ?? '');
@@ -542,6 +547,62 @@ class ChatbotEngine
         }
 
         return preg_match('/\b(mau|pesan|order|beli|minta|tambah|add)\b/u', $lower) === 1;
+    }
+
+    /**
+     * Dispatch each intent sequentially, passing updated state between calls.
+     * Replies are joined with a blank line separator.
+     */
+    private function dispatchAll(array $intents, array $context): array
+    {
+        $replies       = [];
+        $finalState    = $context['conversation']['state'] ?? 'idle';
+        $finalConvCtx  = $context['conv_context'];
+        $actionResults = [];
+
+        foreach ($intents as $intent) {
+            $ctx = array_merge($context, [
+                'intent'       => $intent,
+                'conversation' => array_merge($context['conversation'], ['state' => $finalState]),
+                'conv_context' => $finalConvCtx,
+            ]);
+            $result = $this->dispatch($ctx);
+            $reply  = trim($result['reply_message'] ?? '');
+            if ($reply !== '') {
+                $replies[] = $reply;
+            }
+            $finalState   = $result['new_state']    ?? $finalState;
+            $finalConvCtx = $result['conv_context'] ?? $finalConvCtx;
+            if (!empty($result['action_result'])) {
+                $actionResults[] = $result['action_result'];
+            }
+        }
+
+        return [
+            'reply_message' => implode("\n\n", $replies),
+            'new_state'     => $finalState,
+            'action_result' => $actionResults ?: null,
+            'conv_context'  => $finalConvCtx,
+        ];
+    }
+
+    /**
+     * Remove noise intents when actionable ones are present.
+     * Deduplicates while preserving order.
+     */
+    private function filterIntents(array $intents): array
+    {
+        $actionable = array_values(array_filter($intents, fn($i) => $i !== 'out_of_scope'));
+        if (!empty($actionable)) {
+            $intents = $actionable;
+        }
+
+        $nonSmallTalk = array_values(array_filter($intents, fn($i) => $i !== 'small_talk'));
+        if (!empty($nonSmallTalk)) {
+            $intents = $nonSmallTalk;
+        }
+
+        return array_values(array_unique($intents));
     }
 
     private function errorResponse(string $msg): array

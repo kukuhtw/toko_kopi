@@ -191,6 +191,47 @@ Ekspektasi:
 - jika sebelumnya ada konteks menu/promo/cart/checkout, bot tetap relatif nyambung
 - jika konteks tidak cukup, bot meminta klarifikasi singkat, bukan fallback ngawur
 
+## 18. Multi Intent — Order + Tanya Promo
+
+Input:
+`pesan 2 iced latte dan ada promo apa?`
+
+Ekspektasi:
+- intent utama di debug: `tambah_item`
+- iced latte (qty 2) masuk ke cart
+- reply juga mencakup info promo aktif
+- kedua jawaban muncul dalam satu response yang digabung
+
+## 19. Multi Intent — Tanya Harga + Order
+
+Input:
+`harga cappuccino berapa dan mau pesan 1 sekalian`
+
+Ekspektasi:
+- bot menjawab harga cappuccino
+- cappuccino juga langsung masuk ke cart
+- tidak perlu dua pesan terpisah
+
+## 20. Multi Intent — Lihat Cart + Checkout
+
+Input:
+`lihat pesanan saya dan lanjut checkout`
+
+Ekspektasi:
+- bot menampilkan isi cart terlebih dahulu
+- kemudian langsung memulai flow checkout (minta nama/email/dll)
+- satu pesan memicu dua aksi berurutan
+
+## 21. Multi Intent — Filter Noise (out_of_scope diabaikan)
+
+Input:
+`mau pesan kopi dan blablabla ngawur`
+
+Ekspektasi:
+- intent `tambah_item` tetap diproses
+- bagian noise tidak menyebabkan fallback `out_of_scope`
+- bot tetap menambahkan item ke cart
+
 ## Catatan Hasil
 
 Saat testing, catat minimal:

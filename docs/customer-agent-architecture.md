@@ -260,17 +260,25 @@ Tambahkan reflection ringan:
 
 ## Perbedaan dengan Arsitektur Lama
 
-### Lama
+### Sebelumnya (single-intent)
 
-- deteksi intent
-- pilih satu skill
+- `detect()` → satu intent saja (skor tertinggi)
+- pilih satu skill yang `canHandle(intent)`
 - skill langsung reply
 - context disimpan sebagai state machine
 
-### Baru
+### Saat Ini (multi-intent)
 
-- deteksi intent
-- route mode
+- `detectAll()` → semua intent terdeteksi, diurutkan by skor
+- `filterIntents()` → buang `out_of_scope` / `small_talk` jika ada intent actionable
+- heuristik diterapkan hanya pada intent utama (index 0)
+- `dispatchAll()` → loop dispatch per intent, state diwariskan
+- semua reply digabung dalam satu response ke customer
+- blocking states (`awaiting_variant`, checkout states, dll.) tetap single-intent — perilaku lama terjaga
+
+### Agent Layer (roadmap)
+
+- deteksi intent → route mode
 - advisory mode masuk agent kernel
 - agent membuat mini plan
 - tools execute
