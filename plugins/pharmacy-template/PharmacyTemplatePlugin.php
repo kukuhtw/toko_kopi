@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Plugin\{PluginInterface, HookManager};
+use App\Config\Database;
 
 class PharmacyTemplatePlugin implements PluginInterface
 {
@@ -48,6 +49,89 @@ class PharmacyTemplatePlugin implements PluginInterface
             ['Ibu & Anak', 'ibu-anak', 'Produk ibu dan anak.', 11],
             ['Kebersihan & Personal Care', 'kebersihan-personal-care', 'Produk kebersihan dan personal care.', 12],
         ];
+    }
+
+    public function resetAndSeed(): array
+    {
+        $pdo = Database::getInstance();
+        $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+
+        $pdo->exec('SET FOREIGN_KEY_CHECKS = 0');
+        $pdo->beginTransaction();
+
+        try {
+            $pdo->exec('DELETE FROM order_status_logs');
+            $pdo->exec('DELETE FROM order_items');
+            $pdo->exec('DELETE FROM orders');
+            $pdo->exec('DELETE FROM cart_items');
+            $pdo->exec('DELETE FROM carts');
+            $pdo->exec('DELETE FROM menu_item_toppings');
+            $pdo->exec('DELETE FROM branch_menu_variant_overrides');
+            $pdo->exec('DELETE FROM branch_menu_overrides');
+            $pdo->exec('DELETE FROM menu_item_variants');
+            $pdo->exec('DELETE FROM menu_items');
+            $pdo->exec('DELETE FROM menu_toppings');
+            $pdo->exec('DELETE FROM menu_categories');
+
+            $stmtCat = $pdo->prepare(
+                'INSERT INTO menu_categories (name, slug, description, sort_order, is_active)
+                 VALUES (:name, :slug, :desc, :sort, 1)'
+            );
+            $stmtItem = $pdo->prepare(
+                'INSERT INTO menu_items
+                 (category_id, name, slug, description, price, min_toppings, max_toppings,
+                  is_available, is_active, sort_order)
+                 VALUES (:cat_id, :name, :slug, :desc, :price, 0, 0, 1, 1, :sort)'
+            );
+            $stmtVariant = $pdo->prepare(
+                'INSERT INTO menu_item_variants
+                 (menu_item_id, label, slug, price_delta, sort_order, is_active)
+                 VALUES (:item_id, :label, :slug, :delta, :sort, 1)'
+            );
+
+            $categoryMap = [];
+            foreach (self::getCategories() as [$name, $slug, $desc, $sort]) {
+                $stmtCat->execute([':name' => $name, ':slug' => $slug, ':desc' => $desc, ':sort' => $sort]);
+                $categoryMap[$slug] = (int) $pdo->lastInsertId();
+            }
+
+            foreach (self::getMenuItems() as $catSlug => $items) {
+                $catId = $categoryMap[$catSlug] ?? null;
+                if (!$catId) {
+                    continue;
+                }
+                foreach ($items as $item) {
+                    $stmtItem->execute([
+                        ':cat_id' => $catId,
+                        ':name'   => $item['name'],
+                        ':slug'   => $item['slug'],
+                        ':desc'   => $item['desc'],
+                        ':price'  => $item['price'],
+                        ':sort'   => $item['sort'],
+                    ]);
+                    $itemId = (int) $pdo->lastInsertId();
+                    foreach ($item['variants'] as $vSort => [$label, $vSlug, $delta]) {
+                        $stmtVariant->execute([
+                            ':item_id' => $itemId,
+                            ':label'   => $label,
+                            ':slug'    => $itemId . '-' . $vSlug,
+                            ':delta'   => $delta,
+                            ':sort'    => $vSort + 1,
+                        ]);
+                    }
+                }
+            }
+
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
+            $pdo->exec('SET FOREIGN_KEY_CHECKS = 1');
+            return ['success' => false, 'message' => 'Seeding apotek gagal: ' . $e->getMessage()];
+        }
+
+        $pdo->exec('SET FOREIGN_KEY_CHECKS = 1');
+        $total = array_sum(array_map('count', self::getMenuItems()));
+        return ['success' => true, 'message' => "{$total} produk apotek berhasil di-seed."];
     }
 
     public static function getMenuItems(): array

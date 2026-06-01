@@ -225,12 +225,21 @@ function runInstallation(): array
         $errors[] = 'Update admin gagal: ' . $e->getMessage();
     }
 
+    // Tulis .env dan plugins.json lebih awal agar Database::getInstance() bisa dipakai oleh template
     if (file_put_contents(ROOT . '/.env', buildEnvContent($db, $app)) === false) {
         $errors[] = 'Gagal menulis file .env. Pastikan folder root dapat ditulis.';
     }
 
     if (!writePluginsConfig($plugins)) {
         $errors[] = 'Gagal menulis file plugins/plugins.json.';
+    }
+
+    $catalogTemplate = $_SESSION['catalog_template'] ?? 'keep-seed';
+    if ($catalogTemplate !== 'keep-seed') {
+        $templateErrors = applyCatalogTemplate($catalogTemplate);
+        if ($templateErrors) {
+            $errors = array_merge($errors, array_map(fn($e) => "[template] $e", $templateErrors));
+        }
     }
 
     @mkdir(ROOT . '/storage', 0755, true);
@@ -242,6 +251,43 @@ function runInstallation(): array
     }
 
     return empty($errors) ? ['success' => true, 'errors' => []] : ['success' => false, 'errors' => $errors];
+}
+
+function applyCatalogTemplate(string $slug): array
+{
+    $classMap = [
+        'coffee-template'           => 'CoffeeTemplatePlugin',
+        'bakery-template'           => 'BakeryTemplatePlugin',
+        'fruit-template'            => 'FruitTemplatePlugin',
+        'meat-veggie-template'      => 'MeatVeggieTemplatePlugin',
+        'pharmacy-template'         => 'PharmacyTemplatePlugin',
+        'indonesian-resto-template' => 'RestoIndonesiaTemplatePlugin',
+    ];
+
+    if (!isset($classMap[$slug])) {
+        return ["Template '{$slug}' tidak dikenal atau belum mendukung seeding otomatis."];
+    }
+
+    $pluginDir  = ROOT . '/plugins/' . $slug;
+    $className  = $classMap[$slug];
+
+    foreach (glob($pluginDir . '/*.php') ?: [] as $file) {
+        if (basename($file) !== 'plugin.php') {
+            require_once $file;
+        }
+    }
+
+    if (!class_exists($className)) {
+        return ["Kelas '{$className}' tidak ditemukan di plugin '{$slug}'."];
+    }
+
+    if (!method_exists($className, 'resetAndSeed')) {
+        return ["Template '{$slug}' belum memiliki method resetAndSeed()."];
+    }
+
+    $result = (new $className())->resetAndSeed();
+
+    return ($result['success'] ?? false) ? [] : [$result['message'] ?? 'Template seeding gagal.'];
 }
 
 function buildEnvContent(array $db, array $app): string
