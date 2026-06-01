@@ -88,6 +88,10 @@ Di Langkah 5, pilih template produk yang paling mendekati jenis bisnis:
 | **Resto Indonesia Template** | 125 | Nasi goreng, soto ayam, rendang, ayam bakar |
 | **Warung Makan Template** | 15 | Nasi goreng, ayam goreng, tempe, tahu, es teh, kopi tubruk |
 | **Resto Baso & Minuman Template** | 15 | Bakso urat, bakso telur, mie spesial, pangsit goreng, es campur |
+| **Kebab Template** | 15 | Kebab original, kebab mozarella, shawarma ayam, pita falafel, milkshake |
+| **Burger Template** | 15 | Burger classic beef, burger BBQ smoky, french fries, onion ring, milkshake |
+| **Toko Aksesori & Casing HP Template** | 80 | Soft case, tempered glass, charger 33W, TWS earbuds, power bank, ring stand |
+| **Toko Baju Busana Wanita Template** | 80 | Blouse rayon, jeans skinny, midi dress, blazer, gamis syari, tas tote bag |
 
 > Setelah instalasi, produk dapat ditambah, diubah, atau dihapus kapan saja via dashboard admin. Template dapat di-reset ulang dari halaman plugin terkait.
 
@@ -206,6 +210,10 @@ VALUES ('Super Admin', 'admin@example.com', '$2y$10$...', 'super_admin', 1);
 | **Restoran Indonesia** | Resto Indonesia template, topping/varian, loyalty, delivery, complaint handler |
 | **Warung makan / warteg** | Warung Makan template, loyalty point, promo sederhana, customer CRM |
 | **Warung baso / kedai mie** | Resto Baso & Minuman template, loyalty point, customer portal, delivery |
+| **Kedai kebab / shawarma** | Kebab template, loyalty point, promo, customer CRM, delivery |
+| **Kedai burger / fast food** | Burger template, loyalty point, upselling, promo bundle, payment gateway, delivery |
+| **Toko aksesori & casing HP** | HP Accessories template, customer CRM, loyalty point, payment gateway |
+| **Butik / toko baju wanita** | Fashion Wanita template, loyalty point, customer portal, promo, payment gateway |
 
 ---
 

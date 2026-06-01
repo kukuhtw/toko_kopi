@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+define('APP_NAME_DEFAULT', 'AI Agent Commerce');
+define('APP_BRAND_DEFAULT', 'Toko Kopi');
+
 define('ROOT', dirname(__DIR__));
 define('LOCK_FILE', ROOT . '/storage/installed.lock');
 define('DB_DIR', ROOT . '/database');
@@ -40,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($dbHost === '' || $dbName === '' || $dbUser === '') {
             $errors[] = 'Host, nama database, dan user wajib diisi.';
-        } elseif (!preg_match('/^[A-Za-z0-9_]+$/', $dbName)) {
+        } elseif (!preg_match('/^\w+$/', $dbName)) {
             $errors[] = 'Nama database hanya boleh berisi huruf, angka, dan underscore.';
         } else {
             try {
@@ -50,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $dbPass,
                     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_TIMEOUT => 5]
                 );
-                $testPdo->exec('CREATE DATABASE IF NOT EXISTS `' . str_replace('`', '``', $dbName) . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+                $testPdo->exec('CREATE DATABASE IF NOT EXISTS `' . str_replace('`', '``', $dbName) . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'); // NOSONAR - identifier safely escaped
                 unset($testPdo);
 
                 $_SESSION['db'] = compact('dbHost', 'dbPort', 'dbName', 'dbUser', 'dbPass');
@@ -64,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'step3_save') {
-        $appName = trim($_POST['app_name'] ?? 'AI Agent Commerce');
+        $appName = trim($_POST['app_name'] ?? APP_NAME_DEFAULT);
         $brandEmoji = mb_substr(strip_tags((string)($_POST['brand_emoji'] ?? '')), 0, 8);
         $tagline = mb_substr(strip_tags((string)($_POST['tagline'] ?? '')), 0, 120);
         $baseUrl = rtrim(trim($_POST['base_url'] ?? ''), '/');
@@ -187,8 +190,8 @@ function runInstallation(): array
             [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
         );
         $safeDb = str_replace('`', '``', $db['dbName']);
-        $pdo->exec('DROP DATABASE IF EXISTS `' . $safeDb . '`');
-        $pdo->exec('CREATE DATABASE `' . $safeDb . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+        $pdo->exec('DROP DATABASE IF EXISTS `' . $safeDb . '`'); // NOSONAR - identifier safely escaped with backtick doubling
+        $pdo->exec('CREATE DATABASE `' . $safeDb . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'); // NOSONAR
     } catch (PDOException $e) {
         return ['success' => false, 'errors' => ['Koneksi DB atau create database gagal: ' . $e->getMessage()]];
     }
@@ -246,27 +249,35 @@ function runInstallation(): array
         $errors[] = 'Gagal menulis file plugins/plugins.json.';
     }
 
-    if ($catalogTemplate !== 'keep-seed') {
-        $bootstrapError = bootstrapInstallerTemplateRuntime($db);
-        if ($bootstrapError !== null) {
-            $errors[] = '[template] ' . $bootstrapError;
-        } else {
-            $templateErrors = applyCatalogTemplate($catalogTemplate);
-            if ($templateErrors) {
-                $errors = array_merge($errors, array_map(fn($e) => "[template] $e", $templateErrors));
-            }
-        }
-    }
+    $errors = array_merge($errors, seedCatalogTemplateIfNeeded($catalogTemplate, $db));
 
-    @mkdir(ROOT . '/storage', 0755, true);
-    @mkdir(ROOT . '/storage/logs', 0755, true);
-    @mkdir(ROOT . '/uploads', 0755, true);
+    createStorageDirs();
 
     if (file_put_contents(LOCK_FILE, date('Y-m-d H:i:s')) === false) {
         $errors[] = 'Gagal membuat storage/installed.lock. Folder storage mungkin tidak writable.';
     }
 
     return empty($errors) ? ['success' => true, 'errors' => []] : ['success' => false, 'errors' => $errors];
+}
+
+function seedCatalogTemplateIfNeeded(string $catalogTemplate, array $db): array
+{
+    if ($catalogTemplate === 'keep-seed') {
+        return [];
+    }
+    $bootstrapError = bootstrapInstallerTemplateRuntime($db);
+    if ($bootstrapError !== null) {
+        return ['[template] ' . $bootstrapError];
+    }
+    $templateErrors = applyCatalogTemplate($catalogTemplate);
+    return array_map(fn(string $e): string => "[template] $e", $templateErrors);
+}
+
+function createStorageDirs(): void
+{
+    @mkdir(ROOT . '/storage', 0755, true);
+    @mkdir(ROOT . '/storage/logs', 0755, true);
+    @mkdir(ROOT . '/uploads', 0755, true);
 }
 
 function applyCatalogTemplate(string $slug): array
@@ -278,15 +289,21 @@ function applyCatalogTemplate(string $slug): array
         'meat-veggie-template'      => 'MeatVeggieTemplatePlugin',
         'pharmacy-template'         => 'PharmacyTemplatePlugin',
         'indonesian-resto-template' => 'RestoIndonesiaTemplatePlugin',
+        'minimarket-template'       => 'MinimarketTemplatePlugin',
+        'warung-template'           => 'WarungTemplatePlugin',
+        'resto-baso-template'       => 'RestoBasoTemplatePlugin',
+        'kebab-template'            => 'KebabTemplatePlugin',
+        'burger-template'           => 'BurgerTemplatePlugin',
+        'hp-accessories-template'   => 'HpAccessoriesTemplatePlugin',
+        'fashion-wanita-template'   => 'FashionWanitaTemplatePlugin',
     ];
 
-    if (!isset($classMap[$slug])) {
+    $className = $classMap[$slug] ?? null;
+    if ($className === null) {
         return ["Template '{$slug}' tidak dikenal atau belum mendukung seeding otomatis."];
     }
 
-    $pluginDir  = ROOT . '/plugins/' . $slug;
-    $className  = $classMap[$slug];
-
+    $pluginDir = ROOT . '/plugins/' . $slug;
     foreach (glob($pluginDir . '/*.php') ?: [] as $file) {
         if (basename($file) !== 'plugin.php') {
             require_once $file;
@@ -359,8 +376,8 @@ function persistInstalledAppSettings(PDO $pdo, array $app, string $catalogTempla
 {
     try {
         $settings = [
-            'app_name'         => (string)($app['appName'] ?? 'AI Agent Commerce'),
-            'theme_app_name'   => (string)($app['appName'] ?? 'AI Agent Commerce'),
+            'app_name'         => (string)($app['appName'] ?? APP_NAME_DEFAULT),
+            'theme_app_name'   => (string)($app['appName'] ?? APP_NAME_DEFAULT),
             'theme_brand_emoji'=> (string)($app['brandEmoji'] ?? ''),
             'theme_tagline'    => (string)($app['tagline'] ?? ''),
             'business_type'    => inferBusinessTypeFromTemplate($catalogTemplate),
@@ -462,36 +479,43 @@ function executeSqlFile(PDO $pdo, string $filePath): array
     return $errors;
 }
 
+function splitSqlProcessChar(string $c, int $i, string $sql, bool &$inStr, string &$strChar, string &$current, array &$statements): void
+{
+    if ($inStr) {
+        $current .= $c;
+        if ($c === $strChar && ($i === 0 || $sql[$i - 1] !== '\\')) {
+            $inStr = false;
+        }
+        return;
+    }
+    if ($c === '"' || $c === "'" || $c === '`') {
+        $inStr = true;
+        $strChar = $c;
+        $current .= $c;
+        return;
+    }
+    if ($c === ';') {
+        $s = trim($current);
+        if ($s !== '') {
+            $statements[] = $s;
+        }
+        $current = '';
+        return;
+    }
+    $current .= $c;
+}
+
 function splitSql(string $sql): array
 {
     $sql = preg_replace('/--[^\n]*/', '', $sql);
     $sql = preg_replace('/\/\*.*?\*\//s', '', (string)$sql);
     $statements = [];
     $current = '';
-    $len = strlen((string)$sql);
     $inStr = false;
     $strChar = '';
 
-    for ($i = 0; $i < $len; $i++) {
-        $c = $sql[$i];
-        if ($inStr) {
-            $current .= $c;
-            if ($c === $strChar && ($i === 0 || $sql[$i - 1] !== '\\')) {
-                $inStr = false;
-            }
-        } elseif ($c === '"' || $c === "'" || $c === '`') {
-            $inStr = true;
-            $strChar = $c;
-            $current .= $c;
-        } elseif ($c === ';') {
-            $s = trim($current);
-            if ($s !== '') {
-                $statements[] = $s;
-            }
-            $current = '';
-        } else {
-            $current .= $c;
-        }
+    for ($i = 0, $len = strlen((string)$sql); $i < $len; $i++) {
+        splitSqlProcessChar($sql[$i], $i, $sql, $inStr, $strChar, $current, $statements);
     }
 
     $s = trim($current);
@@ -546,7 +570,7 @@ function renderStep3(array $errors): string
     $err = renderErrors($errors);
     $autoUrl = detectBaseUrl();
     $brandEmoji = htmlspecialchars((string)($saved['brandEmoji'] ?? '☕'));
-    $appName = htmlspecialchars((string)($saved['appName'] ?? 'AI Agent Commerce'));
+    $appName = htmlspecialchars((string)($saved['appName'] ?? APP_NAME_DEFAULT));
     $tagline = htmlspecialchars((string)($saved['tagline'] ?? ''));
     $baseUrl = htmlspecialchars((string)($saved['baseUrl'] ?? $autoUrl));
     $devSel = ($saved['appEnv'] ?? 'production') === 'development' ? 'selected' : '';
@@ -562,7 +586,7 @@ function applyTemplateBrandingDefaults(array $app, string $catalogTemplate, bool
     $currentEmoji = trim((string)($app['brandEmoji'] ?? ''));
     $currentTagline = trim((string)($app['tagline'] ?? ''));
 
-    $genericNames = ['AI Agent Commerce', 'AI Commerce Mart', 'Toko Kopi'];
+    $genericNames = [APP_NAME_DEFAULT, 'AI Commerce Mart', 'Toko Kopi'];
     $genericEmojis = ['', '☕'];
     $genericTaglines = ['', 'Premium Coffee Experience'];
 
@@ -621,6 +645,26 @@ function getBrandingDefaultsForTemplate(string $catalogTemplate): array
             'appName' => 'Warung Baso',
             'brandEmoji' => '🍜',
             'tagline' => 'Baso Segar, Kuah Gurih, Pesan Sekarang',
+        ],
+        'kebab-template' => [
+            'appName' => 'Kebab House',
+            'brandEmoji' => '🌯',
+            'tagline' => 'Kebab Segar, Renyah, dan Kaya Rempah',
+        ],
+        'burger-template' => [
+            'appName' => 'Burger Joint',
+            'brandEmoji' => '🍔',
+            'tagline' => 'Burger Juicy, Sides Crispy, Pesan Sekarang',
+        ],
+        'hp-accessories-template' => [
+            'appName' => 'Aksesori HP Store',
+            'brandEmoji' => '📱',
+            'tagline' => 'Lengkapi HP-mu, Pesan Langsung via Chat',
+        ],
+        'fashion-wanita-template' => [
+            'appName' => 'Butik Fashion',
+            'brandEmoji' => '👗',
+            'tagline' => 'Tampil Cantik, Belanja Mudah',
         ],
         default => [
             'appName' => 'Toko Kopi',
@@ -698,7 +742,7 @@ function renderErrors(array $errors): string
 
 function sanitizeDatabaseName(string $name): string
 {
-    return preg_replace('/[^A-Za-z0-9_]/', '_', $name) ?: 'toko_kopi';
+    return preg_replace('/\W/', '_', $name) ?: 'toko_kopi';
 }
 
 function getCatalogTemplateOptions(): array
@@ -714,6 +758,10 @@ function getCatalogTemplateOptions(): array
         ['slug' => 'indonesian-resto-template', 'name' => 'Resto Indonesia Template', 'description' => 'Aktifkan plugin template resto masakan Indonesia untuk seed 125 menu tradisional dengan varian bumbu dan ukuran porsi.', 'examples' => 'Nasi Goreng, Soto Ayam, Rendang, Gado-Gado, Ayam Bakar, Es Teh'],
         ['slug' => 'warung-template', 'name' => 'Warung Makan Template', 'description' => 'Aktifkan plugin template warung makan untuk seed 15 menu khas warung Indonesia: nasi, lauk pauk, dan minuman warung.', 'examples' => 'Nasi Goreng, Ayam Goreng, Tempe, Tahu, Es Teh Manis, Kopi Tubruk'],
         ['slug' => 'resto-baso-template', 'name' => 'Resto Baso & Minuman Template', 'description' => 'Aktifkan plugin template resto baso untuk seed 15 menu bakso, mie, camilan, dan minuman segar khas warung baso.', 'examples' => 'Bakso Biasa, Bakso Urat, Bakso Telur, Mie Spesial, Pangsit Goreng, Es Campur'],
+        ['slug' => 'kebab-template', 'name' => 'Kebab Template', 'description' => 'Aktifkan plugin template kedai kebab untuk seed 15 menu kebab sapi, ayam, mozarella, shawarma, falafel, dan minuman.', 'examples' => 'Kebab Original, Kebab Mozarella, Shawarma Ayam, Pita Falafel, Milkshake'],
+        ['slug' => 'burger-template', 'name' => 'Burger Template', 'description' => 'Aktifkan plugin template kedai burger untuk seed 15 menu burger beef, ayam crispy, BBQ, fish fillet, sides, dan minuman.', 'examples' => 'Burger Classic Beef, Burger BBQ Smoky, French Fries, Onion Ring, Milkshake'],
+        ['slug' => 'hp-accessories-template', 'name' => 'Toko Aksesori & Casing HP Template', 'description' => 'Aktifkan plugin template toko aksesori HP untuk seed 80 produk: casing, tempered glass, kabel, charger, earphone, power bank, holder, dan aksesori gaming.', 'examples' => 'Soft Case, Tempered Glass, Charger 33W, TWS Earbuds, Power Bank, Ring Stand'],
+        ['slug' => 'fashion-wanita-template', 'name' => 'Toko Baju Busana Wanita Template', 'description' => 'Aktifkan plugin template toko fashion wanita untuk seed 80 produk: atasan, bawahan, dress, outer, gamis, casual, formal, dan aksesori fashion.', 'examples' => 'Blouse Rayon, Jeans Skinny, Midi Dress, Blazer, Gamis Syari, Tas Tote Bag'],
     ];
 }
 
@@ -792,7 +840,13 @@ function renderShell(string $title, string $content): string
         $bars = '';
         foreach ($steps as $i => $label) {
             $n = $i + 1;
-            $cls = $n < $step ? 'done' : ($n === $step ? 'active' : '');
+            if ($n < $step) {
+                $cls = 'done';
+            } elseif ($n === $step) {
+                $cls = 'active';
+            } else {
+                $cls = '';
+            }
             $bars .= "<div class=\"step {$cls}\"><span>{$n}</span>{$label}</div>";
         }
         $pct = min(100, (int)(($step - 1) / 5 * 100));
