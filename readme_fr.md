@@ -21,7 +21,7 @@
 > - Points de fidélité, échange de points et Customer CRM
 > - Tableau de bord self-service pour les clients
 > - Multi-devise, taxe et fuseau horaire
-> - Plugins de modèles de menus pour coffee shops, boulangeries, boutiques de fruits, viande fraîche, légumes, pharmacies et marts
+> - Plugins de modèles de menus pour coffee shops, boulangeries, boutiques de fruits, fresh market, pharmacies, marts, mode, accessoires téléphone, tours & travel et umrah
 > - Plugins de passerelle de paiement, connecteur POS, connecteur de livraison, FAQ RAG, gestion des réclamations et automatisation du support client
 >
 > ### Stack Technique
@@ -87,7 +87,7 @@ Les dernières fonctionnalités de plugins qui renforcent cette extension inclue
 | **Connecteur POS** | Scaffold et file de synchronisation live pour Moka Connect / Private Solution, synchronisation webhook entrant et retry runner |
 | **Connecteur de livraison** | Connecteur partenaire GoSend avec configuration endpoint prête pour production, file de réservation, déclencheur pickup, statut webhook et journal d'audit |
 | **Gestion des menus** | Téléversement CSV, variantes de taille/prix, toppings, override par succursale, téléversement de photos produits et génération de photos produits par IA |
-| **Modèles de menus** | Plugins de modèles de données de menus prêts à l'emploi : Coffee Shop, Boulangerie, Boutique de fruits, Viande & Légumes, Pharmacie et Mart, avec seed data et override de devise par succursale |
+| **Modèles de menus** | Plugins de modèles de données prêts à l'emploi : Coffee Shop, Boulangerie, Boutique de fruits, Viande & Légumes, Pharmacie, Mart, Warung, Baso, Kebab, Burger, Accessoires téléphone, Mode femme, Tours & Travel et Umrah |
 | **Tableau de bord** | Super admin multi-succursales, admin par succursale, Customer CRM, historique de fidélité client et Customer Portal self-service |
 | **Customer CRM** | Normalisation de l'identité client basée sur email/WhatsApp, notifications de fidélité et logs CRM par succursale |
 | **Customer Portal** | Connexion client légère via informations de contact + numéro de commande pour consulter l'historique des commandes, la fidélité, le profil et refaire une commande |
@@ -99,3 +99,26 @@ Les dernières fonctionnalités de plugins qui renforcent cette extension inclue
 ## Note de mise à jour du README
 
 Ce README a été mis à jour pour expliquer la nouvelle orientation de l'application comme plateforme AI Agent Commerce multi-verticale. Les informations ajoutées suivent les dernières fonctionnalités de plugins déjà disponibles ou préparées dans l'architecture plugin, notamment les canaux de chat, les passerelles de paiement, le connecteur POS, le connecteur de livraison, FAQ RAG, la gestion des réclamations, Customer CRM, Customer Portal et les modèles de menus pour différents types d'entreprises.
+
+## Modèles de Produits Disponibles
+
+L'installateur propose actuellement les modèles de produits et services prêts à être injectés suivants :
+
+| Modèle | Catégorie | Exemples de produits / services |
+| --- | --- | --- |
+| Menu café par défaut | Coffee Shop | Espresso, Cappuccino, Cafe Latte, Americano |
+| Coffee Shop | Café & boissons | Signature Coffee, Matcha Latte, Croffle |
+| Boulangerie | Boulangerie & pâtisserie | Croissant, Pain au lait, Cinnamon Roll |
+| Boutique de fruits | Fruits frais | Mangue, Orange, Pomme, Pack fruits |
+| Viande & Légumes | Fresh market | Bœuf, Poulet, Épinards, Carotte |
+| Pharmacie / Apotek | Santé & médicaments | Médicament fièvre, Vitamines, Antiseptique |
+| Minimarket | Produits du quotidien | Riz, Nouilles instantanées, Eau minérale |
+| Resto Indonesia | Restaurant indonésien | Nasi Goreng, Ayam Geprek, Thé glacé |
+| Warung | Petite restauration | Menu riz, Snacks frits, Thé chaud |
+| Resto Baso & Minuman | Boulettes & boissons | Baso Urat, Baso Telur, Orange glacée |
+| Kebab | Restauration rapide | Kebab bœuf, Kebab fromage, Shawarma |
+| Burger | Restauration rapide | Burger bœuf, Burger poulet, Frites |
+| Accessoires téléphone | Accessoires gadget | Chargeur, Câble USB, Coque téléphone |
+| Mode femme | Mode | Robe, Blouse, Tunique, Hijab |
+| Tours & Travel | Services de voyage | Open Trip, Private Tour, Airport Transfer |
+| Umrah | Voyage religieux | Pack Umrah, Manasik, Documents de voyage |

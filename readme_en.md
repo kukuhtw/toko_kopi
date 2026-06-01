@@ -21,7 +21,7 @@
 > - Loyalty Point, Redeem Point, and Customer CRM
 > - Customer Self-Service Dashboard
 > - Multi Currency, Tax, and Timezone
-> - Menu template plugins for coffee shops, bakeries, fruit stores, fresh meat, vegetables, pharmacies, and marts
+> - Menu template plugins for coffee shops, bakeries, fruit stores, fresh market, pharmacies, marts, fashion, phone accessories, tours & travel, and umrah
 > - Payment gateway plugins, POS connector, delivery connector, FAQ RAG, complaint handling, and customer support automation
 >
 > ### Tech Stack
@@ -87,7 +87,7 @@ The latest plugin features that strengthen this expansion include menu templates
 | **POS Connector** | Scaffold and live sync queue for Moka Connect / Private Solution, inbound webhook sync, and retry runner |
 | **Delivery Connector** | GoSend partner connector with live-ready endpoint configuration, booking queue, pickup trigger, webhook status, and audit log |
 | **Menu Management** | CSV upload, size/price variants, toppings, branch-level override, product photo upload, and AI product photo generation |
-| **Menu Templates** | Ready-to-use menu data template plugins: Coffee Shop, Bakery, Fruit Store, Meat & Vegetables, Pharmacy, and Mart, with seed data and branch-level currency override |
+| **Menu Templates** | Ready-to-use menu data template plugins: Coffee Shop, Bakery, Fruit Store, Meat & Vegetables, Pharmacy, Mart, Warung, Baso, Kebab, Burger, Phone Accessories, Women's Fashion, Tours & Travel, and Umrah |
 | **Dashboard** | Cross-branch super admin, branch admin, Customer CRM, customer loyalty history, and Customer Portal self-service |
 | **Customer CRM** | Customer identity normalization based on email/WhatsApp, loyalty notifications, and branch-level CRM logs |
 | **Customer Portal** | Lightweight customer login using contact information + order number to check order history, loyalty, profile, and repeat order |
@@ -99,3 +99,26 @@ The latest plugin features that strengthen this expansion include menu templates
 ## README Update Note
 
 This README has been updated to explain the new direction of the application as a multi-vertical AI Agent Commerce platform. The added information follows the latest plugin features that are already available or prepared in the plugin architecture, including chat channels, payment gateway, POS connector, delivery connector, FAQ RAG, complaint handler, Customer CRM, Customer Portal, and menu templates for different business types.
+
+## Available Product Templates
+
+The installer currently provides the following ready-to-seed product and service templates:
+
+| Template | Category | Example Products / Services |
+| --- | --- | --- |
+| Default Seed Coffee Menu | Coffee Shop | Espresso, Cappuccino, Cafe Latte, Americano |
+| Coffee Shop | Coffee & Beverages | Signature Coffee, Matcha Latte, Croffle |
+| Bakery | Bakery & Pastry | Croissant, Milk Bread, Cinnamon Roll |
+| Fruit Store | Fresh Fruit | Mango, Orange, Apple, Fruit Package |
+| Meat & Veggie | Fresh Market | Beef, Chicken, Spinach, Carrot |
+| Pharmacy / Apotek | Health & Medicine | Fever Medicine, Vitamins, Antiseptic |
+| Minimarket | Daily Essentials | Rice, Instant Noodles, Mineral Water |
+| Resto Indonesia | Indonesian Restaurant | Nasi Goreng, Ayam Geprek, Es Teh |
+| Warung | Food Stall | Rice Package, Fried Snacks, Hot Tea |
+| Resto Baso & Minuman | Meatball & Drinks | Baso Urat, Baso Telur, Iced Orange |
+| Kebab | Fast Food | Beef Kebab, Cheese Kebab, Shawarma |
+| Burger | Fast Food | Beef Burger, Chicken Burger, Fries |
+| Phone Accessories | Gadget Accessories | Charger, USB Cable, Phone Case |
+| Women's Fashion | Fashion Retail | Dress, Blouse, Tunic, Hijab |
+| Tours & Travel | Travel Services | Open Trip, Private Tour, Airport Transfer |
+| Umrah | Religious Travel | Umrah Package, Manasik, Travel Documents |
