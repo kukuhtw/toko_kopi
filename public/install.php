@@ -612,6 +612,16 @@ function getBrandingDefaultsForTemplate(string $catalogTemplate): array
             'brandEmoji' => '🍽️',
             'tagline' => 'Menu Favorit Nusantara, Siap Dipesan',
         ],
+        'warung-template' => [
+            'appName' => 'Warung Makan',
+            'brandEmoji' => '🍽️',
+            'tagline' => 'Makan Enak, Harga Warung',
+        ],
+        'resto-baso-template' => [
+            'appName' => 'Warung Baso',
+            'brandEmoji' => '🍜',
+            'tagline' => 'Baso Segar, Kuah Gurih, Pesan Sekarang',
+        ],
         default => [
             'appName' => 'Toko Kopi',
             'brandEmoji' => '☕',
@@ -700,8 +710,10 @@ function getCatalogTemplateOptions(): array
         ['slug' => 'fruit-template', 'name' => 'Fruit Store Template', 'description' => 'Aktifkan plugin template toko buah untuk seed 60 produk buah, jus, smoothie, dan salad.', 'examples' => 'Apel, Jeruk, Pisang, Alpukat, Jus Mangga, Salad Buah'],
         ['slug' => 'meat-veggie-template', 'name' => 'Meat & Veggie Template', 'description' => 'Aktifkan plugin template fresh market untuk seed 80 produk daging dan sayuran.', 'examples' => 'Daging Sapi, Ayam Fillet, Ikan, Brokoli, Wortel, Bayam'],
         ['slug' => 'pharmacy-template', 'name' => 'Pharmacy / Apotek Template', 'description' => 'Aktifkan plugin template apotek untuk seed 120 produk lengkap dengan kategori obat, vitamin, alat kesehatan, varian kemasan, dan harga IDR.', 'examples' => 'Paracetamol, Vitamin C, Masker, Tensimeter, Obat Batuk, Suplemen'],
-        ['slug' => 'minimarket-template', 'name' => 'Minimarket Template', 'description' => 'Aktifkan plugin template minimarket untuk seed produk retail sehari-hari dengan berbagai kategori kebutuhan pokok.', 'examples' => 'Beras, Minyak Goreng, Indomie, Sabun, Shampo, Minuman Kemasan'],
+        ['slug' => 'minimarket-template', 'name' => 'Minimarket Template', 'description' => 'Aktifkan plugin template minimarket untuk seed 120 produk retail sehari-hari dengan berbagai kategori kebutuhan pokok.', 'examples' => 'Beras, Minyak Goreng, Indomie, Sabun, Shampo, Minuman Kemasan'],
         ['slug' => 'indonesian-resto-template', 'name' => 'Resto Indonesia Template', 'description' => 'Aktifkan plugin template resto masakan Indonesia untuk seed 125 menu tradisional dengan varian bumbu dan ukuran porsi.', 'examples' => 'Nasi Goreng, Soto Ayam, Rendang, Gado-Gado, Ayam Bakar, Es Teh'],
+        ['slug' => 'warung-template', 'name' => 'Warung Makan Template', 'description' => 'Aktifkan plugin template warung makan untuk seed 15 menu khas warung Indonesia: nasi, lauk pauk, dan minuman warung.', 'examples' => 'Nasi Goreng, Ayam Goreng, Tempe, Tahu, Es Teh Manis, Kopi Tubruk'],
+        ['slug' => 'resto-baso-template', 'name' => 'Resto Baso & Minuman Template', 'description' => 'Aktifkan plugin template resto baso untuk seed 15 menu bakso, mie, camilan, dan minuman segar khas warung baso.', 'examples' => 'Bakso Biasa, Bakso Urat, Bakso Telur, Mie Spesial, Pangsit Goreng, Es Campur'],
     ];
 }
 

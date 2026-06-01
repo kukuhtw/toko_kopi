@@ -86,6 +86,8 @@ Di Langkah 5, pilih template produk yang paling mendekati jenis bisnis:
 | **Pharmacy / Apotek Template** | 120 | Paracetamol, Vitamin C, Amoxicillin, tensimeter |
 | **Minimarket Template** | 120 | Beras, Indomie, Aqua, Chitato, sabun, deterjen |
 | **Resto Indonesia Template** | 125 | Nasi goreng, soto ayam, rendang, ayam bakar |
+| **Warung Makan Template** | 15 | Nasi goreng, ayam goreng, tempe, tahu, es teh, kopi tubruk |
+| **Resto Baso & Minuman Template** | 15 | Bakso urat, bakso telur, mie spesial, pangsit goreng, es campur |
 
 > Setelah instalasi, produk dapat ditambah, diubah, atau dihapus kapan saja via dashboard admin. Template dapat di-reset ulang dari halaman plugin terkait.
 
@@ -202,6 +204,8 @@ VALUES ('Super Admin', 'admin@example.com', '$2y$10$...', 'super_admin', 1);
 | **Pharmacy / apotek** | Pharmacy template (120 produk), FAQ RAG & complaints, customer CRM, payment gateway, delivery |
 | **Mini mart / retail mart** | Minimarket template (120 produk), POS connector, barcode scanner, payment gateway, customer portal |
 | **Restoran Indonesia** | Resto Indonesia template, topping/varian, loyalty, delivery, complaint handler |
+| **Warung makan / warteg** | Warung Makan template, loyalty point, promo sederhana, customer CRM |
+| **Warung baso / kedai mie** | Resto Baso & Minuman template, loyalty point, customer portal, delivery |
 
 ---
 
