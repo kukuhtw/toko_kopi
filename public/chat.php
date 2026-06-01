@@ -1536,7 +1536,8 @@ function buildReplyActions(text, meta = {}) {
     return appendDefaultReplyActions(actions, { suppressDefaults: true });
   }
 
-  if (lower.includes('metode pesanan') || lower.includes('fulfillment method') || lower.includes('ambil di toko') || lower.includes('pickup in store')) {
+  if (!lower.includes('berhasil') && !lower.includes('successfully') &&
+      (lower.includes('metode pesanan') || lower.includes('fulfillment method') || lower.includes('ambil di toko') || lower.includes('pickup in store'))) {
     actions.push({ label: 'Ambil di Toko', value: 'ambil di toko', tone: '' });
     actions.push({ label: 'Delivery ke Meja', value: 'delivery ke meja', tone: '' });
     actions.push({ label: 'Delivery ke Alamat', value: 'delivery ke alamat', tone: 'primary' });
