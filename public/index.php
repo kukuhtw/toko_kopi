@@ -103,6 +103,20 @@ $businessProfiles = [
         'summary_en' => 'Supports full meals, table service, delivery, and kitchen workflows.',
         'icon' => '🍽️',
     ],
+    'travel' => [
+        'label_id' => 'Tours & Travel',
+        'label_en' => 'Tours & Travel',
+        'summary_id' => 'Cocok untuk paket wisata, konsultasi itinerary, booking tour, dan layanan add-on perjalanan.',
+        'summary_en' => 'Great for tour packages, itinerary consultation, trip booking, and travel add-on services.',
+        'icon' => '✈️',
+    ],
+    'umrah' => [
+        'label_id' => 'Umrah & Travel Religi',
+        'label_en' => 'Umrah & Religious Travel',
+        'summary_id' => 'Siap untuk paket umrah, handling dokumen, perlengkapan jamaah, dan konsultasi keberangkatan.',
+        'summary_en' => 'Ready for umrah packages, document handling, pilgrim kits, and departure consultation.',
+        'icon' => '🕋',
+    ],
 ];
 
 $templateLabels = [
@@ -114,6 +128,8 @@ $templateLabels = [
     'pharmacy-template'         => ['id' => 'Pharmacy template', 'en' => 'Pharmacy template'],
     'indonesian-resto-template' => ['id' => 'Resto Indonesia template', 'en' => 'Indonesian resto template'],
     'minimarket-template'       => ['id' => 'Minimarket template', 'en' => 'Minimarket template'],
+    'tours-travel-template'     => ['id' => 'Tours & travel template', 'en' => 'Tours & travel template'],
+    'umrah-template'            => ['id' => 'Umrah template', 'en' => 'Umrah template'],
 ];
 
 $branchModel = new BranchModel();

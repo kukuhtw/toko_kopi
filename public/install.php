@@ -296,6 +296,8 @@ function applyCatalogTemplate(string $slug): array
         'burger-template'           => 'BurgerTemplatePlugin',
         'hp-accessories-template'   => 'HpAccessoriesTemplatePlugin',
         'fashion-wanita-template'   => 'FashionWanitaTemplatePlugin',
+        'tours-travel-template'     => 'ToursTravelTemplatePlugin',
+        'umrah-template'            => 'UmrahTemplatePlugin',
     ];
 
     $className = $classMap[$slug] ?? null;
@@ -422,6 +424,8 @@ function inferBusinessTypeFromTemplate(string $catalogTemplate): string
         'pharmacy-template'         => 'apotek',
         'indonesian-resto-template' => 'restaurant',
         'minimarket-template'       => 'mart',
+        'tours-travel-template'     => 'travel',
+        'umrah-template'            => 'umrah',
         default                     => 'coffee shop',
     };
 }
@@ -666,6 +670,16 @@ function getBrandingDefaultsForTemplate(string $catalogTemplate): array
             'brandEmoji' => '👗',
             'tagline' => 'Tampil Cantik, Belanja Mudah',
         ],
+        'tours-travel-template' => [
+            'appName' => 'Nusantara Travel',
+            'brandEmoji' => '✈️',
+            'tagline' => 'Paket Wisata Siap Booking, Konsultasi Cepat',
+        ],
+        'umrah-template' => [
+            'appName' => 'Umrah Amanah',
+            'brandEmoji' => '🕋',
+            'tagline' => 'Paket Umrah Nyaman, Ibadah Lebih Tenang',
+        ],
         default => [
             'appName' => 'Toko Kopi',
             'brandEmoji' => '☕',
@@ -762,6 +776,8 @@ function getCatalogTemplateOptions(): array
         ['slug' => 'burger-template', 'name' => 'Burger Template', 'description' => 'Aktifkan plugin template kedai burger untuk seed 15 menu burger beef, ayam crispy, BBQ, fish fillet, sides, dan minuman.', 'examples' => 'Burger Classic Beef, Burger BBQ Smoky, French Fries, Onion Ring, Milkshake'],
         ['slug' => 'hp-accessories-template', 'name' => 'Toko Aksesori & Casing HP Template', 'description' => 'Aktifkan plugin template toko aksesori HP untuk seed 80 produk: casing, tempered glass, kabel, charger, earphone, power bank, holder, dan aksesori gaming.', 'examples' => 'Soft Case, Tempered Glass, Charger 33W, TWS Earbuds, Power Bank, Ring Stand'],
         ['slug' => 'fashion-wanita-template', 'name' => 'Toko Baju Busana Wanita Template', 'description' => 'Aktifkan plugin template toko fashion wanita untuk seed 80 produk: atasan, bawahan, dress, outer, gamis, casual, formal, dan aksesori fashion.', 'examples' => 'Blouse Rayon, Jeans Skinny, Midi Dress, Blazer, Gamis Syari, Tas Tote Bag'],
+        ['slug' => 'tours-travel-template', 'name' => 'Tours & Travel Template', 'description' => 'Aktifkan plugin template jasa wisata dan travel untuk seed 15 layanan: tour domestik, internasional, visa, transfer, dan private guide.', 'examples' => 'Bali 3D2N, Labuan Bajo, Singapore, Visa Wisata, Airport Transfer'],
+        ['slug' => 'umrah-template', 'name' => 'Umrah Template', 'description' => 'Aktifkan plugin template jasa umrah untuk seed 15 layanan: paket reguler, premium, plus tour, handling dokumen, dan perlengkapan jamaah.', 'examples' => 'Umrah 9 Hari, Umrah VIP, Plus Turki, Dokumen, Perlengkapan Umrah'],
     ];
 }
 
