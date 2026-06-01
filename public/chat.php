@@ -954,6 +954,7 @@ let chatCartState = {
   },
 };
 let activeProductDetail = null;
+let hasRenderedConversationHistory = false;
 
 // ── On load: check if identity already saved in localStorage ──
 window.addEventListener('DOMContentLoaded', () => {
@@ -1064,7 +1065,7 @@ function clearIdentity() {
 }
 
 // ── Show chat UI, hide overlay ────────────────────────────────
-function showChatReady(sendWelcome) {
+async function showChatReady(sendWelcome) {
   // Hide overlay
   const overlay = document.getElementById('identityOverlay');
   if (overlay) {
@@ -1087,6 +1088,11 @@ function showChatReady(sendWelcome) {
     badge.style.display   = 'flex';
     initial.textContent   = chatUser.name.charAt(0).toUpperCase();
     dispName.textContent  = chatUser.name.split(' ')[0]; // first name only
+  }
+
+  const hasHistory = await loadConversationHistory();
+  if (hasHistory) {
+    return;
   }
 
   if (sendWelcome) {
@@ -1148,6 +1154,59 @@ function formatBotText(text) {
     .replace(/\n/g, '<br>');
 }
 
+function formatMessageTime(value) {
+  if (!value) {
+    const now = new Date();
+    return now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+  }
+
+  const parsed = new Date(String(value).replace(' ', 'T'));
+  if (Number.isNaN(parsed.getTime())) {
+    return formatMessageTime('');
+  }
+
+  return parsed.getHours().toString().padStart(2,'0') + ':' + parsed.getMinutes().toString().padStart(2,'0');
+}
+
+async function loadConversationHistory() {
+  if (!BRANCH_ID || !chatUser || hasRenderedConversationHistory) return false;
+
+  try {
+    const res = await fetch(
+      `${BASE_URL}/api/chat/history.php?branch_id=${encodeURIComponent(BRANCH_ID)}&session_id=${encodeURIComponent(SESSION_ID)}`
+    );
+    const data = await res.json();
+    if (!data?.success || !Array.isArray(data.data?.messages) || !data.data.messages.length) {
+      hasRenderedConversationHistory = true;
+      return false;
+    }
+
+    const container = document.getElementById('chatMessages');
+    if (!container) return false;
+    container.innerHTML = '';
+
+    data.data.messages.forEach(row => {
+      const rawMeta = row?.raw_data && typeof row.raw_data === 'object' ? row.raw_data : {};
+      const html = row.sender === 'bot'
+        ? formatBotText(row.message || '') + detectorDebugLabel(rawMeta.detector)
+        : escapeHtml(row.message || '');
+
+      appendRawMessage(html, row.sender === 'bot' ? 'bot' : 'user', {
+        actionResult: rawMeta.action_result ?? null,
+        intent: row.intent || '',
+        conversationState: rawMeta.conversation_state || '',
+        createdAt: row.created_at || '',
+      });
+    });
+
+    hasRenderedConversationHistory = true;
+    return true;
+  } catch {
+    hasRenderedConversationHistory = true;
+    return false;
+  }
+}
+
 function appendRawMessage(htmlContent, sender) {
   const container = document.getElementById('chatMessages');
   if (!container) return;
@@ -1163,8 +1222,7 @@ function appendRawMessage(htmlContent, sender) {
 
   const time = document.createElement('div');
   time.className = 'message-time';
-  const now = new Date();
-  time.textContent = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+  time.textContent = formatMessageTime(meta.createdAt || '');
   bubble.appendChild(time);
   wrap.appendChild(bubble);
   container.appendChild(wrap);

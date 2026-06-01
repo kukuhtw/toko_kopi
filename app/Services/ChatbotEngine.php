@@ -182,7 +182,11 @@ class ChatbotEngine
         $newState = $result['new_state']   ?? 'idle';
         $newCtx   = $result['conv_context'] ?? $convCtx;
         $this->convModel->updateState($convId, $newState, $newCtx);
-        $this->convModel->addMessage($convId, 'bot', $result['reply_message'] ?? '', $intent);
+        $this->convModel->addMessage($convId, 'bot', $result['reply_message'] ?? '', $intent, [
+            'action_result' => $result['action_result'] ?? null,
+            'conversation_state' => $newState,
+            'detector' => $this->detectorMeta,
+        ]);
 
         return [
             'reply_message' => $result['reply_message'] ?? '',

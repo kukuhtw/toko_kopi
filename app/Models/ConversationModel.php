@@ -113,12 +113,26 @@ class ConversationModel extends BaseModel
         ];
     }
 
-    public function addMessage(int $convId, string $sender, string $message, string $intent = ''): int
+    public function findActiveBySessionKey(string $sessionKey): array|false
+    {
+        return $this->query(
+            'SELECT * FROM conversations WHERE session_key = ? AND ended_at IS NULL ORDER BY id DESC LIMIT 1',
+            [$sessionKey]
+        )->fetch();
+    }
+
+    public function addMessage(int $convId, string $sender, string $message, string $intent = '', ?array $rawData = null): int
     {
         $this->query('UPDATE conversations SET last_activity = NOW() WHERE id = ?', [$convId]);
         return (int) $this->query(
-            'INSERT INTO conversation_messages (conversation_id, sender, message, intent) VALUES (?, ?, ?, ?)',
-            [$convId, $sender, $message, $intent]
+            'INSERT INTO conversation_messages (conversation_id, sender, message, intent, raw_data) VALUES (?, ?, ?, ?, ?)',
+            [
+                $convId,
+                $sender,
+                $message,
+                $intent,
+                !empty($rawData) ? json_encode($rawData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null,
+            ]
         )->rowCount();
     }
 

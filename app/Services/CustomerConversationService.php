@@ -65,7 +65,14 @@ class CustomerConversationService
         if ($activeSuspension !== null) {
             $reply = $this->buildSuspendedReply($language, (string)$activeSuspension['until']);
             $this->convModel->addMessage($convId, 'customer', $message, 'suspended');
-            $this->convModel->addMessage($convId, 'bot', $reply, 'suspended');
+            $this->convModel->addMessage($convId, 'bot', $reply, 'suspended', [
+                'conversation_state' => 'suspended',
+                'detector' => $this->detectorMeta,
+                'action_result' => [
+                    'suspended_until' => $activeSuspension['until'],
+                    'reason' => $activeSuspension['reason'],
+                ],
+            ]);
 
             return [
                 'reply_message' => $reply,
@@ -119,7 +126,14 @@ class CustomerConversationService
 
                 $this->convModel->addMessage($convId, 'customer', $message, $intent);
                 $this->convModel->updateState($convId, 'suspended', $convCtx);
-                $this->convModel->addMessage($convId, 'bot', $reply, 'suspended');
+                $this->convModel->addMessage($convId, 'bot', $reply, 'suspended', [
+                    'conversation_state' => 'suspended',
+                    'detector' => $this->detectorMeta,
+                    'action_result' => [
+                        'suspended_until' => $abuseResult['suspended_until'],
+                        'reason' => 'too_many_out_of_scope',
+                    ],
+                ]);
 
                 return [
                     'reply_message' => $reply,
@@ -176,7 +190,15 @@ class CustomerConversationService
             (array)($agentResult['tool_calls'] ?? [])
         );
         $this->convModel->updateState($convId, 'idle', $agentConvCtx);
-        $this->convModel->addMessage($convId, 'bot', $reply, $intent);
+        $this->convModel->addMessage($convId, 'bot', $reply, $intent, [
+            'conversation_state' => 'idle',
+            'detector' => $this->detectorMeta,
+            'action_result' => [
+                'agent_mode' => 'advisory',
+                'tool_calls' => $agentResult['tool_calls'] ?? [],
+                'handoff' => $agentResult['handoff'] ?? null,
+            ],
+        ]);
         $this->logAgentTask($agentContext, $convId, $agentResult, $reply);
 
         return [
