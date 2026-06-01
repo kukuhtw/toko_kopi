@@ -47,7 +47,53 @@
 >
 > Copyright 2026 Kukuh TW. All rights reserved.
 
-KopiBot is a chatbot ordering and AI commerce system built with PHP 8 native, without a large framework. It uses one codebase for multi-business, multi-branch, multi-channel, multi-language, promo engine, loyalty points, Customer CRM, Customer Portal, and plugin system. Although the repository name is still `toko_kopi`, the direction of the application has expanded into a configurable AI Agent Commerce platform for various business verticals such as culinary businesses, pharmacies, and marts.
+KopiBot is built for businesses that want an ordering, customer support, loyalty, and digital catalog system they can truly control. It is powered by native PHP 8, without a large framework, and uses one codebase for multi-business, multi-branch, multi-channel, multi-language operations, promo engine, loyalty points, Customer CRM, Customer Portal, and a plugin system. Although the repository name is still `toko_kopi`, the product direction has expanded into a configurable AI Agent Commerce platform for culinary, pharmacy, retail, travel, and booking-based service businesses.
+
+## Problems It Solves
+
+Many small and mid-sized businesses want to serve orders from websites, WhatsApp, and other chat channels, but their operations are often spread across disconnected tools. The catalog lives in one place, promotions in another, customer history is scattered, loyalty is inconsistent, and branch teams struggle to get a complete picture of each customer.
+
+Another recurring problem is the limitation of instant, one-size-fits-all solutions. As soon as a business needs a specific checkout flow, branch-specific promotion rules, a certain payment integration, or a product template that matches its vertical, generic tools quickly become restrictive. Even small changes may depend on the vendor, raise recurring costs, or lock business data inside a third-party platform.
+
+## The Solution
+
+KopiBot is designed as an AI Agent Commerce foundation that can be installed, owned, and extended by the business or its technical team. The goal is not only to make a chatbot reply to messages, but to support the full commerce flow end to end:
+
+- capture customer intent from chat or web ordering
+- display branch-aware catalogs and product variants
+- drive upselling, promotions, and loyalty automatically
+- store reusable customer history inside CRM
+- connect checkout to payment, delivery, POS, or other operational workflows
+
+From an implementation perspective, the platform is intentionally modular. One brand can run many branches, channels, catalog types, and integrations without splitting the system into separate applications.
+
+## Why Not a Typical SaaS?
+
+This platform differs from generic commerce SaaS because it prioritizes control and extensibility. In a SaaS model, businesses usually adapt themselves to the vendor's workflow. When they need something specific, the options are often limited: wait for the vendor roadmap, pay for another add-on, or accept an operational compromise.
+
+With KopiBot, the business or internal technical team can:
+
+- self-host the system and keep full access to the database and codebase
+- adjust checkout workflows, AI prompts, CRM logic, promotions, and branch rules
+- add new integrations without waiting for a central vendor
+- build business-specific installation templates for different verticals
+
+This approach fits agencies, software houses, multi-branch operators, or businesses that want to build a long-term digital asset instead of renting the same SaaS panel used by everyone else.
+
+## Plugins & Extensions
+
+The plugin architecture is one of the core pillars of the project. New features do not have to be placed directly in the core. Through action and filter hooks, plugins can extend application behavior with less risk to the main codebase, making upgrades and feature experiments safer.
+
+Some extension categories already supported:
+
+- product and service template plugins for installer seed catalogs
+- payment gateway plugins such as Midtrans, Xendit, iPaymu, and Nicepay
+- POS connector plugins such as Moka Connect / Private Solution
+- delivery connector plugins such as GoSend
+- knowledge and support plugins such as FAQ RAG and complaint handling
+- branding and theme plugins for store name, brand icon, tagline, and visual appearance
+
+This model allows each deployment to assemble a different feature stack. One installation can act as a coffee shop ordering bot, another as a digital pharmacy, minimarket, travel booking assistant, or umrah portal, all on the same foundation but with a different plugin composition.
 
 ---
 

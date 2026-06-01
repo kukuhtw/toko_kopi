@@ -47,7 +47,53 @@
 >
 > Copyright 2026 Kukuh TW. Tous droits réservés.
 
-KopiBot est un système de commande par chatbot et une plateforme de commerce IA construits avec PHP 8 natif, sans grand framework. Il utilise une seule base de code pour le multi-business, le multi-succursales, le multi-canal, le multilingue, le moteur de promotions, les points de fidélité, le Customer CRM, le Customer Portal et le système de plugins. Même si le nom du dépôt reste `toko_kopi`, l'orientation de l'application a été élargie en une plateforme AI Agent Commerce configurable pour différents secteurs d'activité comme la restauration, la pharmacie et les marts.
+KopiBot est conçu pour les entreprises qui veulent un système de commande, de support client, de fidélisation et de catalogue digital qu'elles peuvent réellement maîtriser. Il repose sur PHP 8 natif, sans grand framework, et utilise une seule base de code pour le multi-business, le multi-succursales, le multi-canal, le multilingue, le moteur de promotions, les points de fidélité, le Customer CRM, le Customer Portal et le système de plugins. Même si le nom du dépôt reste `toko_kopi`, l'orientation du produit a été élargie vers une plateforme AI Agent Commerce configurable pour la restauration, la pharmacie, le retail, le voyage et les services basés sur la réservation.
+
+## Problèmes Résolus
+
+De nombreuses petites et moyennes entreprises veulent gérer les commandes depuis leur site web, WhatsApp et d'autres canaux de chat, mais leurs opérations sont souvent dispersées dans des outils qui ne communiquent pas entre eux. Le catalogue est à un endroit, les promotions à un autre, l'historique client est fragmenté, la fidélité manque de cohérence et les équipes en succursale ont du mal à obtenir une vue complète du client.
+
+Un autre problème fréquent vient des solutions instantanées trop génériques. Dès qu'une entreprise a besoin d'un parcours de checkout spécifique, de règles promotionnelles propres à chaque succursale, d'une intégration de paiement particulière ou d'un modèle produit adapté à sa verticale métier, les outils génériques deviennent vite limitants. Même de petits ajustements peuvent dépendre du fournisseur, augmenter les coûts récurrents ou enfermer les données métier dans une plateforme tierce.
+
+## La Solution
+
+KopiBot est pensé comme une base AI Agent Commerce que l'entreprise ou son équipe technique peut installer, posséder et faire évoluer. L'objectif n'est pas seulement de faire répondre un chatbot, mais de prendre en charge le flux commerce de bout en bout :
+
+- capter l'intention client depuis le chat ou la commande web
+- afficher des catalogues et variantes produits adaptés à chaque succursale
+- activer automatiquement l'upselling, les promotions et la fidélité
+- stocker un historique client réutilisable dans le CRM
+- connecter le checkout au paiement, à la livraison, au POS ou à d'autres workflows opérationnels
+
+Du point de vue de l'implémentation, la plateforme est volontairement modulaire. Une même marque peut gérer plusieurs succursales, canaux, types de catalogues et intégrations sans devoir fragmenter le système en plusieurs applications séparées.
+
+## Pourquoi Pas un SaaS Classique ?
+
+Cette plateforme se distingue d'un SaaS commerce générique parce qu'elle met l'accent sur le contrôle et l'extensibilité. Dans un modèle SaaS, les entreprises s'adaptent souvent au workflow défini par le fournisseur. Lorsqu'un besoin spécifique apparaît, les options sont généralement limitées : attendre la roadmap du fournisseur, payer un add-on supplémentaire, ou accepter un compromis opérationnel.
+
+Avec KopiBot, l'entreprise ou l'équipe technique interne peut :
+
+- auto-héberger le système et garder un accès complet à la base de données et au code
+- ajuster les workflows de checkout, les prompts IA, la logique CRM, les promotions et les règles par succursale
+- ajouter de nouvelles intégrations sans attendre un fournisseur central
+- créer des modèles d'installation adaptés à différents verticales métiers
+
+Cette approche convient aux agences, software houses, opérateurs multi-succursales ou entreprises qui veulent construire un actif numérique de long terme plutôt que louer le même panneau SaaS que tout le monde.
+
+## Plugins & Extensions
+
+L'architecture plugin est l'un des piliers du projet. Les nouvelles fonctionnalités n'ont pas besoin d'être ajoutées directement dans le core. Grâce aux hooks action et filter, les plugins peuvent étendre le comportement de l'application avec moins de risque pour la base principale, ce qui rend les montées de version et les expérimentations plus sûres.
+
+Quelques catégories d'extensions déjà supportées :
+
+- plugins de modèles produits et services pour injecter un catalogue initial à l'installation
+- plugins de passerelles de paiement comme Midtrans, Xendit, iPaymu et Nicepay
+- plugins de connecteurs POS comme Moka Connect / Private Solution
+- plugins de connecteurs de livraison comme GoSend
+- plugins de knowledge et support comme FAQ RAG et complaint handling
+- plugins de branding et de thème pour le nom du magasin, l'icône de marque, la tagline et l'apparence visuelle
+
+Ce modèle permet à chaque déploiement d'assembler une pile fonctionnelle différente. Une installation peut servir de bot de commande pour coffee shop, une autre de pharmacie digitale, de minimarket, d'assistant de réservation voyage ou de portail umrah, tout cela sur la même fondation mais avec une composition de plugins différente.
 
 ---
 

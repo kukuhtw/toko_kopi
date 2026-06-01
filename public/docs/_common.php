@@ -8,6 +8,11 @@ function docsSourceDir(): string
     return dirname(__DIR__, 2) . '/docs';
 }
 
+function docsTutorialSourceDir(): string
+{
+    return dirname(__DIR__, 2) . '/doctutorial';
+}
+
 function docsBaseUrl(): string
 {
     return BASE_URL . '/docs';
@@ -49,6 +54,7 @@ function docsCatalog(): array
 
     $preferredOrder = [
         'instalasi',
+        'ebook-panduan-penggunaan-kopibot',
         'lisensi',
         'plugin-system',
         'woocommerce-vs-ai-agent-commerce',
@@ -65,7 +71,7 @@ function docsCatalog(): array
     ];
 
     $entries = [];
-    foreach (glob(docsSourceDir() . '/*.md') ?: [] as $path) {
+    foreach (docsMarkdownSources() as $path) {
         $slug = basename($path, '.md');
         $entries[$slug] = [
             'slug' => $slug,
@@ -95,6 +101,23 @@ function docsCatalog(): array
 
     $catalog = $entries;
     return $catalog;
+}
+
+function docsMarkdownSources(): array
+{
+    $paths = glob(docsSourceDir() . '/*.md') ?: [];
+
+    $extraDocs = [
+        docsTutorialSourceDir() . '/ebook-panduan-penggunaan-kopibot.md',
+    ];
+
+    foreach ($extraDocs as $path) {
+        if (is_file($path)) {
+            $paths[] = $path;
+        }
+    }
+
+    return $paths;
 }
 
 function docsDocUrl(string $slug): string
@@ -190,6 +213,12 @@ function docsRewriteHref(string $href): string
         return docsPublicUrl('docs/' . rawurlencode($slug) . '.php' . $anchor);
     }
 
+    if (preg_match('/^doctutorial\/([^#?]+)\.md(#.*)?$/i', ltrim($normalized, './'), $matches)) {
+        $slug = basename($matches[1]);
+        $anchor = $matches[2] ?? '';
+        return docsPublicUrl('docs/' . rawurlencode($slug) . '.php' . $anchor);
+    }
+
     if (preg_match('/^([^#?]+)\.md(#.*)?$/i', $normalized, $matches)) {
         $slug = basename($matches[1]);
         $anchor = $matches[2] ?? '';
@@ -204,6 +233,10 @@ function docsRewriteHref(string $href): string
     }
 
     if (preg_match('/^(docs|plugins|database|app|storage|uploads)\/.+$/i', ltrim($normalized, './'))) {
+        return docsSourceViewerUrl(ltrim($normalized, './'));
+    }
+
+    if (preg_match('/^(doctutorial)\/.+$/i', ltrim($normalized, './'))) {
         return docsSourceViewerUrl(ltrim($normalized, './'));
     }
 
@@ -447,12 +480,22 @@ function docsParseMarkdown(string $markdown): array
 
 function docsRenderSidebarLinks(array $catalog, string $activeSlug): string
 {
-    $items = [];
+    $groups = [];
     foreach ($catalog as $slug => $entry) {
         $class = $slug === $activeSlug ? ' class="is-active"' : '';
-        $items[] = '<a' . $class . ' href="' . htmlspecialchars($entry['url'], ENT_QUOTES, 'UTF-8') . '">'
+        $meta = docsDocMeta($slug);
+        $group = $meta['label'];
+        $groups[$group][] = '<a' . $class . ' href="' . htmlspecialchars($entry['url'], ENT_QUOTES, 'UTF-8') . '">'
             . htmlspecialchars($entry['title'], ENT_QUOTES, 'UTF-8')
             . '</a>';
+    }
+
+    $items = [];
+    foreach ($groups as $group => $links) {
+        $items[] = '<div class="docs-sidebar-group">'
+            . '<div class="docs-sidebar-group-title">' . htmlspecialchars($group, ENT_QUOTES, 'UTF-8') . '</div>'
+            . implode("\n", $links)
+            . '</div>';
     }
 
     return implode("\n", $items);
@@ -592,6 +635,9 @@ function docsPageShell(string $title, string $bodyClass, string $mainContent, st
     .docs-sidebar, .docs-toc { position: sticky; top: 82px; align-self: start; padding: 20px; }
     .docs-sidebar h2, .docs-toc h2 { margin: 0 0 14px; color: var(--doc-accent-strong); font-size: 1rem; }
     .docs-sidebar nav, .docs-toc nav { display: grid; gap: 8px; }
+    .docs-sidebar-group { display: grid; gap: 8px; padding-top: 6px; }
+    .docs-sidebar-group + .docs-sidebar-group { margin-top: 8px; padding-top: 14px; border-top: 1px solid var(--doc-border); }
+    .docs-sidebar-group-title { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--doc-accent); padding: 0 4px; }
     .docs-sidebar a, .docs-toc a { display: block; padding: 9px 11px; border-radius: 12px; color: var(--doc-text-soft); text-decoration: none; font-size: 0.9rem; line-height: 1.35; }
     .docs-sidebar a:hover, .docs-sidebar a.is-active, .docs-toc a:hover { background: rgba(139, 94, 60, 0.09); color: var(--doc-accent-strong); }
     .toc-level-3 { margin-left: 12px; font-size: 0.84rem !important; }
@@ -651,7 +697,7 @@ function docsRenderPage(string $slug): string
         http_response_code(404);
         $body = '<main class="docs-shell"><section class="docs-card docs-main"><div class="docs-empty"><h1>Dokumen tidak ditemukan</h1><p>Slug <code>'
             . htmlspecialchars($slug, ENT_QUOTES, 'UTF-8')
-            . '</code> tidak ada di folder <code>/docs</code>.</p></div></section></main>';
+            . '</code> tidak ada di katalog dokumentasi.</p></div></section></main>';
         return docsPageShell('Dokumen Tidak Ditemukan', 'docs-page', $body, 'Dokumen tidak ditemukan.');
     }
 
@@ -736,14 +782,16 @@ function docsRenderIndexPage(): string
 
     foreach ($catalog as $entry) {
         $excerpt = htmlspecialchars($entry['excerpt'] !== '' ? $entry['excerpt'] : 'Dokumen ini belum memiliki ringkasan otomatis.', ENT_QUOTES, 'UTF-8');
+        $badge = docsRenderDocBadge($entry['slug']);
         $items[] = '<article class="docs-listing-item">'
+            . $badge
             . '<h3>' . htmlspecialchars($entry['title'], ENT_QUOTES, 'UTF-8') . '</h3>'
             . '<p>' . $excerpt . '</p>'
             . '<a href="' . htmlspecialchars($entry['url'], ENT_QUOTES, 'UTF-8') . '">Buka versi HTML</a>'
             . '</article>';
     }
 
-    $listing = $items !== [] ? implode("\n", $items) : '<div class="docs-empty">Belum ada file Markdown di folder <code>/docs</code>.</div>';
+    $listing = $items !== [] ? implode("\n", $items) : '<div class="docs-empty">Belum ada file Markdown di katalog dokumentasi.</div>';
     $remark = docsBrandRemarkHtml();
 
     $body = <<<HTML
@@ -761,7 +809,19 @@ function docsRenderIndexPage(): string
   <section class="docs-card docs-main">
     <div class="docs-kicker">Dokumentasi Developer</div>
     <h1>Dokumentasi HTML KopiBot AI</h1>
-    <p>Semua file di folder <code>/docs</code> sekarang punya versi HTML yang lebih nyaman dibaca di browser. Konten sumbernya tetap Markdown, jadi dokumentasi tetap satu sumber dan lebih mudah dirawat, termasuk update terbaru untuk AI Agent Commerce multi-vertical, perbandingan dengan WooCommerce, FAQ RAG, complaint automation, integrasi Moka Connect, integrasi GoSend, loyalty, Customer CRM, dan Customer Portal.</p>
+    <p>Semua file Markdown penting sekarang punya versi HTML yang lebih nyaman dibaca di browser. Konten sumbernya tetap Markdown, jadi dokumentasi tetap satu sumber dan lebih mudah dirawat, termasuk update terbaru untuk AI Agent Commerce multi-vertical, ebook panduan penggunaan, perbandingan dengan WooCommerce, FAQ RAG, complaint automation, integrasi Moka Connect, integrasi GoSend, loyalty, Customer CRM, dan Customer Portal.</p>
+    <div class="docs-listing" style="margin-bottom:22px">
+      <article class="docs-listing-item" style="border:1px solid rgba(124,58,237,0.18);background:linear-gradient(135deg, rgba(255,248,241,0.98), rgba(255,255,255,0.94));box-shadow:0 18px 40px rgba(124,58,237,0.08);">
+        <h3>Start Here: EBook Panduan Penggunaan</h3>
+        <p>Panduan paling lengkap untuk user dan implementor baru. Membahas Web Installer 6 langkah, branding toko, template bisnis, plugin, CRM, Customer Portal, payment, delivery, hingga checklist production.</p>
+        <a href="ebook-panduan-penggunaan-kopibot.php">Buka panduan utama</a>
+      </article>
+      <article class="docs-listing-item">
+        <h3>Setup Cepat: Panduan Instalasi</h3>
+        <p>Jika Anda ingin langsung memasang aplikasi, mulai dari panduan instalasi. Dokumen ini fokus pada langkah setup web installer, database, template, plugin, dan environment production.</p>
+        <a href="instalasi.php">Buka panduan instalasi</a>
+      </article>
+    </div>
     <div class="docs-listing">
       {$listing}
     </div>
@@ -772,6 +832,7 @@ function docsRenderIndexPage(): string
       <a href="../readme.php">README Project</a>
       <a href="https://github.com/kukuhtw/toko_kopi" target="_blank" rel="noopener noreferrer">GitHub Repository</a>
       <a href="instalasi.php">Panduan Instalasi</a>
+      <a href="ebook-panduan-penggunaan-kopibot.php">EBook Panduan Penggunaan</a>
       <a href="lisensi.php">Lisensi AGPL + Commercial</a>
       <a href="plugin-system.php">Plugin System</a>
       <a href="woocommerce-vs-ai-agent-commerce.php">WooCommerce vs AI Agent Commerce</a>
@@ -787,4 +848,40 @@ HTML;
 
     $body = str_replace('{docs_sidebar_links}', docsRenderSidebarLinks($catalog, ''), $body);
     return docsPageShell('Dokumentasi HTML', 'docs-index', $body, 'Pusat dokumentasi HTML KopiBot AI.');
+}
+
+function docsRenderDocBadge(string $slug): string
+{
+    $meta = docsDocMeta($slug);
+
+    return '<span style="display:inline-flex;align-items:center;gap:8px;padding:6px 10px;margin:0 0 10px;border-radius:999px;background:'
+        . htmlspecialchars($meta['color'], ENT_QUOTES, 'UTF-8')
+        . ';color:#fff;font-size:0.76rem;font-weight:800;letter-spacing:0.04em;text-transform:uppercase;">'
+        . htmlspecialchars($meta['label'], ENT_QUOTES, 'UTF-8')
+        . '</span>';
+}
+
+function docsDocMeta(string $slug): array
+{
+    $map = [
+        'ebook-panduan-penggunaan-kopibot' => ['Start Here', '#7c3aed'],
+        'instalasi' => ['Guide', '#0f766e'],
+        'lisensi' => ['Legal', '#92400e'],
+        'plugin-system' => ['Plugin', '#1d4ed8'],
+        'tutorial-membuat-plugin' => ['Plugin', '#1d4ed8'],
+        'woocommerce-vs-ai-agent-commerce' => ['Strategy', '#b45309'],
+        'faq-rag-and-complaints' => ['Support', '#be185d'],
+        'customer-agent-architecture' => ['Technical', '#334155'],
+        'chatbot-flow-and-entities' => ['Technical', '#334155'],
+        'moka-connect-private-solution' => ['Integration', '#065f46'],
+        'gosend-delivery' => ['Integration', '#065f46'],
+        'sirclo-full-connector' => ['Integration', '#065f46'],
+        'delivery-kiriminaja' => ['Integration', '#065f46'],
+        'payment-gateway-midtrans' => ['Payment', '#7c2d12'],
+        'payment-gateway-ipaymu' => ['Payment', '#7c2d12'],
+        'payment-gateway-nicepay' => ['Payment', '#7c2d12'],
+    ];
+
+    [$label, $color] = $map[$slug] ?? ['Guide', '#475569'];
+    return ['label' => $label, 'color' => $color];
 }
