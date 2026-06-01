@@ -46,7 +46,53 @@
 >
 > Copyright 2026 Kukuh TW. All rights reserved.
 
-Sistem chatbot pemesanan dan AI commerce berbasis PHP 8 native, tanpa framework besar, dengan satu codebase untuk multi-bisnis, multi-cabang, multi-channel, multi-bahasa, promo engine, loyalty point, Customer CRM, Customer Portal, dan plugin system. Walaupun nama repo masih `toko_kopi`, arah pengembangan aplikasi sudah diperluas menjadi platform AI Agent Commerce yang dapat dikonfigurasi untuk berbagai vertical bisnis seperti kuliner, pharmacy, dan mart.
+KopiBot dibangun untuk menjawab kebutuhan bisnis yang ingin memiliki sistem order, customer support, loyalty, dan katalog digital yang benar-benar bisa mereka kontrol sendiri. Sistem ini berbasis PHP 8 native, tanpa framework besar, dengan satu codebase untuk multi-bisnis, multi-cabang, multi-channel, multi-bahasa, promo engine, loyalty point, Customer CRM, Customer Portal, dan plugin system. Walaupun nama repo masih `toko_kopi`, arah pengembangan aplikasi sudah diperluas menjadi platform AI Agent Commerce yang dapat dikonfigurasi untuk berbagai vertical bisnis seperti kuliner, pharmacy, retail, travel, dan layanan berbasis booking.
+
+## Masalah yang Ingin Diselesaikan
+
+Banyak bisnis kecil dan menengah ingin melayani order dari website, WhatsApp, dan channel chat lain, tetapi operasional mereka sering terpecah ke banyak alat yang tidak saling nyambung. Katalog ada di satu tempat, promo di tempat lain, data customer tercecer, loyalty tidak konsisten, dan tim cabang sulit melihat histori customer secara utuh.
+
+Masalah lain yang sering muncul adalah keterbatasan solusi instan. Saat bisnis mulai butuh alur checkout yang spesifik, aturan promo yang berbeda per cabang, integrasi payment tertentu, atau template produk sesuai vertical bisnis, solusi generik cepat terasa sempit. Perubahan kecil sering bergantung pada vendor, biaya bertambah per fitur, dan data bisnis terkurung di platform pihak ketiga.
+
+## Solusi yang Ditawarkan
+
+KopiBot dirancang sebagai fondasi AI Agent Commerce yang bisa dipasang, dimiliki, dan dikembangkan sendiri. Tujuannya bukan sekadar membuat chatbot menjawab pesan, tetapi membantu bisnis menjalankan alur commerce end-to-end:
+
+- menangkap intent customer dari chat atau web order
+- menampilkan katalog dan varian produk sesuai cabang
+- mendorong upselling, promo, dan loyalty otomatis
+- menyimpan histori customer ke CRM yang bisa dipakai ulang
+- menghubungkan checkout ke payment, delivery, POS, atau workflow operasional lain
+
+Dari sisi implementasi, pendekatannya sengaja dibuat modular. Satu brand bisa punya banyak cabang, banyak channel, banyak jenis katalog, dan banyak integrasi tanpa harus memecah codebase menjadi beberapa aplikasi terpisah.
+
+## Mengapa Bukan SaaS Biasa?
+
+Platform ini berbeda dari solusi SaaS commerce generik karena fokusnya adalah kontrol dan extensibility. Pada SaaS, bisnis biasanya mengikuti workflow yang sudah ditentukan vendor. Jika ada kebutuhan khusus, pilihannya sering terbatas: menunggu roadmap vendor, membayar add-on, atau menerima kompromi operasional.
+
+Di KopiBot, bisnis atau tim teknis internal bisa:
+
+- meng-host sistem sendiri dan memegang akses penuh ke database serta codebase
+- menyesuaikan workflow checkout, prompt AI, CRM, promo, dan rule cabang
+- menambah integrasi baru tanpa menunggu vendor pusat
+- membuat template bisnis sendiri untuk instalasi cepat per vertical
+
+Pendekatan ini cocok untuk agency, software house, operator multi-cabang, atau bisnis yang ingin membangun aset digital jangka panjang, bukan sekadar menyewa panel SaaS yang seragam untuk semua orang.
+
+## Plugin & Extension
+
+Arsitektur plugin adalah salah satu pilar utama project ini. Fitur baru tidak harus masuk langsung ke core. Dengan action/filter hooks, plugin dapat memperluas perilaku aplikasi tanpa mengubah terlalu banyak kode inti, sehingga upgrade dan eksperimen fitur jadi lebih aman.
+
+Beberapa kategori extension yang sudah didukung:
+
+- plugin template produk/jasa untuk seed katalog awal saat instalasi
+- plugin payment gateway seperti Midtrans, Xendit, iPaymu, dan Nicepay
+- plugin POS connector seperti Moka Connect / Private Solution
+- plugin delivery connector seperti GoSend
+- plugin knowledge dan support seperti FAQ RAG serta complaint handling
+- plugin branding dan theme untuk nama toko, icon brand, tagline, dan tampilan
+
+Model ini memungkinkan setiap implementasi punya komposisi fitur yang berbeda. Satu deployment bisa fokus sebagai coffee shop order bot, deployment lain sebagai apotek digital, minimarket, travel booking assistant, atau portal umrah, semuanya di atas fondasi yang sama tetapi dengan plugin yang berbeda.
 
 ---
 
