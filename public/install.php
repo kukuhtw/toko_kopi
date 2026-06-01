@@ -181,7 +181,9 @@ function runInstallation(): array
             $db['dbPass'],
             [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
         );
-        $pdo->exec('CREATE DATABASE IF NOT EXISTS `' . str_replace('`', '``', $db['dbName']) . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+        $safeDb = str_replace('`', '``', $db['dbName']);
+        $pdo->exec('DROP DATABASE IF EXISTS `' . $safeDb . '`');
+        $pdo->exec('CREATE DATABASE `' . $safeDb . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
     } catch (PDOException $e) {
         return ['success' => false, 'errors' => ['Koneksi DB atau create database gagal: ' . $e->getMessage()]];
     }
@@ -274,6 +276,7 @@ function executeSqlFile(PDO $pdo, string $filePath): array
     $stmts = splitSql($sql);
     $errors = [];
 
+    $pdo->exec('SET FOREIGN_KEY_CHECKS=0');
     foreach ($stmts as $stmt) {
         $stmt = trim($stmt);
         if ($stmt === '') {
@@ -282,12 +285,14 @@ function executeSqlFile(PDO $pdo, string $filePath): array
         try {
             $pdo->exec($stmt);
         } catch (PDOException $e) {
-            $code = (int) $e->getCode();
+            // errorInfo[1] = MySQL-specific error code; getCode() returns SQLSTATE string
+            $code = (int)($e->errorInfo[1] ?? $e->getCode());
             if (!in_array($code, [1050, 1060, 1061, 1062, 1068, 1071, 1091, 1170], true)) {
                 $errors[] = substr($stmt, 0, 80) . '… → ' . $e->getMessage();
             }
         }
     }
+    $pdo->exec('SET FOREIGN_KEY_CHECKS=1');
 
     return $errors;
 }
