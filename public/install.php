@@ -236,9 +236,14 @@ function runInstallation(): array
 
     $catalogTemplate = $_SESSION['catalog_template'] ?? 'keep-seed';
     if ($catalogTemplate !== 'keep-seed') {
-        $templateErrors = applyCatalogTemplate($catalogTemplate);
-        if ($templateErrors) {
-            $errors = array_merge($errors, array_map(fn($e) => "[template] $e", $templateErrors));
+        $bootstrapError = bootstrapInstallerTemplateRuntime($db);
+        if ($bootstrapError !== null) {
+            $errors[] = '[template] ' . $bootstrapError;
+        } else {
+            $templateErrors = applyCatalogTemplate($catalogTemplate);
+            if ($templateErrors) {
+                $errors = array_merge($errors, array_map(fn($e) => "[template] $e", $templateErrors));
+            }
         }
     }
 
@@ -288,6 +293,55 @@ function applyCatalogTemplate(string $slug): array
     $result = (new $className())->resetAndSeed();
 
     return ($result['success'] ?? false) ? [] : [$result['message'] ?? 'Template seeding gagal.'];
+}
+
+function bootstrapInstallerTemplateRuntime(array $db): ?string
+{
+    static $bootstrapped = false;
+
+    if ($bootstrapped) {
+        return null;
+    }
+
+    $requiredKeys = ['dbHost', 'dbPort', 'dbName', 'dbUser', 'dbPass'];
+    foreach ($requiredKeys as $key) {
+        if (!array_key_exists($key, $db)) {
+            return "Konfigurasi database untuk template tidak lengkap: '{$key}' belum tersedia.";
+        }
+    }
+
+    $dbConstants = [
+        'DB_HOST' => (string) $db['dbHost'],
+        'DB_PORT' => (string) $db['dbPort'],
+        'DB_NAME' => (string) $db['dbName'],
+        'DB_USER' => (string) $db['dbUser'],
+        'DB_PASS' => (string) $db['dbPass'],
+    ];
+
+    foreach ($dbConstants as $constant => $value) {
+        if (!defined($constant)) {
+            define($constant, $value);
+        }
+    }
+
+    spl_autoload_register(static function (string $class): void {
+        $prefix = 'App\\';
+
+        if (strncmp($prefix, $class, strlen($prefix)) !== 0) {
+            return;
+        }
+
+        $relativeClass = substr($class, strlen($prefix));
+        $file = ROOT . '/app/' . str_replace('\\', '/', $relativeClass) . '.php';
+
+        if (file_exists($file)) {
+            require_once $file;
+        }
+    });
+
+    $bootstrapped = true;
+
+    return null;
 }
 
 function buildEnvContent(array $db, array $app): string
