@@ -270,7 +270,7 @@ $categories = array_values($catMap);
   <div class="branch-hero">
     <div class="branch-hero-top">
       <div>
-        <h1>☕ <?= htmlspecialchars($branch['name']) ?></h1>
+        <h1><?= htmlspecialchars($publicEmoji) ?> <?= htmlspecialchars($branch['name']) ?></h1>
         <p><?= htmlspecialchars($branch['address'] ?? 'Indonesia') ?></p>
         <?php if ($branch['phone']): ?><p>📞 <?= htmlspecialchars($branch['phone']) ?></p><?php endif; ?>
         <p style="opacity:.92;font-weight:600"><?= htmlspecialchars($publicAppName) ?><?php if ($publicTagline !== ''): ?> · <?= htmlspecialchars($publicTagline) ?><?php endif; ?></p>
