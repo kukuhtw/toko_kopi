@@ -263,10 +263,30 @@ OPENROUTER_API_KEY=
 ENV;
 }
 
+function detectSafeCollation(PDO $pdo): string
+{
+    try {
+        $version = (string) $pdo->query('SELECT VERSION()')->fetchColumn();
+        if (stripos($version, 'mariadb') !== false) {
+            return 'utf8mb4_unicode_ci';
+        }
+        $major = (int) explode('.', $version)[0];
+        return $major >= 8 ? 'utf8mb4_0900_ai_ci' : 'utf8mb4_unicode_ci';
+    } catch (\Throwable) {
+        return 'utf8mb4_unicode_ci';
+    }
+}
+
 function executeSqlFile(PDO $pdo, string $filePath): array
 {
-    $sql = file_get_contents($filePath);
-    $stmts = splitSql((string)$sql);
+    $sql = (string) file_get_contents($filePath);
+
+    $safeCollation = detectSafeCollation($pdo);
+    if ($safeCollation !== 'utf8mb4_0900_ai_ci') {
+        $sql = str_replace('utf8mb4_0900_ai_ci', $safeCollation, $sql);
+    }
+
+    $stmts = splitSql($sql);
     $errors = [];
 
     foreach ($stmts as $stmt) {
