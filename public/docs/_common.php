@@ -688,6 +688,47 @@ HTML;
     return docsPageShell($entry['title'], 'docs-page', $body, $entry['excerpt']);
 }
 
+function docsRenderRootReadme(string $filename, string $title): string
+{
+    $path = docsProjectRoot() . '/' . ltrim($filename, '/');
+    if (!is_file($path)) {
+        http_response_code(404);
+        $body = '<main class="docs-shell"><section class="docs-card docs-main"><div class="docs-empty"><h1>File tidak ditemukan</h1><p><code>'
+            . htmlspecialchars($filename, ENT_QUOTES, 'UTF-8')
+            . '</code> tidak ada di root project.</p></div></section></main>';
+        return docsPageShell('File Tidak Ditemukan', 'docs-page', $body, '');
+    }
+
+    $catalog      = docsCatalog();
+    $parsed       = docsParseMarkdown((string) file_get_contents($path));
+    $sidebarLinks = docsRenderSidebarLinks($catalog, '');
+    $tocLinks     = docsRenderToc($parsed['headings']);
+    $remark       = docsBrandRemarkHtml();
+
+    $body = <<<HTML
+{$remark}
+<main class="docs-shell">
+  <aside class="docs-card docs-sidebar">
+    <h2>Dokumen</h2>
+    <nav>
+      {$sidebarLinks}
+    </nav>
+  </aside>
+  <article class="docs-card docs-main">
+    {$parsed['html']}
+  </article>
+  <aside class="docs-card docs-toc">
+    <h2>Navigasi Halaman</h2>
+    <nav>
+      {$tocLinks}
+    </nav>
+  </aside>
+</main>
+HTML;
+
+    return docsPageShell($title, 'docs-page', $body, '');
+}
+
 function docsRenderIndexPage(): string
 {
     $catalog = docsCatalog();

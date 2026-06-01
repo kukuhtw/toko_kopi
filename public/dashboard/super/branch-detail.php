@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $message = 'Info cabang diperbarui.';
 
     } elseif ($action === 'update_settings') {
-        foreach (['currency', 'language', 'wa_number'] as $key) {
+        foreach (['currency', 'language', 'business_type', 'wa_number'] as $key) {
             if (isset($_POST[$key])) {
                 $branchModel->setSetting($branchId, $key, Sanitize::string($_POST[$key]));
             }
@@ -210,6 +210,27 @@ ob_start();
           <option value="id" <?= ($settings['language'] ?? 'id') === 'id' ? 'selected' : '' ?>>Indonesia (id)</option>
           <option value="en" <?= ($settings['language'] ?? 'id') === 'en' ? 'selected' : '' ?>>English (en)</option>
         </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="s_business_type">Tipe Bisnis</label>
+        <select id="s_business_type" name="business_type" class="form-control">
+          <?php
+            $currentBT = $settings['business_type'] ?? 'toko';
+            $btOptions = [
+              'toko'         => 'Toko (default)',
+              'coffee shop'  => 'Coffee Shop / Kafe',
+              'bakery'       => 'Bakery / Toko Roti',
+              'toko buah'    => 'Toko Buah / Jus',
+              'fresh market' => 'Fresh Market (Daging & Sayur)',
+              'apotek'       => 'Apotek / Toko Kesehatan',
+              'mart'         => 'Mart / Minimarket',
+            ];
+            foreach ($btOptions as $val => $label):
+          ?>
+            <option value="<?= $val ?>" <?= $currentBT === $val ? 'selected' : '' ?>><?= $label ?></option>
+          <?php endforeach; ?>
+        </select>
+        <div style="font-size:.78rem;color:var(--text-light);margin-top:4px">Menentukan konteks prompt AI — intent detector, jawaban menu, promo, dan FAQ akan menyesuaikan tipe bisnis ini.</div>
       </div>
       <div class="form-group">
         <label class="form-label" for="s_wa">Nomor WhatsApp</label>
