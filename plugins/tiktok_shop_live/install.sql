@@ -1,0 +1,36 @@
+CREATE TABLE IF NOT EXISTS tiktok_live_sessions (
+ id BIGINT AUTO_INCREMENT PRIMARY KEY,
+ live_id VARCHAR(100),
+ title VARCHAR(255),
+ start_time DATETIME,
+ end_time DATETIME,
+ total_viewers INT DEFAULT 0,
+ total_orders INT DEFAULT 0,
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS tiktok_orders (
+ id BIGINT AUTO_INCREMENT PRIMARY KEY,
+ tiktok_order_id VARCHAR(100) UNIQUE,
+ customer_name VARCHAR(255),
+ total_amount DECIMAL(18,2),
+ order_status VARCHAR(50),
+ payload_json LONGTEXT,
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS tiktok_live_events (
+ id BIGINT AUTO_INCREMENT PRIMARY KEY,
+ live_id VARCHAR(100),
+ event_type VARCHAR(100),
+ payload_json LONGTEXT,
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS tiktok_live_comments (
+ id BIGINT AUTO_INCREMENT PRIMARY KEY,
+ live_id VARCHAR(100),
+ username VARCHAR(255),
+ comment_text TEXT,
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
