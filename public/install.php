@@ -448,6 +448,9 @@ function getCatalogTemplateOptions(): array
         ['slug' => 'bakery-template', 'name' => 'Bakery Template', 'description' => 'Aktifkan plugin template bakery untuk seed 70 menu toko roti dan pastry.', 'examples' => 'Roti Tawar, Croissant, Donut, Cake Slice, Pastry, Paket Sarapan'],
         ['slug' => 'fruit-template', 'name' => 'Fruit Store Template', 'description' => 'Aktifkan plugin template toko buah untuk seed 60 produk buah, jus, smoothie, dan salad.', 'examples' => 'Apel, Jeruk, Pisang, Alpukat, Jus Mangga, Salad Buah'],
         ['slug' => 'meat-veggie-template', 'name' => 'Meat & Veggie Template', 'description' => 'Aktifkan plugin template fresh market untuk seed 80 produk daging dan sayuran.', 'examples' => 'Daging Sapi, Ayam Fillet, Ikan, Brokoli, Wortel, Bayam'],
+        ['slug' => 'pharmacy-template', 'name' => 'Pharmacy / Apotek Template', 'description' => 'Aktifkan plugin template apotek untuk seed 120 produk lengkap dengan kategori obat, vitamin, alat kesehatan, varian kemasan, dan harga IDR.', 'examples' => 'Paracetamol, Vitamin C, Masker, Tensimeter, Obat Batuk, Suplemen'],
+        ['slug' => 'minimarket-template', 'name' => 'Minimarket Template', 'description' => 'Aktifkan plugin template minimarket untuk seed produk retail sehari-hari dengan berbagai kategori kebutuhan pokok.', 'examples' => 'Beras, Minyak Goreng, Indomie, Sabun, Shampo, Minuman Kemasan'],
+        ['slug' => 'indonesian-resto-template', 'name' => 'Resto Indonesia Template', 'description' => 'Aktifkan plugin template resto masakan Indonesia untuk seed 125 menu tradisional dengan varian bumbu dan ukuran porsi.', 'examples' => 'Nasi Goreng, Soto Ayam, Rendang, Gado-Gado, Ayam Bakar, Es Teh'],
     ];
 }
 
