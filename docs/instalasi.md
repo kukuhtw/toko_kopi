@@ -1,4 +1,4 @@
-# Panduan Instalasi KopiBot
+# Panduan Instalasi AI Agent Commerce
 
 > ## AI Agent Commerce Platform
 > Platform AI untuk otomatisasi order, customer service, loyalty customer, Customer CRM, Customer Portal, dan manajemen multi cabang untuk berbagai bisnis seperti kuliner, bakery, pharmacy, mart, fresh market, dan retail.
@@ -15,9 +15,7 @@
 >
 > Copyright 2026 Kukuh TW. All rights reserved.
 
-Panduan ini mencakup dua cara instalasi: **Web Installer** dan **Manual**. Walaupun nama folder dan database default masih menggunakan `toko_kopi`, aplikasi sudah diarahkan menjadi platform AI Agent Commerce multi-vertical. Satu codebase dapat dipakai untuk coffee shop, cafe, restoran, bakery, toko buah, fresh meat market, toko sayur, pharmacy, mini mart, retail mart, dan specialty store.
-
-Dokumentasi ini juga menandai komponen yang saat ini aktif secara default, termasuk plugin `loyalty-point`, `customer-crm`, portal customer self-service, serta plugin pendukung commerce seperti payment gateway, channel chat, POS connector, delivery connector, FAQ RAG, dan complaint handling.
+Panduan ini mencakup dua cara instalasi: **Web Installer** (direkomendasikan) dan **Manual**. Satu codebase mendukung berbagai jenis bisnis: coffee shop, cafe, restoran, bakery, toko buah, fresh meat market, toko sayur, pharmacy/apotek, mini mart, retail mart, dan specialty store.
 
 ---
 
@@ -28,15 +26,16 @@ Dokumentasi ini juga menandai komponen yang saat ini aktif secara default, terma
 | PHP | 8.0+ |
 | MySQL | 5.7+ / MariaDB 10.3+ |
 | Apache | dengan `mod_rewrite` aktif |
-| Ekstensi PHP | `pdo_mysql`, `mbstring`, `json`, `fileinfo` |
+| Ekstensi PHP | `pdo`, `pdo_mysql`, `mbstring`, `json`, `curl`, `openssl` |
 
-XAMPP sudah memenuhi semua persyaratan di atas untuk development lokal.
+> **XAMPP** sudah memenuhi semua persyaratan di atas untuk development lokal.
+> Web Installer akan memverifikasi semua persyaratan secara otomatis di Langkah 1.
 
 ---
 
-## Cara 1 - Web Installer
+## Cara 1 — Web Installer (Direkomendasikan)
 
-Web Installer menangani pembuatan database, konfigurasi `.env`, dan akun admin secara otomatis dalam 5 langkah wizard.
+Web Installer menangani pembuatan database, pengisian produk, konfigurasi `.env`, plugin, dan akun admin dalam **6 langkah wizard** tanpa perlu edit file manual.
 
 ### Langkah-langkah
 
@@ -46,7 +45,7 @@ Web Installer menangani pembuatan database, konfigurasi `.env`, dan akun admin s
 C:\xampp\htdocs\toko_kopi\
 ```
 
-Nama folder boleh tetap `toko_kopi` untuk kompatibilitas awal. Untuk white-label atau vertical bisnis lain, nama folder bisa diganti menjadi nama brand, misalnya `ai_commerce`, `pharmacy_agent`, atau `mart_agent`.
+Nama folder boleh tetap `toko_kopi` atau diganti sesuai brand, misalnya `apotek_agent`, `mart_commerce`, `ai_commerce`.
 
 **2. Buka Web Installer di browser**
 
@@ -54,43 +53,78 @@ Nama folder boleh tetap `toko_kopi` untuk kompatibilitas awal. Untuk white-label
 http://localhost/toko_kopi/public/install.php
 ```
 
-**3. Ikuti 5 langkah wizard**
+**3. Ikuti 6 langkah wizard**
 
-- Langkah 1 - Cek Persyaratan: wizard memeriksa ekstensi PHP dan permission folder.
-- Langkah 2 - Konfigurasi Database: isi host, nama database, username, dan password MySQL.
-- Langkah 3 - Konfigurasi Aplikasi: isi `BASE_URL` dan pilih environment (`development` atau `production`).
-- Langkah 4 - Import Skema: wizard mengimpor `database/schema.sql` dan `database/seed.sql`.
-- Langkah 5 - Selesai: file `.env` dibuat dan akun default siap digunakan.
+| Langkah | Nama | Keterangan |
+|---------|------|------------|
+| 1 | Persyaratan Sistem | Wizard memeriksa versi PHP, ekstensi, dan izin folder secara otomatis. |
+| 2 | Konfigurasi Database | Isi host, port, nama database, username, dan password MySQL. Database dibuat otomatis jika belum ada. |
+| 3 | Pengaturan Aplikasi | Isi nama brand, icon emoji, tagline bisnis, Base URL, dan pilih environment (`development` / `production`). Terdapat preview live tampilan sidebar. |
+| 4 | Akun Super Admin | Isi nama, email, dan password akun super admin pertama. |
+| 5 | Template Produk & Plugin | Pilih template data produk sesuai jenis bisnis dan centang plugin yang ingin diaktifkan. |
+| 6 | Jalankan Instalasi | Tampilkan ringkasan konfigurasi, lalu jalankan instalasi dengan satu klik. |
 
-> Catatan: schema dasar diimpor dari `database/schema.sql`. Beberapa plugin juga membawa schema sendiri, misalnya `plugins/customer-crm/schema.sql`, yang akan dipastikan saat plugin dimuat aplikasi.
+**4. Setelah instalasi selesai**
 
-**4. Hapus file installer setelah selesai**
+Web Installer membuat file `storage/installed.lock` sebagai tanda instalasi berhasil. Akses `install.php` selanjutnya akan diblokir otomatis. Untuk instal ulang, hapus file lock tersebut atau akses `install.php?force=1`.
 
-```text
-Hapus: public/install.php
-```
-
-File ini harus dihapus sebelum aplikasi dipakai di production untuk mencegah akses tidak sah.
+> File `install.php` **tidak perlu dihapus** — sudah dilindungi oleh lock file. Namun untuk production, menghapusnya adalah praktik terbaik.
 
 ---
 
-## Cara 2 - Instalasi Manual
+## Template Produk yang Tersedia
 
-### Langkah 1 - Salin Folder ke XAMPP
+Di Langkah 5, pilih template produk yang paling mendekati jenis bisnis:
 
-Salin atau ekstrak folder proyek ke:
+| Template | Jumlah Produk | Contoh Produk |
+|----------|--------------|---------------|
+| **Default Seed Coffee Menu** | ~30 | Espresso, Americano, Cappuccino, Latte |
+| **Coffee Shop Template** | 132 | Kopi panas/dingin, cemilan, paket hemat, dessert |
+| **Bakery Template** | 70 | Roti tawar, croissant, donat, cake slice, pastry |
+| **Fruit Store Template** | 60 | Apel, jeruk, pisang, jus mangga, salad buah |
+| **Meat & Veggie Template** | 80 | Daging sapi, ayam fillet, ikan, brokoli, bayam |
+| **Pharmacy / Apotek Template** | 120 | Paracetamol, Vitamin C, Amoxicillin, tensimeter |
+| **Minimarket Template** | 120 | Beras, Indomie, Aqua, Chitato, sabun, deterjen |
+| **Resto Indonesia Template** | 125 | Nasi goreng, soto ayam, rendang, ayam bakar |
+
+> Setelah instalasi, produk dapat ditambah, diubah, atau dihapus kapan saja via dashboard admin. Template dapat di-reset ulang dari halaman plugin terkait.
+
+---
+
+## Plugin yang Tersedia di Langkah 5
+
+| Kategori | Plugin |
+|----------|--------|
+| **Payment Gateway** | Midtrans, Xendit, iPaymu, Nicepay |
+| **Channel Chat** | WhatsApp (Fonnte, Baileys, Twilio, Vonage, MessageBird), Telegram, Discord |
+| **Delivery** | GoSend, RajaOngkir, KiriminAja |
+| **POS Connector** | Moka Connect / Private Solution |
+| **E-Commerce Connector** | SIRCLO Full Connector |
+| **CRM & Loyalty** | Customer CRM, Loyalty Point |
+| **Layanan Pelanggan** | FAQ RAG & Complaints, Notifikasi Admin |
+| **AI & Marketing** | Upselling, Rekomendasi Promo, Rich Chat UI |
+| **Affiliate** | Affiliate Marketing |
+| **Toko Berita/Konten** | CMS Berita |
+
+Plugin dapat diaktifkan atau dinonaktifkan kapan saja dari dashboard Super Admin → **Plugins** setelah instalasi.
+
+---
+
+## Cara 2 — Instalasi Manual
+
+### Langkah 1 — Salin Folder ke XAMPP
 
 ```text
 C:\xampp\htdocs\toko_kopi\
 ```
 
-### Langkah 2 - Buat Database
+### Langkah 2 — Buat Database
 
 **Via phpMyAdmin**
 
 1. Buka `http://localhost/phpmyadmin`
-2. Buat database baru bernama `toko_kopi`
-3. Pilih database `toko_kopi`, lalu buka tab **Import**
+2. Buat database baru (contoh: `toko_kopi`, `ai_commerce_pharmacy`, `ai_commerce_mart`)
+3. Pilih database, buka tab **Import**
 4. Import `database/schema.sql`
 5. Import `database/seed.sql`
 
@@ -102,11 +136,9 @@ mysql -u root -p toko_kopi < database/schema.sql
 mysql -u root -p toko_kopi < database/seed.sql
 ```
 
-> Nama database boleh diganti mengikuti brand atau vertical bisnis, misalnya `ai_commerce_pharmacy`, `ai_commerce_mart`, atau `ai_commerce_bakery`. Pastikan nilai `DB_NAME` di `.env` sama dengan database yang dibuat.
+> Nama database bisa disesuaikan dengan vertical bisnis: `ai_commerce_pharmacy`, `ai_commerce_mart`, `ai_commerce_bakery`. Pastikan nilai `DB_NAME` di `.env` sama.
 
-> Jika plugin tertentu membutuhkan schema tambahan, aplikasi akan melakukan bootstrap schema plugin saat plugin aktif. Untuk `customer-crm`, referensinya ada di `plugins/customer-crm/schema.sql`.
-
-### Langkah 3 - Konfigurasi `.env`
+### Langkah 3 — Konfigurasi `.env`
 
 Salin template konfigurasi:
 
@@ -114,7 +146,7 @@ Salin template konfigurasi:
 copy .env.example .env
 ```
 
-Buka `.env` lalu sesuaikan nilai berikut:
+Sesuaikan nilai berikut di `.env`:
 
 ```ini
 DB_HOST=localhost
@@ -127,34 +159,81 @@ APP_ENV=development
 BASE_URL=http://localhost/toko_kopi/public
 ```
 
-LLM API key tidak diisi di `.env`, tetapi dikelola lewat dashboard Super Admin agar bisa dikonfigurasi per deployment.
+> LLM API key (OpenAI/Anthropic) **tidak diisi di `.env`** — dikelola lewat dashboard Super Admin agar bisa dikonfigurasi per deployment.
+
+### Langkah 4 — Seed Produk Template (Opsional)
+
+Setelah skema dan seed dasar diimpor, jalankan seed template produk via dashboard:
+
+1. Login sebagai super admin
+2. Buka **Settings → [Nama Template]** (Coffee, Pharmacy, Minimarket, dll.)
+3. Klik tombol **Reset & Seed**
+
+Atau aktifkan plugin template di `plugins/plugins.json`:
+
+```json
+{
+  "pharmacy-template": { "active": true },
+  "rich-chat-ui": { "active": true },
+  "loyalty-point": { "active": true }
+}
+```
+
+### Langkah 5 — Buat Akun Super Admin
+
+Akses `install.php?step=4` atau buat manual via MySQL:
+
+```sql
+INSERT INTO users (name, email, password, role, is_active)
+VALUES ('Super Admin', 'admin@example.com', '$2y$10$...', 'super_admin', 1);
+```
+
+> Gunakan `password_hash('password_kamu', PASSWORD_BCRYPT)` di PHP untuk generate hash.
 
 ---
 
 ## Konfigurasi Business Vertical Setelah Instalasi
 
-Setelah instalasi selesai, admin dapat menyesuaikan aplikasi sesuai jenis bisnis:
+| Vertical | Plugin & Konfigurasi yang Disarankan |
+|----------|--------------------------------------|
+| **Coffee shop / cafe** | Rich Chat UI, coffee template, topping, variant size, loyalty point, promo engine, payment gateway, delivery |
+| **Bakery / kuliner** | Bakery template, katalog produk, promo bundle, loyalty point, customer CRM, customer portal |
+| **Fruit store / fresh market** | Fruit template atau meat-veggie template, delivery connector, customer CRM, promo harian |
+| **Pharmacy / apotek** | Pharmacy template (120 produk), FAQ RAG & complaints, customer CRM, payment gateway, delivery |
+| **Mini mart / retail mart** | Minimarket template (120 produk), POS connector, barcode scanner, payment gateway, customer portal |
+| **Restoran Indonesia** | Resto Indonesia template, topping/varian, loyalty, delivery, complaint handler |
 
-| Vertical | Konfigurasi Awal yang Disarankan |
-|----------|----------------------------------|
-| Coffee shop / cafe | Aktifkan template coffee, topping, variant size, promo, loyalty, payment gateway, delivery |
-| Bakery / kuliner | Aktifkan template bakery, katalog produk, promo bundle, loyalty, customer portal |
-| Fruit store / fresh market | Aktifkan template fruit, meat, veggie, delivery, customer CRM, promo harian |
-| Pharmacy | Gunakan katalog produk kesehatan, FAQ RAG, complaint handler, customer CRM, payment gateway, delivery |
-| Mini mart / retail mart | Gunakan katalog banyak item, promo engine, POS connector, payment gateway, customer portal |
+---
 
-Plugin dapat diaktifkan melalui `plugins/plugins.json` atau lewat mekanisme dashboard bila sudah tersedia pada deployment terkait.
+## Mengelola Plugin Setelah Instalasi
+
+Plugin dikelola via **Super Admin → Plugins**. Secara teknis, daftar plugin aktif tersimpan di `plugins/plugins.json`:
+
+```json
+{
+  "loyalty-point": { "active": true },
+  "customer-crm": { "active": true },
+  "rich-chat-ui": { "active": true },
+  "midtrans-payment": { "active": false },
+  "pharmacy-template": { "active": true }
+}
+```
+
+Setiap plugin yang aktif dapat menambahkan hook, filter, menu dashboard, tabel database tambahan, dan API endpoint baru tanpa mengubah kode inti aplikasi.
 
 ---
 
 ## Catatan Production
 
-Untuk production, pastikan:
+Untuk environment production, pastikan:
 
-- `public/install.php` sudah dihapus.
-- `.env` tidak masuk ke repository publik.
-- Payment gateway memakai credential production yang benar.
-- Delivery connector memakai endpoint partner yang sudah disetujui.
-- POS connector seperti Moka atau integrasi lain sudah melalui UAT.
+- `public/install.php` sudah dihapus (atau `storage/installed.lock` sudah ada).
+- File `.env` tidak masuk ke repository publik — tambahkan ke `.gitignore`.
+- `APP_ENV=production` di `.env` (menyembunyikan pesan error detail).
+- Payment gateway menggunakan credential production yang benar (bukan sandbox).
+- Delivery connector menggunakan endpoint partner yang sudah disetujui.
+- POS connector seperti Moka sudah melalui UAT sebelum go-live.
 - Data customer, order, dan loyalty dilindungi dengan akses role-based.
-- Pharmacy dan mart sebaiknya memiliki validasi katalog, kebijakan produk, dan SOP operasional internal sebelum go-live.
+- Backup database dijadwalkan secara berkala.
+- Untuk pharmacy dan mart: siapkan validasi katalog, kebijakan produk, dan SOP operasional sebelum go-live.
+- LLM API key (OpenAI/Anthropic) diisi via dashboard Super Admin → Settings → AI Configuration, bukan di `.env`.
