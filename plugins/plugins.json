@@ -118,5 +118,8 @@
     },
     "woocommerce-connector": {
         "active": false
+    },
+    "shopee-live-commerce": {
+        "active": true
     }
 }
