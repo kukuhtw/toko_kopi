@@ -1,0 +1,15 @@
+{
+  "name": "TikTok Shop Live Connector",
+  "slug": "tiktok_shop_live",
+  "version": "0.1.0",
+  "description": "Plugin scaffold untuk menghubungkan KopiBot / AI Agent Commerce dengan workflow TikTok Shop Live, termasuk mapping produk, webhook order, event live, dan sinkronisasi status.",
+  "author": "Kukuh TW",
+  "license": "MIT",
+  "requires": {
+    "php": ">=8.0",
+    "mysql": ">=5.7"
+  },
+  "entry": "tiktok_shop_live.php",
+  "docs": "README.md",
+  "status": "experimental"
+}
