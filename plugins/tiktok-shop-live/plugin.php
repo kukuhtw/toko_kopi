@@ -4,7 +4,13 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/TikTokShopLiveRepository.php';
 require_once __DIR__ . '/TikTokShopLiveClient.php';
+require_once __DIR__ . '/TikTokOpenApiClient.php';
 require_once __DIR__ . '/TikTokShopLiveService.php';
+require_once __DIR__ . '/TikTokProductSyncService.php';
+require_once __DIR__ . '/TikTokOrderImportService.php';
+require_once __DIR__ . '/TikTokOAuthService.php';
+require_once __DIR__ . '/TikTokWhatsAppNotifier.php';
+require_once __DIR__ . '/TikTokLiveAnalyticsService.php';
 require_once __DIR__ . '/TikTokShopLivePlugin.php';
 
 return [
