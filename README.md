@@ -20,7 +20,7 @@
 > - Loyalty Point, Redeem Point, and Customer CRM
 > - Customer Self-Service Dashboard
 > - Multi Currency, Tax, and Timezone
-> - Plugin menu template untuk coffee shop, bakery, fruit store, fresh meat, vegetables, pharmacy, dan mart
+> - Plugin menu template untuk coffee shop, bakery, fruit store, fresh market, pharmacy, mart, fashion, aksesori HP, tours & travel, dan umrah
 > - Plugin payment gateway, POS connector, delivery connector, FAQ RAG, complaint handling, dan customer support automation
 >
 > ### Tech Stack
@@ -86,7 +86,7 @@ Fitur plugin terakhir yang memperkuat perluasan ini antara lain menu templates, 
 | **POS Connector** | Scaffold + live sync queue untuk Moka Connect / Private Solution, inbound webhook sync, dan retry runner |
 | **Delivery Connector** | GoSend partner connector dengan live-ready endpoint config, queue booking, pickup trigger, webhook status, dan audit |
 | **Menu Management** | Upload CSV, variant size/price, topping, override per cabang, upload foto produk, dan generate foto produk dengan AI |
-| **Menu Templates** | Plugin template data menu siap pakai: Coffee Shop, Bakery, Toko Buah, Daging & Sayuran, Pharmacy, dan Mart, dengan seed data dan override mata uang per cabang |
+| **Menu Templates** | Plugin template data menu siap pakai: Coffee Shop, Bakery, Toko Buah, Daging & Sayuran, Pharmacy, Mart, Warung, Baso, Kebab, Burger, Aksesori HP, Fashion Wanita, Tours & Travel, dan Umrah |
 | **Dashboard** | Super admin lintas cabang, branch admin per cabang, Customer CRM, histori loyalty customer, dan Customer Portal self-service |
 | **Customer CRM** | Normalisasi identitas customer berbasis email/WhatsApp, notifikasi loyalty, dan log CRM per cabang |
 | **Customer Portal** | Login customer ringan via kontak + nomor order untuk cek order history, loyalty, profile, dan repeat order |
@@ -98,3 +98,30 @@ Fitur plugin terakhir yang memperkuat perluasan ini antara lain menu templates, 
 ## Catatan Update README
 
 README ini diperbarui untuk menjelaskan arah baru aplikasi sebagai AI Agent Commerce multi-vertical. Informasi yang ditambahkan menyesuaikan fitur plugin terakhir yang sudah tersedia atau sudah disiapkan di arsitektur plugin, yaitu channel chat, payment gateway, POS connector, delivery connector, FAQ RAG, complaint handler, Customer CRM, Customer Portal, dan menu template untuk berbagai jenis bisnis.
+
+---
+
+## Template Produk Tersedia
+
+Template produk/menu berikut sudah tersedia dan dapat dipilih langsung saat proses instalasi web di Langkah 5:
+
+| Template | Jumlah Produk/Jasa | Contoh |
+|----------|--------------------|--------|
+| **Default Seed Coffee Menu** | ~30 | Espresso, Americano, Cappuccino, Latte |
+| **Coffee Shop Template** | 132 | Kopi panas/dingin, cemilan, dessert |
+| **Bakery Template** | 70 | Roti tawar, croissant, donat, pastry |
+| **Fruit Store Template** | 60 | Apel, jeruk, jus mangga, salad buah |
+| **Meat & Veggie Template** | 80 | Daging sapi, ayam fillet, ikan, sayuran |
+| **Pharmacy / Apotek Template** | 120 | Paracetamol, vitamin, alat kesehatan |
+| **Minimarket Template** | 120 | Beras, Indomie, sabun, minuman kemasan |
+| **Resto Indonesia Template** | 125 | Nasi goreng, soto ayam, rendang |
+| **Warung Makan Template** | 15 | Nasi goreng, ayam goreng, tempe, kopi tubruk |
+| **Resto Baso & Minuman Template** | 15 | Bakso urat, mie spesial, pangsit goreng |
+| **Kebab Template** | 15 | Kebab original, shawarma ayam, pita falafel |
+| **Burger Template** | 15 | Burger beef, fries, onion ring, milkshake |
+| **Toko Aksesori & Casing HP Template** | 80 | Soft case, tempered glass, charger, TWS |
+| **Toko Baju Busana Wanita Template** | 80 | Blouse, jeans, dress, blazer, tas |
+| **Tours & Travel Template** | 15 | Bali 3D2N, Singapore, visa wisata, airport transfer |
+| **Umrah Template** | 15 | Umrah 9 hari, umrah VIP, plus Turki, perlengkapan umrah |
+
+Semua template hanya berfungsi sebagai data awal. Setelah instalasi selesai, produk/jasa dapat diubah, dihapus, atau ditambah dari dashboard admin kapan saja.

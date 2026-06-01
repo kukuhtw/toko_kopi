@@ -92,6 +92,8 @@ Di Langkah 5, pilih template produk yang paling mendekati jenis bisnis:
 | **Burger Template** | 15 | Burger classic beef, burger BBQ smoky, french fries, onion ring, milkshake |
 | **Toko Aksesori & Casing HP Template** | 80 | Soft case, tempered glass, charger 33W, TWS earbuds, power bank, ring stand |
 | **Toko Baju Busana Wanita Template** | 80 | Blouse rayon, jeans skinny, midi dress, blazer, gamis syari, tas tote bag |
+| **Tours & Travel Template** | 15 | Bali 3D2N, Labuan Bajo, Singapore, visa wisata, airport transfer |
+| **Umrah Template** | 15 | Umrah 9 hari, umrah VIP, plus Turki, dokumen, perlengkapan umrah |
 
 > Setelah instalasi, produk dapat ditambah, diubah, atau dihapus kapan saja via dashboard admin. Template dapat di-reset ulang dari halaman plugin terkait.
 
@@ -214,6 +216,8 @@ VALUES ('Super Admin', 'admin@example.com', '$2y$10$...', 'super_admin', 1);
 | **Kedai burger / fast food** | Burger template, loyalty point, upselling, promo bundle, payment gateway, delivery |
 | **Toko aksesori & casing HP** | HP Accessories template, customer CRM, loyalty point, payment gateway |
 | **Butik / toko baju wanita** | Fashion Wanita template, loyalty point, customer portal, promo, payment gateway |
+| **Agen wisata / tours & travel** | Tours & Travel template, customer CRM, payment gateway, WhatsApp channel, complaint handler |
+| **Travel umrah / religi** | Umrah template, customer CRM, payment gateway, WhatsApp channel, FAQ, complaint handler |
 
 ---
 
