@@ -7,7 +7,7 @@ namespace App\Services;
 use App\Agent\CustomerAgentKernel;
 use App\Agent\Memory\CustomerMemoryStore;
 use App\Config\Database;
-use App\Models\{AgentTaskModel, BranchModel, CartModel, ConversationModel, CustomerModel};
+use App\Models\{AgentTaskModel, BranchModel, CartModel, ConversationModel, CustomerModel, MenuModel};
 use App\Plugin\HookManager;
 
 class CustomerConversationService
@@ -16,6 +16,7 @@ class CustomerConversationService
     private CustomerModel $customerModel;
     private CartModel $cartModel;
     private ConversationModel $convModel;
+    private MenuModel $menuModel;
     private AgentTaskModel $agentTaskModel;
     private IntentDetectorInterface $detector;
     private ChatbotEngine $chatbotEngine;
@@ -31,6 +32,7 @@ class CustomerConversationService
         $this->customerModel = new CustomerModel();
         $this->cartModel = new CartModel();
         $this->convModel = new ConversationModel();
+        $this->menuModel = new MenuModel();
         $this->agentTaskModel = new AgentTaskModel();
         $this->detector = $detector ?? $this->loadDetector();
         $this->chatbotEngine = $chatbotEngine ?? new ChatbotEngine($this->detector);
@@ -89,6 +91,15 @@ class CustomerConversationService
         $intent = $this->normalizePendingStateIntent($intent, $message, (string)($conversation['state'] ?? 'idle'));
         if ($intent === 'out_of_scope' && \App\Skills\SmallTalkSkill::isSmallTalk($message)) {
             $intent = 'small_talk';
+        }
+        if ($intent === 'out_of_scope') {
+            $lower = mb_strtolower(trim($message), 'UTF-8');
+            foreach ($this->menuModel->getCategoriesWithCount($branchId) as $cat) {
+                if (mb_strtolower((string)($cat['name'] ?? ''), 'UTF-8') === $lower) {
+                    $intent = 'tanya_menu';
+                    break;
+                }
+            }
         }
 
         HookManager::doAction('chat.intent_detected', $intent, $message, $branchId);
