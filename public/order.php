@@ -210,6 +210,11 @@ $categories = array_values($catMap);
     .item-notes-input::placeholder { color:var(--border); }
     .item-notes-input:focus { color:var(--coffee-dark); border-top-color:var(--coffee-brown); }
     .cart-total      { font-size:1.15rem; font-weight:700; color:var(--coffee-dark); padding-top:12px; display:flex; justify-content:space-between; }
+    .cart-qty-ctrl   { display:flex; align-items:center; gap:6px; margin-top:6px; }
+    .cart-qty-btn    { width:26px; height:26px; border-radius:50%; border:1.5px solid var(--coffee-brown); background:#fff; color:var(--coffee-brown); font-size:1rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; line-height:1; }
+    .cart-qty-btn:hover { background:var(--coffee-brown); color:#fff; }
+    .cart-qty-num    { min-width:22px; text-align:center; font-weight:600; font-size:.9rem; }
+    .cart-remove-btn { margin-left:auto; border:none; background:none; color:#c0392b; font-size:.78rem; cursor:pointer; padding:0; text-decoration:underline; }
     .checkout-form   { margin-top:16px; border-top:1px solid var(--border); padding-top:16px; }
     .fulfillment-options { display:grid; gap:8px; margin-bottom:12px; }
     .fulfillment-option {
@@ -490,6 +495,7 @@ const TEXT = <?= json_encode([
     'topping_limit_reached' => $isEnglish ? 'Maximum topping choice reached.' : 'Batas pilihan topping sudah tercapai.',
     'notes_placeholder' => $isEnglish ? 'Notes (e.g. less sugar, no ice)' : 'Catatan (contoh: sedikit gula, tanpa es)',
     'profile_hello' => $isEnglish ? 'Hello, {name}!' : 'Halo, {name}!',
+    'remove_item' => $isEnglish ? 'Remove' : 'Hapus',
 ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_INVALID_UTF8_SUBSTITUTE) ?>;
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -908,6 +914,44 @@ function updateQty(id, delta, variantId = null) {
     }
 }
 
+function cartQtyDelta(key, delta) {
+    if (!cart[key]) return;
+    const newQty = (cart[key].qty ?? 0) + delta;
+    if (newQty <= 0) {
+        removeCartItem(key);
+        return;
+    }
+    cart[key].qty = newQty;
+    appliedDiscount = 0;
+    appliedPromoCode = '';
+    loyaltyRedeemedPoints = 0;
+    loyaltyRedeemedDiscount = 0;
+    document.getElementById('promoMsg').textContent = '';
+    document.getElementById('promoCode').value = '';
+    renderCart();
+    saveCartToStorage();
+    scheduleCartSync();
+    if (document.getElementById('checkoutForm').style.display !== 'none') {
+        autoApplyPromo();
+    }
+}
+
+function removeCartItem(key) {
+    delete cart[key];
+    appliedDiscount = 0;
+    appliedPromoCode = '';
+    loyaltyRedeemedPoints = 0;
+    loyaltyRedeemedDiscount = 0;
+    document.getElementById('promoMsg').textContent = '';
+    document.getElementById('promoCode').value = '';
+    renderCart();
+    saveCartToStorage();
+    scheduleCartSync();
+    if (document.getElementById('checkoutForm').style.display !== 'none') {
+        autoApplyPromo();
+    }
+}
+
 function renderCart() {
     const list     = document.getElementById('cartList');
     const btn      = document.getElementById('checkoutBtn');
@@ -931,8 +975,14 @@ function renderCart() {
         let rows = Object.entries(cart).map(([key, i]) =>
             `<div class="cart-item">
               <div class="cart-item-row">
-                <span>${h(i.name)} x${i.qty}</span>
-                <span style="white-space:nowrap">${fmt(i.price * i.qty)}</span>
+                <span style="flex:1;min-width:0;overflow-wrap:break-word">${h(i.name)}</span>
+                <span style="white-space:nowrap;margin-left:8px">${fmt(i.price * i.qty)}</span>
+              </div>
+              <div class="cart-qty-ctrl">
+                <button type="button" class="cart-qty-btn" onclick="cartQtyDelta('${key}',-1)">−</button>
+                <span class="cart-qty-num">${i.qty}</span>
+                <button type="button" class="cart-qty-btn" onclick="cartQtyDelta('${key}',1)">+</button>
+                <button type="button" class="cart-remove-btn" onclick="removeCartItem('${key}')">${h(TEXT.remove_item)}</button>
               </div>
               <input type="text" class="item-notes-input"
                      placeholder="${h(TEXT.notes_placeholder)}"
