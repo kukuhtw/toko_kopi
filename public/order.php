@@ -1587,12 +1587,58 @@ async function syncCartToServer() {
     } catch (_) {}
 }
 
+// ── Load cart from server (picks up items added via chat) ────────────────────
+async function loadCartFromServer() {
+    try {
+        const res = await fetch(
+            BASE_URL + '/api/chat/cart-state.php?branch_id=' + encodeURIComponent(BRANCH_ID) +
+            '&session_id=' + encodeURIComponent(SESSION_ID)
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        const items = data?.data?.items ?? [];
+        if (!items.length) return;
+
+        let changed = false;
+        items.forEach(item => {
+            const menuItem = MENU_DATA.find(m => m.id === item.menu_item_id);
+            if (!menuItem) return;
+            const variantId = item.variant_id || null;
+            const variant = variantId ? (menuItem.variants || []).find(v => v.id === variantId) : null;
+            const key = `${item.menu_item_id}:${variantId ?? 0}`;
+            const serverQty = Number(item.quantity ?? 0);
+            const localQty = cart[key]?.qty ?? 0;
+            if (serverQty > 0 && serverQty !== localQty) {
+                cart[key] = {
+                    menu_item_id: menuItem.id,
+                    variant_id: variantId,
+                    variant_label: variant?.label ?? (item.variant_label ?? ''),
+                    name: variant
+                        ? `${menuItem.name} - ${variant.label}`
+                        : (item.variant_label ? `${menuItem.name} - ${item.variant_label}` : menuItem.name),
+                    base_name: menuItem.name,
+                    price: Number(variant?.price ?? menuItem.price),
+                    qty: serverQty,
+                    notes: item.notes ?? '',
+                };
+                changed = true;
+            }
+        });
+
+        if (changed) {
+            saveCartToStorage();
+            renderMenu();
+            renderCart();
+        }
+    } catch (_) {}
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 buildCatTabs();
 loadCartFromStorage();
 renderMenu();
 renderCart();
-if (Object.keys(cart).length > 0) scheduleCartSync();
+loadCartFromServer();
 </script>
 </body>
 </html>
