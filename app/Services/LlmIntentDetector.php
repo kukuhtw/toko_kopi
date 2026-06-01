@@ -53,8 +53,64 @@ class LlmIntentDetector implements IntentDetectorInterface
 
     public function detectAll(string $message, array $context = []): array
     {
-        // LLM only classifies a single intent; delegate multi-intent scoring to rule-based
+        $state = $context['state'] ?? 'idle';
+        if (in_array($state, ['awaiting_name','awaiting_email','awaiting_wa','awaiting_fulfillment',
+            'awaiting_table','awaiting_address','awaiting_postal','awaiting_confirmation'])) {
+            return [$this->detect($message, $context)];
+        }
+
+        $lower = mb_strtolower(trim($message), 'UTF-8');
+        if ($this->looksLikeOrderHistory($lower))       return ['tanya_status_order'];
+        if ($this->looksLikeMenuExplanation($lower))    return ['tanya_menu'];
+        if ($this->looksLikeMenuRecommendation($lower)) return ['tanya_menu'];
+        if (preg_match('/\bbikin\s+jadi\b|\bjadiin\b/u', $lower)) return ['ubah_item'];
+
+        $intentList   = implode(', ', self::INTENTS);
+        $businessType = $context['business_type'] ?? 'toko';
+        $prompt = <<<PROMPT
+You are an intent classifier for an Indonesian {$businessType} chatbot.
+Identify ALL intents present in the user message, from this list:
+{$intentList}
+
+Rules:
+- Return a JSON array ordered by relevance, e.g. ["tambah_item","tanya_promo"]
+- Most messages have exactly 1 intent; only return multiple if the message clearly contains multiple distinct requests
+- Do NOT include out_of_scope or small_talk if other actionable intents exist
+- "tadi saya pesan apa?" = tanya_status_order; "saya pesan apa?" = lihat_cart
+- "[item] jadi [number]" = ubah_item; order requests = tambah_item
+- Product/catalog explanation/detail/describe/recommend requests = tanya_menu
+- out_of_scope: anything unrelated to the {$businessType}
+- Return ONLY the JSON array, nothing else
+
+User message: "{$message}"
+PROMPT;
+
+        $raw = $this->callLlm($prompt, 60);
+        if ($raw !== null) {
+            $intents = $this->parseIntentArray($raw);
+            if (!empty($intents)) {
+                return $intents;
+            }
+        }
+
         return $this->fallback->detectAll($message, $context);
+    }
+
+    private function parseIntentArray(string $raw): array
+    {
+        if (preg_match('/\[.*?\]/s', $raw, $m)) {
+            $decoded = json_decode($m[0], true);
+            if (is_array($decoded)) {
+                $valid = array_values(array_filter(
+                    array_map('trim', $decoded),
+                    fn($i) => is_string($i) && in_array($i, self::INTENTS, true)
+                ));
+                if (!empty($valid)) {
+                    return $valid;
+                }
+            }
+        }
+        return [];
     }
 
     public function detect(string $message, array $context = []): string
@@ -85,9 +141,10 @@ class LlmIntentDetector implements IntentDetectorInterface
             return 'ubah_item';
         }
 
-        $intentList = implode(', ', self::INTENTS);
+        $intentList   = implode(', ', self::INTENTS);
+        $businessType = $context['business_type'] ?? 'toko';
         $prompt = <<<PROMPT
-You are an intent classifier for an Indonesian coffee shop chatbot.
+You are an intent classifier for an Indonesian {$businessType} chatbot.
 Classify the user message into exactly one of these intents:
 {$intentList}
 
@@ -110,7 +167,7 @@ Intent descriptions:
 - tanya_status_order: asking about PAST orders, order history, or whether they've ordered before (e.g. "tadi saya pesan apa?", "pernah order disini?", "riwayat pesanan saya", "cek order saya")
 - batal_order: cancelling order
 - small_talk: greeting, thank you, casual chat
-- out_of_scope: anything unrelated to the coffee shop
+- out_of_scope: anything unrelated to the {$businessType}
 
 IMPORTANT:
 - "tadi saya pesan apa?", "riwayat order", "history pesanan", "pernah order disini?", "saya pernah pesan?" = tanya_status_order (past orders)

@@ -75,7 +75,8 @@ class MenuRagResponder
                 . 'Description: ' . ($desc !== '' ? $desc : '[no description]');
         }
 
-        $prompt = $this->buildPrompt($lang, $message, implode("\n\n", $menuContext), count($items) > 1);
+        $businessType = (string)($ctx['business_type'] ?? 'toko');
+        $prompt = $this->buildPrompt($lang, $message, implode("\n\n", $menuContext), count($items) > 1, $businessType);
         $maxTokens = count($items) > 1 ? 320 : 220;
         $reply = $this->callLlm($prompt, $maxTokens);
         if ($reply === null) {
@@ -116,22 +117,22 @@ class MenuRagResponder
         return array_values(array_unique(array_filter($candidates)));
     }
 
-    private function buildPrompt(string $lang, string $message, string $menuContext, bool $multiple): string
+    private function buildPrompt(string $lang, string $message, string $menuContext, bool $multiple, string $businessType = 'toko'): string
     {
         if ($lang === 'en') {
             $style = $multiple
-                ? 'Explain each requested menu item briefly in English. Use only the retrieved menu context.'
-                : 'Explain the requested menu item briefly in English. Use only the retrieved menu context.';
+                ? 'Explain each requested catalog item briefly in English. Use only the retrieved menu context.'
+                : 'Explain the requested catalog item briefly in English. Use only the retrieved menu context.';
             $closing = 'End with a short ordering hint like "Want to order? Type order 1 <item name>."';
         } else {
             $style = $multiple
-                ? 'Jelaskan setiap menu yang ditanyakan dengan singkat dalam bahasa Indonesia. Gunakan hanya konteks menu yang diberikan.'
-                : 'Jelaskan menu yang ditanyakan dengan singkat dalam bahasa Indonesia. Gunakan hanya konteks menu yang diberikan.';
-            $closing = 'Akhiri dengan hint singkat untuk pesan, misalnya "Mau pesan? Ketik pesan 1 <nama menu>."';
+                ? 'Jelaskan setiap produk yang ditanyakan dengan singkat dalam bahasa Indonesia. Gunakan hanya konteks menu yang diberikan.'
+                : 'Jelaskan produk yang ditanyakan dengan singkat dalam bahasa Indonesia. Gunakan hanya konteks menu yang diberikan.';
+            $closing = 'Akhiri dengan hint singkat untuk pesan, misalnya "Mau pesan? Ketik pesan 1 <nama produk>."';
         }
 
         return <<<PROMPT
-You are a coffee shop menu assistant.
+You are a {$businessType} catalog assistant.
 
 Rules:
 - {$style}

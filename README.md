@@ -71,7 +71,7 @@ Fitur plugin terakhir yang memperkuat perluasan ini antara lain menu templates, 
 | Kategori | Detail |
 |----------|--------|
 | **Chatbot AI** | Multi-intent detection berbasis rule dan LLM — satu pesan customer dapat memicu dan memproses beberapa intent sekaligus (contoh: order + tanya promo). `detectAll()` mendeteksi semua intent, `filterIntents()` membersihkan noise, `dispatchAll()` mengeksekusi berurutan dan menggabungkan semua reply |
-| **Multi Business Vertical** | Satu codebase dapat dipakai untuk coffee shop, restoran, bakery, toko buah, fresh meat, sayuran, pharmacy, mini mart, dan retail mart |
+| **Multi Business Vertical** | Satu codebase dapat dipakai untuk coffee shop, restoran, bakery, toko buah, fresh meat, sayuran, pharmacy, mini mart, dan retail mart. Setting `business_type` di `branch_settings` membuat semua prompt LLM (intent detector, menu assistant, promo assistant, FAQ assistant) otomatis menyesuaikan konteks bisnis |
 | **Multi Cabang** | Satu brand, banyak cabang dengan menu, promo, pengaturan, mata uang, dan timezone terpisah |
 | **Multi Channel** | Website, WhatsApp, Telegram, dan Discord dengan logika chatbot yang sama |
 | **Plugin System** | Tambah fitur tanpa ubah kode inti melalui action/filter hooks |

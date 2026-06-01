@@ -144,8 +144,38 @@ Contoh struktur:
 - Jika user menyebut harga eksplisit dan currency cocok dengan cabang, hasil pencarian item dibias ke item yang punya harga sesuai.
 - Jika varian belum disebut, state machine tetap meminta klarifikasi.
 
+## Konfigurasi Business Type
+
+Setting `business_type` di tabel `branch_settings` mengontrol konteks bisnis yang dipakai pada semua prompt LLM.
+
+| `branch_settings` key | Contoh nilai | Default |
+|---|---|---|
+| `business_type` | `coffee shop`, `apotek`, `mart`, `toko buah`, `bakery` | `toko` |
+
+Cara set:
+```sql
+INSERT INTO branch_settings (branch_id, setting_key, setting_val)
+VALUES (1, 'business_type', 'apotek')
+ON DUPLICATE KEY UPDATE setting_val = 'apotek';
+```
+
+Atau melalui `BranchModel::setSetting($branchId, 'business_type', 'apotek')`.
+
+Komponen yang terpengaruh oleh `business_type`:
+
+| Komponen | Efek |
+|---|---|
+| `LlmIntentDetector` | Role prompt dan boundary `out_of_scope` berubah |
+| `AnthropicIntentDetector` | System prompt di-cache per business type |
+| `GeminiIntentDetector` | System prompt menyesuaikan vertical bisnis |
+| `OpenRouterIntentDetector` | System prompt menyesuaikan vertical bisnis |
+| `MenuRagResponder` | Dari "coffee shop menu assistant" → `{businessType} catalog assistant` |
+| `PromoRagResponder` | Dari "coffee shop promo assistant" → `{businessType} promo assistant` |
+| `FaqRagResponder` | Dari "coffee shop FAQ assistant" → `{businessType} FAQ assistant` |
+
 ## Catatan Penting
 
 - Retrieval menu/promo saat ini masih berbasis keyword scoring, belum vector embedding.
 - `currency` utama tetap berasal dari konfigurasi cabang.
+- `business_type` default `'toko'` berlaku untuk cabang yang belum mengisi setting ini.
 - Entity extraction membantu memahami teks chat user, tetapi tidak menggantikan sumber harga resmi dari menu cabang.

@@ -72,7 +72,7 @@ The latest plugin features that strengthen this expansion include menu templates
 | Category | Details |
 |----------|--------|
 | **AI Chatbot** | Multi-intent detection via rule-based and LLM — a single customer message can trigger and process multiple intents at once (e.g. order + ask promo). `detectAll()` detects all intents, `filterIntents()` removes noise, `dispatchAll()` executes each sequentially and merges all replies |
-| **Multi Business Vertical** | One codebase can be used for coffee shops, restaurants, bakeries, fruit stores, fresh meat stores, vegetable stores, pharmacies, mini marts, and retail marts |
+| **Multi Business Vertical** | One codebase can be used for coffee shops, restaurants, bakeries, fruit stores, fresh meat stores, vegetable stores, pharmacies, mini marts, and retail marts. The `business_type` branch setting makes all LLM prompts (intent detector, menu assistant, promo assistant, FAQ assistant) automatically adapt to the business context |
 | **Multi Branch** | One brand can manage many branches with separate menus, promotions, settings, currencies, and timezones |
 | **Multi Channel** | Website, WhatsApp, Telegram, and Discord with the same chatbot logic |
 | **Plugin System** | Add features without changing the core code through action/filter hooks |

@@ -70,6 +70,11 @@ class BranchModel extends BaseModel
         return $this->getSetting($branchId, 'timezone') ?? 'Asia/Jakarta';
     }
 
+    public function getBusinessType(int $branchId): string
+    {
+        return $this->getSetting($branchId, 'business_type') ?? 'toko';
+    }
+
     private function ensureSchema(): void
     {
         if (self::$schemaReady) {

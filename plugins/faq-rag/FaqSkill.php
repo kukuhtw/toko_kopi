@@ -27,7 +27,8 @@ final class FaqSkill implements SkillInterface
         $message = trim((string)($context['message'] ?? ''));
         $convContext = (array)($context['conv_context'] ?? []);
 
-        $resolved = $this->rag->answer($message, $branchId, $language);
+        $businessType = (string)($context['business_type'] ?? 'toko');
+        $resolved = $this->rag->answer($message, $branchId, $language, $businessType);
         if ($resolved === null) {
             $this->repo->logQuery(
                 $branchId,

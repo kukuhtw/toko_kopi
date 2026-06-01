@@ -72,7 +72,7 @@ Les dernières fonctionnalités de plugins qui renforcent cette extension inclue
 | Catégorie | Détails |
 |----------|--------|
 | **Chatbot IA** | Détection multi-intention basée sur des règles et sur LLM — un seul message client peut déclencher et traiter plusieurs intentions simultanément (ex. commande + demande de promotion). `detectAll()` détecte toutes les intentions, `filterIntents()` supprime le bruit, `dispatchAll()` exécute chacune séquentiellement et regroupe toutes les réponses |
-| **Multi verticale métier** | Une seule base de code peut être utilisée pour les coffee shops, restaurants, boulangeries, boutiques de fruits, magasins de viande fraîche, magasins de légumes, pharmacies, mini marts et retail marts |
+| **Multi verticale métier** | Une seule base de code peut être utilisée pour les coffee shops, restaurants, boulangeries, boutiques de fruits, magasins de viande fraîche, magasins de légumes, pharmacies, mini marts et retail marts. Le paramètre `business_type` dans `branch_settings` adapte automatiquement tous les prompts LLM (détecteur d'intention, assistant menu, assistant promo, assistant FAQ) au contexte métier |
 | **Multi-succursales** | Une marque peut gérer plusieurs succursales avec des menus, promotions, paramètres, devises et fuseaux horaires séparés |
 | **Multi-canal** | Site web, WhatsApp, Telegram et Discord avec la même logique de chatbot |
 | **Système de plugins** | Ajouter des fonctionnalités sans modifier le code principal grâce aux hooks action/filter |

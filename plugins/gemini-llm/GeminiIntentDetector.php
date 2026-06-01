@@ -23,13 +23,15 @@ class GeminiIntentDetector implements IntentDetectorInterface
         'small_talk', 'out_of_scope',
     ];
 
-    private const INTENT_SYSTEM_PROMPT = <<<'SYS'
-You are an intent classifier for an Indonesian coffee shop chatbot.
+    private function buildIntentSystemPrompt(string $businessType): string
+    {
+        return <<<SYS
+You are an intent classifier for an Indonesian {$businessType} chatbot.
 Classify the user message into exactly one of these intents:
 tanya_menu, tanya_harga, tanya_promo, tambah_item, ubah_item, hapus_item, clear_cart, lihat_cart, checkout, isi_nama, isi_email, isi_wa, isi_alamat, isi_kode_pos, konfirmasi_order, tanya_status_order, batal_order, small_talk, out_of_scope
 
 Intent descriptions:
-- tanya_menu: asking what's on the menu, asking to explain menu items, asking what a named drink/food/package is
+- tanya_menu: asking what's on the menu, asking to explain catalog items, asking what a named product/package is
 - tanya_harga: asking about price
 - tanya_promo: asking about promotions or discount codes
 - tambah_item: ordering or ADDING NEW items to cart
@@ -47,16 +49,36 @@ Intent descriptions:
 - tanya_status_order: asking about past orders or order history
 - batal_order: cancelling order
 - small_talk: greeting, thank you, casual chat
-- out_of_scope: anything unrelated to the coffee shop
+- out_of_scope: anything unrelated to the {$businessType}
 
 IMPORTANT:
 - "tadi saya pesan apa?", "riwayat order", "history pesanan", "pernah order disini?" = tanya_status_order
 - "saya pesan apa?", "pesan apa saya?", "keranjang saya" = lihat_cart
 - "[item] jadi [number]" = ubah_item
-- Menu explanation requests = tanya_menu
+- Catalog explanation/recommend requests = tanya_menu
 
 Respond with ONLY the intent name, nothing else.
 SYS;
+    }
+
+    private function buildDetectAllSystemPrompt(string $businessType): string
+    {
+        return <<<SYS
+You are an intent classifier for an Indonesian {$businessType} chatbot.
+Identify ALL intents present in the user message, from this list:
+tanya_menu, tanya_harga, tanya_promo, tambah_item, ubah_item, hapus_item, clear_cart, lihat_cart, checkout, isi_nama, isi_email, isi_wa, isi_alamat, isi_kode_pos, konfirmasi_order, tanya_status_order, batal_order, small_talk, out_of_scope
+
+Rules:
+- Return a JSON array ordered by relevance, e.g. ["tambah_item","tanya_promo"]
+- Most messages have exactly 1 intent; only return multiple if the message clearly contains multiple distinct requests
+- Do NOT include out_of_scope or small_talk if other actionable intents exist
+- "tadi saya pesan apa?" = tanya_status_order; "saya pesan apa?" = lihat_cart
+- "[item] jadi [number]" = ubah_item; order requests = tambah_item
+- Catalog explanation/detail/describe/recommend requests = tanya_menu
+- out_of_scope: anything unrelated to the {$businessType}
+- Return ONLY the JSON array, nothing else. Example: ["tambah_item","tanya_promo"]
+SYS;
+    }
 
     private const EXTRACT_SYSTEM_PROMPT = <<<'SYS'
 You extract menu items from Indonesian coffee shop customer messages.
@@ -77,7 +99,53 @@ SYS;
 
     public function detectAll(string $message, array $context = []): array
     {
+        $state = $context['state'] ?? 'idle';
+        if (in_array($state, ['awaiting_name','awaiting_email','awaiting_wa','awaiting_address',
+            'awaiting_postal','awaiting_confirmation'], true)) {
+            return [$this->detect($message, $context)];
+        }
+
+        $lower = mb_strtolower(trim($message), 'UTF-8');
+        if ($this->looksLikeOrderHistory($lower))       { return ['tanya_status_order']; }
+        if ($this->looksLikeMenuExplanation($lower))    { return ['tanya_menu']; }
+        if ($this->looksLikeMenuRecommendation($lower)) { return ['tanya_menu']; }
+        if (preg_match('/\bbikin\s+jadi\b|\bjadiin\b/u', $lower)) { return ['ubah_item']; }
+
+        try {
+            $businessType = $context['business_type'] ?? 'toko';
+            $raw = $this->provider->completeJson(
+                'User message: "' . $message . '"',
+                $this->buildDetectAllSystemPrompt($businessType),
+                60
+            );
+            $this->logUsage();
+
+            $intents = $this->parseIntentArray($raw ?? '');
+            if (!empty($intents)) {
+                return $intents;
+            }
+        } catch (\Throwable $e) {
+            error_log('[GeminiIntentDetector] detectAll: ' . $e->getMessage());
+        }
+
         return $this->fallback->detectAll($message, $context);
+    }
+
+    private function parseIntentArray(string $raw): array
+    {
+        if (preg_match('/\[[^\]]*\]/s', $raw, $m)) {
+            $decoded = json_decode($m[0], true);
+            if (is_array($decoded)) {
+                $valid = array_values(array_filter(
+                    array_map('trim', $decoded),
+                    fn($i) => is_string($i) && in_array($i, self::INTENTS, true)
+                ));
+                if (!empty($valid)) {
+                    return $valid;
+                }
+            }
+        }
+        return [];
     }
 
     public function detect(string $message, array $context = []): string
@@ -94,9 +162,10 @@ SYS;
         if (preg_match('/\bbikin\s+jadi\b|\bjadiin\b/u', $lower)) return 'ubah_item';
 
         try {
+            $businessType = $context['business_type'] ?? 'toko';
             $raw = $this->provider->completeWithSystemPrompt(
                 'User message: "' . $message . '"',
-                self::INTENT_SYSTEM_PROMPT,
+                $this->buildIntentSystemPrompt($businessType),
                 20
             );
             $this->logUsage();

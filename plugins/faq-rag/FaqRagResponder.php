@@ -38,14 +38,14 @@ final class FaqRagResponder
         return $topScore >= 0.58 || ($hasFaqCue && $topScore >= 0.44);
     }
 
-    public function answer(string $message, int $branchId, string $language = 'id'): ?array
+    public function answer(string $message, int $branchId, string $language = 'id', string $businessType = 'toko'): ?array
     {
         $matches = $this->faqs->searchRelevant($message, $branchId, 3, 0.34);
         if (empty($matches)) {
             return null;
         }
 
-        $reply = $this->composeReply($message, $matches, $language);
+        $reply = $this->composeReply($message, $matches, $language, $businessType);
         return [
             'reply' => $reply,
             'matches' => $matches,
@@ -55,10 +55,10 @@ final class FaqRagResponder
     /**
      * @param array<int, array<string, mixed>> $matches
      */
-    public function composeReply(string $message, array $matches, string $language): string
+    public function composeReply(string $message, array $matches, string $language, string $businessType = 'toko'): string
     {
         if ($this->provider !== 'none' && $this->apiKey !== '') {
-            $reply = $this->composeWithLlm($message, $matches, $language);
+            $reply = $this->composeWithLlm($message, $matches, $language, $businessType);
             if ($reply !== null && trim($reply) !== '') {
                 return trim($reply);
             }
@@ -86,7 +86,7 @@ final class FaqRagResponder
     /**
      * @param array<int, array<string, mixed>> $matches
      */
-    private function composeWithLlm(string $message, array $matches, string $language): ?string
+    private function composeWithLlm(string $message, array $matches, string $language, string $businessType = 'toko'): ?string
     {
         $faqContext = [];
         foreach ($matches as $index => $row) {
@@ -97,9 +97,10 @@ final class FaqRagResponder
                 . 'Scope: ' . (string)$row['scope'];
         }
 
+        $faqCtxStr = implode("\n\n", $faqContext);
         $prompt = $language === 'en'
-            ? "You are a coffee shop FAQ assistant. Answer only from the retrieved FAQ context. Be concise, direct, and do not invent facts.\n\nCustomer message:\n{$message}\n\nRetrieved FAQ context:\n" . implode("\n\n", $faqContext)
-            : "Anda adalah asisten FAQ coffee shop. Jawab hanya dari konteks FAQ yang diambil. Singkat, langsung, dan jangan mengarang fakta.\n\nPesan customer:\n{$message}\n\nKonteks FAQ terambil:\n" . implode("\n\n", $faqContext);
+            ? "You are a {$businessType} FAQ assistant. Answer only from the retrieved FAQ context. Be concise, direct, and do not invent facts.\n\nCustomer message:\n{$message}\n\nRetrieved FAQ context:\n{$faqCtxStr}"
+            : "Anda adalah asisten FAQ {$businessType}. Jawab hanya dari konteks FAQ yang diambil. Singkat, langsung, dan jangan mengarang fakta.\n\nPesan customer:\n{$message}\n\nKonteks FAQ terambil:\n{$faqCtxStr}";
 
         return $this->callLlm($prompt, 260);
     }

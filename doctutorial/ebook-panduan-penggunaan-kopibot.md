@@ -263,6 +263,20 @@ Data cabang yang perlu disiapkan:
 6. Status aktif atau nonaktif.
 7. Mata uang dan timezone.
 8. Pengaturan channel order.
+9. Tipe bisnis (`business_type`) — menentukan konteks prompt LLM untuk seluruh cabang.
+
+Setting `business_type` dilakukan melalui tabel `branch_settings` dengan `setting_key = 'business_type'`. Nilai dapat diisi sesuai jenis bisnis, misalnya:
+
+| Jenis Bisnis | Nilai `business_type` |
+|---|---|
+| Coffee shop / kafe | `coffee shop` |
+| Apotek | `apotek` |
+| Mini mart / retail | `mart` |
+| Toko buah / jus | `toko buah` |
+| Bakery / roti | `bakery` |
+| Toko daging & sayur | `fresh market` |
+
+Jika tidak di-set, default nilai adalah `toko` (netral). Dengan setting ini, semua prompt LLM — mulai dari deteksi intent, jawaban menu, jawaban promo, hingga FAQ — akan otomatis menyesuaikan konteks bisnis cabang tersebut.
 
 Contoh slug cabang:
 

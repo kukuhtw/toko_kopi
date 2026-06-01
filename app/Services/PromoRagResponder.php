@@ -83,7 +83,8 @@ class PromoRagResponder
                 . 'Min order: ' . (string)($promo['min_order'] ?? '0');
         }
 
-        $prompt = $this->buildPrompt($lang, $message, implode("\n\n", $promoContext));
+        $businessType = (string)($ctx['business_type'] ?? 'toko');
+        $prompt = $this->buildPrompt($lang, $message, implode("\n\n", $promoContext), $businessType);
         return $this->callLlm($prompt, 260);
     }
 
@@ -131,7 +132,7 @@ class PromoRagResponder
         return $score;
     }
 
-    private function buildPrompt(string $lang, string $message, string $promoContext): string
+    private function buildPrompt(string $lang, string $message, string $promoContext, string $businessType = 'toko'): string
     {
         if ($lang === 'en') {
             $instruction = 'Answer briefly in English using only the retrieved promo context. Mention title, discount, and code if any. If the user asks for recommendation, choose the most relevant promo from the retrieved list and explain why in one short sentence.';
@@ -142,7 +143,7 @@ class PromoRagResponder
         }
 
         return <<<PROMPT
-You are a coffee shop promo assistant.
+You are a {$businessType} promo assistant.
 
 Rules:
 - {$instruction}

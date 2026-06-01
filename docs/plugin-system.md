@@ -240,6 +240,17 @@ Vertical plugin dapat dikombinasikan dengan:
 - CRM
 - AI recommendation
 
+Untuk mengaktifkan adaptasi prompt LLM sesuai vertical bisnis, set `business_type` di `branch_settings`:
+
+| `setting_key` | Contoh `setting_val` | Efek |
+|---|---|---|
+| `business_type` | `apotek` | Semua prompt LLM menggunakan konteks apotek |
+| `business_type` | `mart` | Semua prompt LLM menggunakan konteks mart |
+| `business_type` | `toko buah` | Semua prompt LLM menggunakan konteks toko buah |
+| `business_type` | `coffee shop` | Semua prompt LLM menggunakan konteks coffee shop |
+
+Default jika tidak di-set: `toko`.
+
 ---
 
 ## Hook Reference

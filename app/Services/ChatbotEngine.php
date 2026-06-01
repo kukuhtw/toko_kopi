@@ -73,9 +73,10 @@ class ChatbotEngine
             return $this->errorResponse('Branch not found or inactive.');
         }
 
-        $currency = $this->branchModel->getCurrency($branchId);
-        $language = $this->branchModel->getLanguage($branchId);
-        $timezone = $this->branchModel->getTimezone($branchId);
+        $currency     = $this->branchModel->getCurrency($branchId);
+        $language     = $this->branchModel->getLanguage($branchId);
+        $timezone     = $this->branchModel->getTimezone($branchId);
+        $businessType = $this->branchModel->getBusinessType($branchId);
         $nowLocal = (new \DateTime('now', new \DateTimeZone($timezone)))->format('Y-m-d H:i:s');
         $customer = $channel === 'web'
             ? $this->customerModel->resolveWebCustomer($customerIdentifier)
@@ -106,6 +107,7 @@ class ChatbotEngine
             'customer_id'     => (int)($customer['id'] ?? 0),
             'conversation_id' => (int)($conversation['id'] ?? 0),
             'conv_context'    => $convCtx,
+            'business_type'   => $businessType,
         ];
         $intents    = $this->detector->detectAll($message, $detectorContext);
         $intents[0] = $this->normalizePendingStateIntent($intents[0], $message, (string)($conversation['state'] ?? 'idle'));
@@ -127,21 +129,22 @@ class ChatbotEngine
         $greeting = $this->buildGreeting($customer, $intent, $language, $branchId);
 
         $context = [
-            'channel'      => $channel,
-            'branch_id'    => $branchId,
-            'branch'       => $branch,
-            'customer'     => $customer,
-            'conversation' => $conversation,
-            'cart'         => $cart,
-            'intent'       => $intent,
-            'message'      => $message,
-            'entities'     => $entities,
-            'language'     => $language,
-            'currency'         => $currency,
-            'ppn_rate'         => $this->branchModel->getPpnRate($branchId),
-            'branch_timezone'  => $timezone,
-            'now_local'        => $nowLocal,
-            'conv_context'     => $convCtx,
+            'channel'       => $channel,
+            'branch_id'     => $branchId,
+            'branch'        => $branch,
+            'customer'      => $customer,
+            'conversation'  => $conversation,
+            'cart'          => $cart,
+            'intent'        => $intent,
+            'message'       => $message,
+            'entities'      => $entities,
+            'language'      => $language,
+            'currency'          => $currency,
+            'ppn_rate'          => $this->branchModel->getPpnRate($branchId),
+            'branch_timezone'   => $timezone,
+            'now_local'         => $nowLocal,
+            'conv_context'      => $convCtx,
+            'business_type'     => $businessType,
         ];
 
         $result = count($intents) > 1
