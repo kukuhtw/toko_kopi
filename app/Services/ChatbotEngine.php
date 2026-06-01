@@ -15,6 +15,7 @@ class ChatbotEngine
     private CustomerModel            $customerModel;
     private CartModel                $cartModel;
     private ConversationModel        $convModel;
+    private MenuModel                $menuModel;
     private IntentDetectorInterface  $detector;
     private ChatEntityExtractor      $entityExtractor;
     private array $detectorMeta = ['type' => 'rule-based', 'provider' => 'none', 'model' => ''];
@@ -48,6 +49,7 @@ class ChatbotEngine
         $this->customerModel = new CustomerModel();
         $this->cartModel     = new CartModel();
         $this->convModel     = new ConversationModel();
+        $this->menuModel     = new MenuModel();
         $this->detector      = $detector ?? $this->loadDetector();
         $this->entityExtractor = new ChatEntityExtractor();
 
@@ -115,6 +117,7 @@ class ChatbotEngine
         $intents[0] = $this->preferCheckoutEditIntent($intents[0], $message, $conversation['state']);
         $intents[0] = $this->preferActiveCartIntent($intents[0], $message, $cartItems, $convCtx);
         $intents[0] = $this->preferMenuSelectionIntent($intents[0], $message, $convCtx);
+        $intents[0] = $this->resolveCategoryIntent($intents[0], $message, $branchId);
         if ($intents[0] === 'out_of_scope' && SmallTalkSkill::isSmallTalk($message)) {
             $intents[0] = 'small_talk';
         }
@@ -391,6 +394,20 @@ class ChatbotEngine
         });
 
         return array_map(fn(array $row) => $row['skill'], $normalized);
+    }
+
+    private function resolveCategoryIntent(string $intent, string $message, int $branchId): string
+    {
+        if ($intent !== 'out_of_scope') {
+            return $intent;
+        }
+        $lower = mb_strtolower(trim($message), 'UTF-8');
+        foreach ($this->menuModel->getCategoriesWithCount($branchId) as $cat) {
+            if (mb_strtolower((string)($cat['name'] ?? ''), 'UTF-8') === $lower) {
+                return 'tanya_menu';
+            }
+        }
+        return $intent;
     }
 
     private function applyFollowUpHeuristics(string $intent, string $message, array $convCtx): string

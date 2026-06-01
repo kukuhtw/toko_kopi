@@ -857,6 +857,8 @@ function confirmCustomize() {
     const loyaltyMsg = document.getElementById('loyaltyMsg');
     if (loyaltyMsg) loyaltyMsg.textContent = '';
     renderCart();
+    saveCartToStorage();
+    scheduleCartSync();
     closeCustomizeModal();
     if (document.getElementById('checkoutForm').style.display !== 'none') {
         autoApplyPromo();
@@ -899,6 +901,8 @@ function updateQty(id, delta, variantId = null) {
     document.getElementById('promoMsg').textContent = '';
     document.getElementById('promoCode').value = '';
     renderCart();
+    saveCartToStorage();
+    scheduleCartSync();
     if (document.getElementById('checkoutForm').style.display !== 'none') {
         autoApplyPromo();
     }
@@ -1551,11 +1555,44 @@ function clearCartFromStorage() {
     try { localStorage.removeItem(CART_KEY); } catch {}
 }
 
+// ── Server cart sync (keeps chat.php in sync) ─────────────────────────────────
+let _cartSyncTimer = null;
+
+function scheduleCartSync() {
+    if (_cartSyncTimer) clearTimeout(_cartSyncTimer);
+    _cartSyncTimer = setTimeout(syncCartToServer, 500);
+}
+
+async function syncCartToServer() {
+    try {
+        await fetch(BASE_URL + '/api/cart/clear.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({branch_id: BRANCH_ID, session_id: SESSION_ID}),
+        });
+        for (const item of Object.values(cart)) {
+            await fetch(BASE_URL + '/api/cart/add.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    branch_id: BRANCH_ID,
+                    menu_item_id: item.menu_item_id,
+                    variant_id: item.variant_id || null,
+                    quantity: item.qty,
+                    notes: item.notes || '',
+                    session_id: SESSION_ID,
+                }),
+            });
+        }
+    } catch (_) {}
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 buildCatTabs();
 loadCartFromStorage();
 renderMenu();
 renderCart();
+if (Object.keys(cart).length > 0) scheduleCartSync();
 </script>
 </body>
 </html>
