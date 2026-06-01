@@ -774,7 +774,7 @@
         <div class="chat-header-avatar">☕</div>
         <div class="chat-header-info">
           <h3><?= htmlspecialchars($selectedBranch['name']) ?></h3>
-          <span>Kopi Bot · Online</span>
+          <span id="chat-header-status"><?= htmlspecialchars($chatAssistantName) ?> · <?= htmlspecialchars($chatAssistantStatus) ?></span>
         </div>
         <div class="chat-mobile-actions">
           <button type="button" class="chat-mobile-toggle" onclick="openSidebar()" aria-label="Pilih cabang">☰</button>
