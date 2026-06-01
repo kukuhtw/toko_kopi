@@ -6,8 +6,13 @@ require_once dirname(__DIR__) . '/app/Config/config.php';
 
 use App\Helpers\Auth;
 use App\Helpers\Csrf;
+use App\Plugin\HookManager;
 
 Auth::startSession();
+
+$publicAppName = HookManager::applyFilters('site.app_name', APP_NAME);
+$publicEmoji = HookManager::applyFilters('site.brand_emoji', '☕');
+$publicTagline = HookManager::applyFilters('site.tagline', 'Chatbot Order Management System');
 
 // Already logged in
 if (Auth::check()) {
@@ -43,11 +48,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login — Toko Kopi</title>
   <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/app.css">
+  <?= HookManager::applyFilters('site.head_styles', '') ?>
+  <title><?= htmlspecialchars($publicAppName) ?> Login</title>
+  <style>
+    .login-logo > h1,
+    .login-logo > p { display:none; }
+    .login-logo .public-brand h1,
+    .login-logo .public-brand p { display:block; }
+  </style>
 </head>
 <body>
 <div class="login-page">
   <div class="login-card">
     <div class="login-logo">
+      <div class="public-brand">
+        <h1><?= htmlspecialchars($publicEmoji) ?> <?= htmlspecialchars($publicAppName) ?></h1>
+        <p><?= htmlspecialchars($publicTagline) ?></p>
+      </div>
       <h1>☕ Toko Kopi</h1>
       <p>Chatbot Order Management System</p>
     </div>

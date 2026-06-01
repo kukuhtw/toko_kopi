@@ -132,7 +132,7 @@ try {
 $primaryBranch = $branches[0] ?? null;
 $primaryBranchSettings = $primaryBranch ? $branchModel->getAllSettings((int) $primaryBranch['id']) : [];
 
-$siteName = trim((string) ($appSettings['app_name'] ?? APP_NAME));
+$siteName = trim((string) HookManager::applyFilters('site.app_name', (string) ($appSettings['app_name'] ?? APP_NAME)));
 if ($siteName === '') {
     $siteName = 'Toko Kopi';
 }
@@ -145,6 +145,8 @@ if (!isset($businessProfiles[$businessType])) {
 $catalogTemplate = (string) ($appSettings['catalog_template'] ?? 'keep-seed');
 $businessProfile = $businessProfiles[$businessType];
 $templateProfile = $templateLabels[$catalogTemplate] ?? ['id' => $catalogTemplate, 'en' => $catalogTemplate];
+$publicBrandEmoji = trim((string) HookManager::applyFilters('site.brand_emoji', $businessProfile['icon']));
+$publicTagline = trim((string) HookManager::applyFilters('site.tagline', $businessProfile['summary_id']));
 $branchCount = count($branches);
 $defaultLanguage = strtoupper((string) ($appSettings['app_language'] ?? 'id'));
 $currency = (string) ($appSettings['app_currency'] ?? 'IDR');
@@ -156,8 +158,12 @@ $heroBadgeId = sprintf('%s Profil Terpasang · %d Cabang Aktif · %s', $business
 $heroBadgeEn = sprintf('%s Installed Profile · %d Active Branches · %s', $businessProfile['icon'], $branchCount, $templateProfile['en']);
 $heroTitleId = sprintf('Platform AI Commerce untuk %s', $siteName);
 $heroTitleEn = sprintf('AI Commerce Platform for %s', $siteName);
-$heroSummaryId = $businessProfile['summary_id'] . ' Landing page ini otomatis menampilkan profil hasil instalasi terbaru.';
-$heroSummaryEn = $businessProfile['summary_en'] . ' This landing page automatically reflects the latest installed profile.';
+$heroSummaryId = $publicTagline !== ''
+    ? $publicTagline . ' Landing page ini otomatis menampilkan profil hasil instalasi terbaru.'
+    : $businessProfile['summary_id'] . ' Landing page ini otomatis menampilkan profil hasil instalasi terbaru.';
+$heroSummaryEn = $publicTagline !== ''
+    ? $publicTagline . ' This landing page automatically reflects the latest installed profile.'
+    : $businessProfile['summary_en'] . ' This landing page automatically reflects the latest installed profile.';
 ?>
 <!DOCTYPE html>
 <html lang="id" id="root-html">
@@ -209,6 +215,8 @@ $heroSummaryEn = $businessProfile['summary_en'] . ' This landing page automatica
     .hero h1 { font-size:clamp(2rem,5vw,3.4rem); font-weight:800; line-height:1.15; margin:0 0 20px; }
     .hero h1 span { color:#f0c060; }
     .hero p { font-size:1.1rem; color:rgba(255,255,255,.93); max-width:560px; margin:0 auto 36px; line-height:1.7; }
+    .hero > p:first-of-type { display:none; }
+    .hero-theme-tagline { display:block !important; }
     .hero-btns { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; }
     .btn-gold {
       background:linear-gradient(135deg,#c8922a,#e8b84b); color:#1a0e07;
@@ -431,7 +439,7 @@ $heroSummaryEn = $businessProfile['summary_en'] . ' This landing page automatica
 
 <!-- Nav -->
 <nav class="nav">
-  <div class="nav-brand">☕ KopiBot <span style="font-weight:400;color:var(--body-text-light)">AI</span></div>
+  <div class="nav-brand"><?= htmlspecialchars($publicBrandEmoji) ?> <?= htmlspecialchars($siteName) ?> <span style="font-weight:400;color:var(--body-text-light)">AI</span></div>
   <div class="nav-links">
     <a href="#fitur"><span data-t-id="Fitur" data-t-en="Features">Fitur</span></a>
     <a href="#demo">Demo</a>
@@ -445,10 +453,13 @@ $heroSummaryEn = $businessProfile['summary_en'] . ' This landing page automatica
 
 <!-- Hero -->
 <section class="hero">
-  <div class="hero-badge" data-t-id="☕ Siap Deploy · Multi-Cabang · Tanpa Biaya Langganan" data-t-en="☕ Ready to Deploy · Multi-Branch · No Monthly Fees">☕ Siap Deploy · Multi-Cabang · Tanpa Biaya Langganan</div>
-  <h1 id="hero-h1">Chatbot Pemesanan Otomatis<br>untuk <span>Toko Kopi</span> Kamu</h1>
+  <div class="hero-badge" data-t-id="<?= htmlspecialchars($publicBrandEmoji) ?> Siap Deploy · Multi-Cabang · Tanpa Biaya Langganan" data-t-en="<?= htmlspecialchars($publicBrandEmoji) ?> Ready to Deploy · Multi-Branch · No Monthly Fees"><?= htmlspecialchars($publicBrandEmoji) ?> Siap Deploy · Multi-Cabang · Tanpa Biaya Langganan</div>
+  <h1 id="hero-h1">Chatbot Pemesanan Otomatis<br>untuk <span><?= htmlspecialchars($siteName) ?></span></h1>
   <p data-t-id="Terima pesanan kapan saja lewat Website &amp; WhatsApp — tanpa jaga kasir, tanpa biaya bulanan. Dirilis sebagai open source di bawah GNU Affero General Public License v3.0 (AGPL-3.0)."
      data-t-en="Accept orders anytime via Website &amp; WhatsApp — no cashier needed, no monthly fees. Released as open source under the GNU Affero General Public License v3.0 (AGPL-3.0).">Terima pesanan kapan saja lewat Website &amp; WhatsApp — tanpa jaga kasir, tanpa biaya bulanan. Dirilis sebagai open source di bawah GNU Affero General Public License v3.0 (AGPL-3.0).</p>
+  <p class="hero-theme-tagline"
+     data-t-id="<?= htmlspecialchars($heroSummaryId, ENT_QUOTES, 'UTF-8') ?>"
+     data-t-en="<?= htmlspecialchars($heroSummaryEn, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($heroSummaryId) ?></p>
   <div class="hero-btns">
     <a href="#demo" class="btn-gold"><span data-t-id="🚀 Coba Demo Gratis" data-t-en="🚀 Try Free Demo">🚀 Coba Demo Gratis</span></a>
     <a href="https://github.com/kukuhtw/toko_kopi" class="btn-ghost" target="_blank" rel="noopener"><span data-t-id="🔗 Lihat GitHub" data-t-en="🔗 View GitHub">🔗 Lihat GitHub</span></a>
@@ -465,7 +476,7 @@ $heroSummaryEn = $businessProfile['summary_en'] . ' This landing page automatica
       <div class="hero-remark-chip">&#9749; Product Remark</div>
       <div class="hero-remark-title">AI Agent Coffee Shop Commerce Platform</div>
     </div>
-    <p class="hero-remark-desc">Platform AI untuk otomatisasi order, customer service, loyalty customer, FAQ RAG, complaint ticketing, connector POS, dan manajemen multi cabang coffee shop.</p>
+    <p class="hero-remark-desc"><?= htmlspecialchars($publicTagline !== '' ? $publicTagline : 'Platform AI untuk otomatisasi order, customer service, loyalty customer, FAQ RAG, complaint ticketing, connector POS, dan manajemen multi cabang.') ?></p>
     <div class="hero-remark-grid">
       <div class="hero-remark-card">
         <h3>&#128640; Features</h3>

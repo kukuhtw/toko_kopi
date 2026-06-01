@@ -119,6 +119,10 @@ class ThemesPlugin implements PluginInterface
         HookManager::addFilter('site.head_styles',      [$this, 'injectStyles'],    5);
         HookManager::addFilter('dashboard.brand_html',  [$this, 'overrideBrand'],   5);
         HookManager::addFilter('dashboard.app_name',    [$this, 'overrideAppName'], 5);
+        HookManager::addFilter('site.brand_html',       [$this, 'overrideBrand'],   5);
+        HookManager::addFilter('site.app_name',         [$this, 'overrideAppName'], 5);
+        HookManager::addFilter('site.tagline',          [$this, 'overrideTagline'], 5);
+        HookManager::addFilter('site.brand_emoji',      [$this, 'overrideEmoji'],   5);
         HookManager::addFilter('dashboard.nav_items',   [$this, 'addNavItem'],      5);
     }
 
@@ -204,6 +208,18 @@ class ThemesPlugin implements PluginInterface
     {
         $configured = trim($this->getSetting('app_name', ''));
         return $configured !== '' ? $configured : $name;
+    }
+
+    public function overrideTagline(string $tagline): string
+    {
+        $configured = trim($this->getSetting('tagline', ''));
+        return $configured !== '' ? $configured : $tagline;
+    }
+
+    public function overrideEmoji(string $emoji): string
+    {
+        $configured = trim($this->getSetting('brand_emoji', ''));
+        return $configured !== '' ? $configured : $emoji;
     }
 
     // ── Filter: dashboard.nav_items ──────────────────────────────

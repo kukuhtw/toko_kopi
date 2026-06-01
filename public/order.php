@@ -19,6 +19,9 @@ $sessionId = session_id();
 $rajaOngkirEnabled = \App\Plugin\PluginLoader::isLoaded('rajaongkir-delivery');
 
 $isEnglish = $language === 'en';
+$publicAppName = HookManager::applyFilters('site.app_name', APP_NAME);
+$publicEmoji = HookManager::applyFilters('site.brand_emoji', '☕');
+$publicTagline = HookManager::applyFilters('site.tagline', $isEnglish ? 'Online ordering for your branch' : 'Pemesanan online untuk cabang ini');
 $t = [
     'search_menu'   => $isEnglish ? 'Search menu...' : 'Cari menu...',
     'all'           => $isEnglish ? 'All' : 'Semua',
@@ -98,7 +101,7 @@ $categories = array_values($catMap);
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Order Online — <?= htmlspecialchars($branch['name']) ?></title>
+  <title><?= htmlspecialchars($publicAppName) ?> Order - <?= htmlspecialchars($branch['name']) ?></title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/app.css">
     <?= HookManager::applyFilters('site.head_styles', '') ?>
@@ -270,6 +273,7 @@ $categories = array_values($catMap);
         <h1>☕ <?= htmlspecialchars($branch['name']) ?></h1>
         <p><?= htmlspecialchars($branch['address'] ?? 'Indonesia') ?></p>
         <?php if ($branch['phone']): ?><p>📞 <?= htmlspecialchars($branch['phone']) ?></p><?php endif; ?>
+        <p style="opacity:.92;font-weight:600"><?= htmlspecialchars($publicAppName) ?><?php if ($publicTagline !== ''): ?> · <?= htmlspecialchars($publicTagline) ?><?php endif; ?></p>
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end">
         <a href="<?= BASE_URL ?>/customer/login.php" class="home-link">👤 Customer Dashboard</a>
