@@ -113,12 +113,19 @@ class HpAccessoriesTemplatePlugin implements PluginInterface
                         ':sort'   => $item['sort'],
                     ]);
                     $itemId = (int) $pdo->lastInsertId();
-                    foreach ($item['variants'] as $vSort => [$label, $vSlug, $delta]) {
+                    foreach ($item['variants'] as $vSort => $variant) {
+                        if (!is_array($variant) || count($variant) < 3) {
+                            continue;
+                        }
+                        [$label, $vSlug, $delta] = $variant;
+                        if ($label === null || $vSlug === null) {
+                            continue;
+                        }
                         $stmtVariant->execute([
                             ':item_id' => $itemId,
-                            ':label'   => $label,
-                            ':slug'    => $itemId . '-' . $vSlug,
-                            ':delta'   => $delta,
+                            ':label'   => (string) $label,
+                            ':slug'    => $itemId . '-' . (string) $vSlug,
+                            ':delta'   => (float) $delta,
                             ':sort'    => $vSort + 1,
                         ]);
                     }
@@ -205,7 +212,7 @@ class HpAccessoriesTemplatePlugin implements PluginInterface
             ],
             'earphone-headset' => [
                 ['TWS Bluetooth Earbuds', 'tws-bluetooth', 'True wireless stereo earbuds dengan case pengisi daya, bass kuat.', 150000, [[self::REG, 'reguler', 0], [self::PRO, 'pro', 100000]]],
-                ['Earphone In-Ear Wired', 'earphone-inear-wired', 'Earphone kabel in-ear dengan bass boost dan mikrofon.', 45000, ['3.5mm Jack', 'jack', 0], ['USB-C', 'usbc', 5000]],
+                ['Earphone In-Ear Wired', 'earphone-inear-wired', 'Earphone kabel in-ear dengan bass boost dan mikrofon.', 45000, [['3.5mm Jack', 'jack', 0], ['USB-C', 'usbc', 5000]]],
                 ['Earphone Type-C', 'earphone-typec', 'Earphone kabel USB-C untuk HP tanpa jack 3.5mm.', 55000, [[self::REG, 'reguler', 0], [self::PRO, 'pro', 30000]]],
                 ['Headset Gaming RGB', 'headset-gaming-rgb', 'Headset over-ear dengan LED RGB dan mikrofon surround untuk gaming.', 185000, [[self::REG, 'reguler', 0], [self::PRO, 'pro', 65000]]],
                 ['Neckband Bluetooth', 'neckband-bluetooth', 'Headset neckband bluetooth dengan baterai tahan lama.', 125000, [[self::REG, 'reguler', 0], [self::PRO, 'pro', 50000]]],
