@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-use App\Config\Database;
 use App\Helpers\Csrf;
-use App\Models\BranchModel;
 use App\Models\OrderModel;
-use App\Plugin\HookManager;
-use App\Plugin\PluginInterface;
+use KopiBot\Contracts\PluginInterface;
+use KopiBot\Core\DatabaseConnection;
+use KopiBot\Core\HookManager;
+use KopiBot\Domains\Branch\BranchRepository;
 
 final class NicepayPaymentPlugin implements PluginInterface
 {
@@ -259,7 +259,7 @@ final class NicepayPaymentPlugin implements PluginInterface
                        placeholder="IONPAYTEST / IMID sandbox Anda">
               </div>
               <div class="form-group">
-                <label class="form-label" for="nicepay_merchant_key_<?= (int)$branchId ?>">Merchant Key</label>
+                <label class="form-label" for="nicepay_merchant_key_<?= (int)$branchId ?>">Merchant Key / Secret Key</label>
                 <input type="password" id="nicepay_merchant_key_<?= (int)$branchId ?>" name="merchant_key" class="form-control"
                        value="<?= htmlspecialchars($merchantKey) ?>">
               </div>
@@ -308,14 +308,14 @@ final class NicepayPaymentPlugin implements PluginInterface
 
     private function buildPayload(array $order, int $branchId): array
     {
-        $branchModel = new BranchModel();
-        $branch = $branchModel->find($branchId) ?: [];
+        $branchRepository = new BranchRepository();
+        $branch = $branchRepository->find($branchId) ?: [];
 
         $timestamp = date('YmdHis');
         $amount = (string)max(1, (int)round((float)($order['total_amount'] ?? 0)));
         $expiryMinutes = max(5, min(20, (int)($this->getSetting($branchId, 'expiry_minutes') ?: 20)));
         $expiryDateTime = time() + ($expiryMinutes * 60);
-        $currency = strtoupper((string)($branchModel->getCurrency($branchId) ?: 'IDR'));
+        $currency = strtoupper((string)($branchRepository->getCurrency($branchId) ?: 'IDR'));
         if ($currency === '') {
             $currency = 'IDR';
         }
@@ -416,7 +416,7 @@ final class NicepayPaymentPlugin implements PluginInterface
             return '';
         }
 
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT setting_key FROM plugin_branch_settings
              WHERE plugin_slug = ? AND branch_id = ? AND setting_val = ? AND setting_key LIKE ? LIMIT 1'
         );
@@ -443,7 +443,7 @@ final class NicepayPaymentPlugin implements PluginInterface
 
     private function getSetting(int $branchId, string $key): ?string
     {
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT setting_val FROM plugin_branch_settings
              WHERE plugin_slug = ? AND branch_id = ? AND setting_key = ? LIMIT 1'
         );
@@ -454,7 +454,7 @@ final class NicepayPaymentPlugin implements PluginInterface
 
     private function saveSetting(int $branchId, string $key, string $value): void
     {
-        Database::getInstance()->prepare(
+        DatabaseConnection::getInstance()->prepare(
             'INSERT INTO plugin_branch_settings (plugin_slug, branch_id, setting_key, setting_val)
              VALUES (?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE setting_val = VALUES(setting_val)'
