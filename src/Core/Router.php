@@ -45,4 +45,19 @@ class Router
             Response::json($result);
         }
     }
+
+    public function auth(Request $request): ?array
+    {
+        $user = (new AuthMiddleware())->user();
+
+        if (!$user) {
+            Response::json([
+                'success' => false,
+                'message' => 'Unauthorized',
+            ], 401);
+            return null;
+        }
+
+        return $user;
+    }
 }

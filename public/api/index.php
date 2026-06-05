@@ -55,9 +55,14 @@ $router->get('/api/products', function (Request $request): array {
     return (new ProductService())->getMenu($tenantId, $branchId);
 });
 
-$router->post('/api/cart/add', function (Request $request): array {
+$router->post('/api/cart/add', function (Request $request) use ($router): array {
+    $user = $router->auth($request);
+    if (!$user) {
+        return [];
+    }
+
     return (new CartService())->addItem(
-        tenantId: (int) $request->input('tenant_id', 1),
+        tenantId: (int) ($user['tenant_id'] ?? $request->input('tenant_id', 1)),
         branchId: (int) $request->input('branch_id', 1),
         customerId: $request->input('customer_id') !== null ? (int) $request->input('customer_id') : null,
         sessionId: (string) $request->input('session_id', 'api-session'),
@@ -70,9 +75,14 @@ $router->post('/api/cart/add', function (Request $request): array {
     );
 });
 
-$router->post('/api/cart/checkout', function (Request $request): array {
+$router->post('/api/cart/checkout', function (Request $request) use ($router): array {
+    $user = $router->auth($request);
+    if (!$user) {
+        return [];
+    }
+
     return (new CartService())->checkout(
-        tenantId: (int) $request->input('tenant_id', 1),
+        tenantId: (int) ($user['tenant_id'] ?? $request->input('tenant_id', 1)),
         branchId: (int) $request->input('branch_id', 1),
         customerId: (int) $request->input('customer_id', 1),
         sessionId: (string) $request->input('session_id', 'api-session'),
