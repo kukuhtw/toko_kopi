@@ -14,11 +14,15 @@ class IntentDetector
             return IntentType::UNKNOWN;
         }
 
+        if ($this->containsAny($message, ['checkout', 'bayar', 'lanjut bayar', 'buat order', 'proses order'])) {
+            return IntentType::CREATE_ORDER;
+        }
+
         if ($this->containsAny($message, ['menu', 'daftar menu', 'katalog', 'produk apa'])) {
             return IntentType::SHOW_MENU;
         }
 
-        if ($this->containsAny($message, ['pesan', 'order', 'beli', 'checkout'])) {
+        if ($this->containsAny($message, ['pesan', 'order', 'beli', 'tambah'])) {
             return IntentType::CREATE_ORDER;
         }
 
