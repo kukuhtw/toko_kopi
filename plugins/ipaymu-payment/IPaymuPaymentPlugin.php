@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-use App\Config\Database;
 use App\Helpers\Csrf;
-use App\Models\BranchModel;
 use App\Models\OrderModel;
-use App\Plugin\HookManager;
-use App\Plugin\PluginInterface;
+use KopiBot\Contracts\PluginInterface;
+use KopiBot\Core\DatabaseConnection;
+use KopiBot\Core\HookManager;
+use KopiBot\Domains\Branch\BranchRepository;
 
 final class IPaymuPaymentPlugin implements PluginInterface
 {
@@ -297,8 +297,8 @@ final class IPaymuPaymentPlugin implements PluginInterface
 
     private function buildPayload(array $order, int $branchId): array
     {
-        $branchModel = new BranchModel();
-        $currency = strtoupper((string)($branchModel->getCurrency($branchId) ?: 'IDR'));
+        $branchRepository = new BranchRepository();
+        $currency = strtoupper((string)($branchRepository->getCurrency($branchId) ?: 'IDR'));
 
         $products = [];
         $qty = [];
@@ -371,7 +371,7 @@ final class IPaymuPaymentPlugin implements PluginInterface
             return '';
         }
 
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT setting_key FROM plugin_branch_settings
              WHERE plugin_slug = ? AND branch_id = ? AND setting_val = ? AND setting_key LIKE ? LIMIT 1'
         );
@@ -398,7 +398,7 @@ final class IPaymuPaymentPlugin implements PluginInterface
 
     private function getSetting(int $branchId, string $key): ?string
     {
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT setting_val FROM plugin_branch_settings
              WHERE plugin_slug = ? AND branch_id = ? AND setting_key = ? LIMIT 1'
         );
@@ -409,7 +409,7 @@ final class IPaymuPaymentPlugin implements PluginInterface
 
     private function saveSetting(int $branchId, string $key, string $value): void
     {
-        Database::getInstance()->prepare(
+        DatabaseConnection::getInstance()->prepare(
             'INSERT INTO plugin_branch_settings (plugin_slug, branch_id, setting_key, setting_val)
              VALUES (?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE setting_val = VALUES(setting_val)'
