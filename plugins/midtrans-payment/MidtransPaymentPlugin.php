@@ -3,7 +3,8 @@
 use KopiBot\Contracts\PluginInterface;
 use KopiBot\Core\DatabaseConnection;
 use KopiBot\Core\HookManager;
-use App\Models\OrderModel;
+use KopiBot\Domains\Order\OrderPaymentService;
+use KopiBot\Security\Csrf;
 
 /**
  * Midtrans Payment Plugin
@@ -134,11 +135,11 @@ class MidtransPaymentPlugin implements PluginInterface
         $failed = in_array($txStatus, ['cancel', 'deny', 'expire', 'failure'], true);
 
         if ($orderNumber && ($paid || $failed)) {
-            $orderModel = new OrderModel();
-            $order      = $orderModel->findByOrderNumber($orderNumber);
+            $orderPayment = new OrderPaymentService();
+            $order = $orderPayment->findByOrderNumber($orderNumber);
 
             if ($order) {
-                $orderModel->updatePayment(
+                $orderPayment->updatePaymentStatus(
                     (int)$order['id'],
                     $paid ? 'paid' : 'failed',
                 );
@@ -186,7 +187,7 @@ class MidtransPaymentPlugin implements PluginInterface
           <div class="card-title">💳 Midtrans Payment Gateway</div>
 
           <form method="POST">
-            <?= \App\Helpers\Csrf::field() ?>
+            <?= Csrf::field() ?>
             <input type="hidden" name="action"      value="save_plugin_settings">
             <input type="hidden" name="branch_id"   value="<?= (int)$branchId ?>">
             <input type="hidden" name="plugin_slug" value="midtrans-payment">
