@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-use App\Helpers\Csrf;
-use App\Models\OrderModel;
 use KopiBot\Contracts\PluginInterface;
 use KopiBot\Core\DatabaseConnection;
 use KopiBot\Core\HookManager;
 use KopiBot\Domains\Branch\BranchRepository;
+use KopiBot\Domains\Order\OrderPaymentService;
+use KopiBot\Security\Csrf;
 
 final class NicepayPaymentPlugin implements PluginInterface
 {
@@ -138,13 +138,13 @@ final class NicepayPaymentPlugin implements PluginInterface
             return;
         }
 
-        $orderModel = new OrderModel();
-        $order = $orderModel->findByOrderNumber($orderNumber);
+        $orderPayment = new OrderPaymentService();
+        $order = $orderPayment->findByOrderNumber($orderNumber);
         if (!$order) {
             return;
         }
 
-        $orderModel->updatePayment((int)$order['id'], $paymentState);
+        $orderPayment->updatePaymentStatus((int)$order['id'], $paymentState);
     }
 
     public function appendCheckoutPaymentData(array $responseData, array $order, int $branchId): array
@@ -432,8 +432,11 @@ final class NicepayPaymentPlugin implements PluginInterface
             return '';
         }
 
-        $order = (new OrderModel())->find($orderId);
-        return $order ? (string)($order['order_number'] ?? '') : '';
+        $stmt = DatabaseConnection::getInstance()->prepare('SELECT order_no, order_number FROM orders WHERE id = ? LIMIT 1');
+        $stmt->execute([$orderId]);
+        $order = $stmt->fetch();
+
+        return $order ? (string)($order['order_number'] ?? $order['order_no'] ?? '') : '';
     }
 
     private function isEnabled(int $branchId): bool
