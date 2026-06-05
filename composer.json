@@ -55,6 +55,16 @@
       "@smoke:payment",
       "@smoke:api"
     ],
+    "integration:checkout": "php tests/integration_checkout.php",
+    "integration:chat-memory": "php tests/integration_chat_memory.php",
+    "integration:all": [
+      "@integration:checkout",
+      "@integration:chat-memory"
+    ],
+    "verify": [
+      "@smoke:all",
+      "@integration:all"
+    ],
     "test": "phpunit",
     "analyse": "phpstan analyse src plugins",
     "cs-fix": "php-cs-fixer fix"
