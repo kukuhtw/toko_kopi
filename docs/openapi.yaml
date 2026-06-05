@@ -1,0 +1,91 @@
+openapi: 3.0.3
+info:
+  title: KopiBot MVP API
+  version: 0.1.0
+  description: MVP API for KopiBot AI Commerce Platform.
+servers:
+  - url: http://localhost:8000
+paths:
+  /api/health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: Service status
+  /api/auth/register:
+    post:
+      summary: Register user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenant_id:
+                  type: integer
+                name:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Registration result
+  /api/auth/login:
+    post:
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenant_id:
+                  type: integer
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: JWT token result
+  /api/products:
+    get:
+      summary: Product menu or search
+      parameters:
+        - name: tenant_id
+          in: query
+          schema:
+            type: integer
+        - name: branch_id
+          in: query
+          schema:
+            type: integer
+        - name: q
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Product result
+  /api/cart/add:
+    post:
+      summary: Add item to cart
+      responses:
+        '200':
+          description: Cart result
+  /api/cart/checkout:
+    post:
+      summary: Checkout cart and create payment link
+      responses:
+        '200':
+          description: Checkout result
+  /api/chatbot/message:
+    post:
+      summary: Process chatbot message
+      responses:
+        '200':
+          description: Chatbot response
