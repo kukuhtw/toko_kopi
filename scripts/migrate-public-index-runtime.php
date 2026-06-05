@@ -16,44 +16,33 @@ if ($contents === false) {
     exit(1);
 }
 
-$old = <<<'PHP'
-declare(strict_types=1);
-require_once dirname(__DIR__) . '/app/Config/config.php';
+$slash = chr(92);
+$replacements = [];
+$replacements["require_once dirname(__DIR__) . '/app/Config/config.php';"] = "require_once dirname(__DIR__) . '/config/runtime.php';";
+$replacements['use App' . $slash . 'Config' . $slash . 'Database;'] = 'use KopiBot' . $slash . 'Core' . $slash . 'DatabaseConnection;';
+$replacements['use App' . $slash . 'Models' . $slash . 'BranchModel;'] = 'use KopiBot' . $slash . 'Domains' . $slash . 'Branch' . $slash . 'BranchRepository;';
+$replacements['use App' . $slash . 'Plugin' . $slash . 'HookManager;'] = 'use KopiBot' . $slash . 'Core' . $slash . 'HookManager;';
+$replacements['$branchModel = new BranchModel();'] = '$branchRepository = new BranchRepository();';
+$replacements['$branches    = $branchModel->getActive();'] = '$branches    = $branchRepository->getActive();';
+$replacements['Database::getInstance()'] = 'DatabaseConnection::getInstance()';
+$replacements['$primaryBranchSettings = $primaryBranch ? $branchModel->getAllSettings((int) $primaryBranch[\'id\']) : [];'] = '$primaryBranchSettings = $primaryBranch ? $branchRepository->getAllSettings((int) $primaryBranch[\'id\']) : [];';
 
-use App\Config\Database;
-use App\Models\BranchModel;
-use App\Plugin\HookManager;
-PHP;
-
-$new = <<<'PHP'
-declare(strict_types=1);
-
-require_once dirname(__DIR__) . '/config/runtime.php';
-
-if (file_exists(dirname(__DIR__) . '/app/Config/config.php')) {
-    require_once dirname(__DIR__) . '/app/Config/config.php';
+$changed = false;
+foreach ($replacements as $search => $replace) {
+    if (str_contains($contents, $search)) {
+        $contents = str_replace($search, $replace, $contents);
+        $changed = true;
+    }
 }
 
-use App\Config\Database;
-use App\Models\BranchModel;
-use App\Plugin\HookManager;
-PHP;
-
-if (str_contains($contents, $new)) {
-    echo "public/index.php already uses config/runtime.php\n";
+if (!$changed) {
+    echo "public/index.php already appears migrated or no known legacy patterns found\n";
     exit(0);
 }
-
-if (!str_contains($contents, $old)) {
-    fwrite(STDERR, "Target legacy bootstrap block not found. Migration not applied.\n");
-    exit(1);
-}
-
-$contents = str_replace($old, $new, $contents);
 
 if (file_put_contents($target, $contents) === false) {
     fwrite(STDERR, "Unable to write public/index.php\n");
     exit(1);
 }
 
-echo "public/index.php migrated to config/runtime.php\n";
+echo "public/index.php migrated to Composer runtime and landing dependencies\n";
