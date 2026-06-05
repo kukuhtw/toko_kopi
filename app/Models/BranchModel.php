@@ -4,97 +4,69 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-class BranchModel extends BaseModel
-{
-    protected string $table = 'branches';
-    private static bool $schemaReady = false;
+use KopiBot\Domains\Branch\BranchRepository;
 
-    public function __construct()
+class BranchModel
+{
+    private BranchRepository $repository;
+
+    public function __construct(?BranchRepository $repository = null)
     {
-        parent::__construct();
-        $this->ensureSchema();
+        $this->repository = $repository ?? new BranchRepository();
+    }
+
+    public function findByCode(string $branchCode): ?array
+    {
+        return $this->repository->findByCode($branchCode);
     }
 
     public function findBySlug(string $slug): array|false
     {
-        return $this->query('SELECT * FROM branches WHERE slug = ? AND is_active = 1 LIMIT 1', [$slug])->fetch();
+        return $this->repository->findBySlug($slug);
     }
 
     public function getActive(): array
     {
-        return $this->findAll('is_active = 1', [], 'name ASC');
+        return $this->repository->getActive();
     }
 
     public function getSetting(int $branchId, string $key, ?string $default = null): ?string
     {
-        $row = $this->query(
-            'SELECT setting_val FROM branch_settings WHERE branch_id = ? AND setting_key = ? LIMIT 1',
-            [$branchId, $key]
-        )->fetch();
-        return $row ? $row['setting_val'] : $default;
+        return $this->repository->getSetting($branchId, $key, $default);
     }
 
     public function setSetting(int $branchId, string $key, string $value): void
     {
-        $this->query(
-            'INSERT INTO branch_settings (branch_id, setting_key, setting_val)
-             VALUES (?, ?, ?)
-             ON DUPLICATE KEY UPDATE setting_val = ?',
-            [$branchId, $key, $value, $value]
-        );
+        $this->repository->setSetting($branchId, $key, $value);
     }
 
     public function getAllSettings(int $branchId): array
     {
-        $rows = $this->query('SELECT setting_key, setting_val FROM branch_settings WHERE branch_id = ?', [$branchId])->fetchAll();
-        return array_column($rows, 'setting_val', 'setting_key');
+        return $this->repository->getAllSettings($branchId);
     }
 
     public function getCurrency(int $branchId): string
     {
-        return $this->getSetting($branchId, 'currency') ?? 'IDR';
+        return $this->repository->getCurrency($branchId);
     }
 
     public function getLanguage(int $branchId): string
     {
-        return $this->getSetting($branchId, 'language') ?? 'id';
+        return $this->repository->getLanguage($branchId);
     }
 
     public function getPpnRate(int $branchId): float
     {
-        return (float)($this->getSetting($branchId, 'ppn_rate') ?? '11');
+        return $this->repository->getPpnRate($branchId);
     }
 
     public function getTimezone(int $branchId): string
     {
-        return $this->getSetting($branchId, 'timezone') ?? 'Asia/Jakarta';
+        return $this->repository->getTimezone($branchId);
     }
 
     public function getBusinessType(int $branchId): string
     {
-        return $this->getSetting($branchId, 'business_type') ?? 'toko';
-    }
-
-    private function ensureSchema(): void
-    {
-        if (self::$schemaReady) {
-            return;
-        }
-
-        $stmt = $this->query(
-            'SELECT 1
-             FROM information_schema.columns
-             WHERE table_schema = DATABASE()
-               AND table_name = ?
-               AND column_name = ?
-             LIMIT 1',
-            [$this->table, 'postal_code']
-        );
-
-        if (!$stmt->fetchColumn()) {
-            $this->db->exec('ALTER TABLE branches ADD COLUMN postal_code VARCHAR(10) DEFAULT NULL AFTER city');
-        }
-
-        self::$schemaReady = true;
+        return $this->repository->getBusinessType($branchId);
     }
 }
