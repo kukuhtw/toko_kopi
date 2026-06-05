@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace KopiBot\Domains\Chatbot;
 
+use KopiBot\Domains\AI\ConversationContext;
+use KopiBot\Domains\AI\ConversationOptionResolver;
+use KopiBot\Domains\AI\ConversationStateMachine;
+use KopiBot\Domains\AI\ProductRecommendationEngine;
+use KopiBot\Domains\AI\ProductResolver;
 use KopiBot\Domains\Cart\CartItemDTO;
 use KopiBot\Domains\Cart\CartService;
 use KopiBot\Domains\FAQ\FaqService;
@@ -21,11 +26,32 @@ class MessageRouter
         private FaqService $faqService = new FaqService(),
         private PromoService $promoService = new PromoService(),
         private CartService $cartService = new CartService(),
-        private CartIntentParser $cartIntentParser = new CartIntentParser()
+        private CartIntentParser $cartIntentParser = new CartIntentParser(),
+        private ConversationStateMachine $stateMachine = new ConversationStateMachine(),
+        private ConversationOptionResolver $optionResolver = new ConversationOptionResolver(),
+        private ProductResolver $productResolver = new ProductResolver(),
+        private ProductRecommendationEngine $recommendationEngine = new ProductRecommendationEngine()
     ) {}
 
     public function route(string $intent, ChatMessageDTO $message): array
     {
+        $context = new ConversationContext($message->tenantId, $message->branchId, $message->channel, $message->senderId, $message->customerId);
+
+        $selected = $this->optionResolver->resolveSelection($context, $message->message);
+        if ($selected && isset($selected['product'])) {
+            $product = $selected['product'];
+            $this->stateMachine->waitForQty($context, (string) $product['name']);
+            return $this->responseBuilder->text('Baik, Anda memilih ' . $product['name'] . '. Berapa jumlahnya?', [
+                'intent_result' => $selected,
+            ]);
+        }
+
+        $shortReply = $this->stateMachine->resolveShortReply($context, $message->message);
+        if ($shortReply && ($shortReply['intent'] ?? '') === 'add_to_cart') {
+            $this->stateMachine->clear($context);
+            return $this->addResolvedItemToCart($message, (string) $shortReply['product_name'], (int) $shortReply['qty']);
+        }
+
         if ($this->cartIntentParser->isCheckoutIntent($message->message)) {
             return $this->checkoutCart($message);
         }
@@ -45,24 +71,37 @@ class MessageRouter
     private function showMenu(ChatMessageDTO $message): array
     {
         $result = $this->productService->getMenu($message->tenantId, $message->branchId);
+        $formatted = $this->recommendationEngine->formatOptions($result['data'] ?? []);
 
-        return $this->responseBuilder->data('Berikut menu yang tersedia.', $result['data'] ?? [], [
+        return $this->responseBuilder->text("Berikut menu yang tersedia:\n" . $formatted, [
             'intent_result' => $result,
         ]);
     }
 
     private function searchProduct(ChatMessageDTO $message): array
     {
-        $result = $this->productSearchService->search($message->tenantId, $message->branchId, $message->message);
+        $resolved = $this->productResolver->resolve($message->tenantId, $message->branchId, $message->message);
+        $context = new ConversationContext($message->tenantId, $message->branchId, $message->channel, $message->senderId, $message->customerId);
 
-        if (($result['total'] ?? 0) <= 0) {
-            return $this->responseBuilder->text('Saya belum menemukan produk yang cocok. Coba tulis nama produk atau kategori yang lebih spesifik.', [
-                'intent_result' => $result,
+        if ($resolved['status'] === 'resolved') {
+            $product = $resolved['product'];
+            $this->stateMachine->waitForQty($context, (string) $product['name']);
+            return $this->responseBuilder->text('Saya menemukan ' . $product['name'] . '. Berapa jumlahnya?', [
+                'intent_result' => $resolved,
             ]);
         }
 
-        return $this->responseBuilder->data('Saya menemukan beberapa produk yang mungkin cocok.', $result['data'], [
-            'intent_result' => $result,
+        if ($resolved['status'] === 'ambiguous') {
+            $options = $resolved['options'];
+            $this->optionResolver->waitForProductOption($context, $options);
+            return $this->responseBuilder->text("Saya menemukan beberapa produk. Pilih nomor produk:\n" . $this->recommendationEngine->formatOptions($options), [
+                'intent_result' => $resolved,
+            ]);
+        }
+
+        $recommendations = $this->recommendationEngine->recommendFromMenu($message->tenantId, $message->branchId);
+        return $this->responseBuilder->text("Produk belum ditemukan. Rekomendasi menu:\n" . $this->recommendationEngine->formatOptions($recommendations), [
+            'intent_result' => $resolved,
         ]);
     }
 
@@ -98,18 +137,31 @@ class MessageRouter
         $parsed = $this->cartIntentParser->parseAddItem($message->message);
 
         if (!$parsed) {
-            return $this->responseBuilder->text('Format order belum saya pahami. Contoh: pesan cappuccino 2');
+            return $this->searchProduct($message);
         }
 
-        $search = $this->productSearchService->search($message->tenantId, $message->branchId, $parsed['product_name']);
+        return $this->addResolvedItemToCart($message, (string) $parsed['product_name'], (int) $parsed['qty']);
+    }
 
-        if (($search['total'] ?? 0) <= 0) {
-            return $this->responseBuilder->text('Produk tersebut belum saya temukan di katalog. Coba cek menu atau tulis nama produk lain.', [
-                'intent_result' => $search,
+    private function addResolvedItemToCart(ChatMessageDTO $message, string $productName, int $qty): array
+    {
+        $resolved = $this->productResolver->resolve($message->tenantId, $message->branchId, $productName);
+        $context = new ConversationContext($message->tenantId, $message->branchId, $message->channel, $message->senderId, $message->customerId);
+
+        if ($resolved['status'] === 'ambiguous') {
+            $this->optionResolver->waitForProductOption($context, $resolved['options']);
+            return $this->responseBuilder->text("Saya menemukan beberapa produk. Pilih nomor produk:\n" . $this->recommendationEngine->formatOptions($resolved['options']), [
+                'intent_result' => $resolved,
             ]);
         }
 
-        $product = $search['data'][0];
+        if ($resolved['status'] !== 'resolved') {
+            return $this->responseBuilder->text('Produk tersebut belum saya temukan di katalog. Coba cek menu atau tulis nama produk lain.', [
+                'intent_result' => $resolved,
+            ]);
+        }
+
+        $product = $resolved['product'];
         $sessionId = $message->channel . ':' . $message->senderId;
 
         $cart = $this->cartService->addItem(
@@ -117,20 +169,10 @@ class MessageRouter
             branchId: $message->branchId,
             customerId: $message->customerId,
             sessionId: $sessionId,
-            item: new CartItemDTO(
-                productId: (int) $product['id'],
-                productName: (string) $product['name'],
-                qty: (int) $parsed['qty'],
-                price: (float) $product['base_price']
-            )
+            item: new CartItemDTO((int) $product['id'], (string) $product['name'], $qty, (float) $product['base_price'])
         );
 
-        return $this->responseBuilder->text(sprintf(
-            '%s x%d sudah saya masukkan ke keranjang. Subtotal sementara Rp %s. Ketik checkout untuk lanjut pembayaran.',
-            $product['name'],
-            $parsed['qty'],
-            number_format((float) ($cart['subtotal'] ?? 0), 0, ',', '.')
-        ), [
+        return $this->responseBuilder->text(sprintf('%s x%d sudah saya masukkan ke keranjang. Subtotal sementara Rp %s. Ketik checkout untuk lanjut pembayaran.', $product['name'], $qty, number_format((float) ($cart['subtotal'] ?? 0), 0, ',', '.')), [
             'intent_result' => $cart,
         ]);
     }
@@ -142,25 +184,13 @@ class MessageRouter
         }
 
         $sessionId = $message->channel . ':' . $message->senderId;
-        $checkout = $this->cartService->checkout(
-            tenantId: $message->tenantId,
-            branchId: $message->branchId,
-            customerId: $message->customerId,
-            sessionId: $sessionId,
-            customerName: 'Customer',
-            customerEmail: null,
-            customerPhone: null
-        );
+        $checkout = $this->cartService->checkout($message->tenantId, $message->branchId, $message->customerId, $sessionId, 'Customer', null, null);
 
         if (empty($checkout['success'])) {
-            return $this->responseBuilder->text($checkout['message'] ?? 'Checkout belum berhasil.', [
-                'intent_result' => $checkout,
-            ]);
+            return $this->responseBuilder->text($checkout['message'] ?? 'Checkout belum berhasil.', ['intent_result' => $checkout]);
         }
 
-        $checkoutUrl = $checkout['payment']['checkout_url'] ?? '';
-
-        return $this->responseBuilder->text('Order berhasil dibuat. Silakan lanjut pembayaran melalui link berikut: ' . $checkoutUrl, [
+        return $this->responseBuilder->text('Order berhasil dibuat. Silakan lanjut pembayaran melalui link berikut: ' . ($checkout['payment']['checkout_url'] ?? ''), [
             'intent_result' => $checkout,
         ]);
     }

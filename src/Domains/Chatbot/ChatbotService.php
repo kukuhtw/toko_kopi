@@ -4,17 +4,38 @@ declare(strict_types=1);
 
 namespace KopiBot\Domains\Chatbot;
 
+use KopiBot\Domains\AI\ConversationContext;
+use KopiBot\Domains\AI\ConversationMemoryService;
+
 class ChatbotService
 {
     public function __construct(
         private IntentDetector $intentDetector = new IntentDetector(),
-        private MessageRouter $router = new MessageRouter()
+        private MessageRouter $router = new MessageRouter(),
+        private ConversationMemoryService $memory = new ConversationMemoryService()
     ) {}
 
     public function process(ChatMessageDTO $message): array
     {
+        $context = new ConversationContext(
+            tenantId: $message->tenantId,
+            branchId: $message->branchId,
+            channel: $message->channel,
+            senderId: $message->senderId,
+            customerId: $message->customerId
+        );
+
+        $this->memory->rememberUserMessage($context, $message->message, [
+            'channel' => $message->channel,
+        ]);
+
         $intent = $this->intentDetector->detect($message->message);
         $response = $this->router->route($intent, $message);
+
+        $this->memory->rememberAssistantMessage($context, (string) ($response['message'] ?? ''), [
+            'intent' => $intent,
+            'response_type' => $response['type'] ?? 'text',
+        ]);
 
         return array_merge($response, [
             'intent' => $intent,
