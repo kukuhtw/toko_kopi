@@ -29,6 +29,23 @@ final class HookManager
         }
     }
 
+    public static function hasAction(string $hook): bool
+    {
+        return isset(self::$actions[$hook]) && self::$actions[$hook] !== [];
+    }
+
+    public static function removeAction(string $hook, callable $callback, int $priority = 10): void
+    {
+        if (!isset(self::$actions[$hook][$priority])) {
+            return;
+        }
+
+        self::$actions[$hook][$priority] = array_values(array_filter(
+            self::$actions[$hook][$priority],
+            static fn (callable $registered): bool => $registered !== $callback
+        ));
+    }
+
     public static function addFilter(string $hook, callable $callback, int $priority = 10): void
     {
         self::$filters[$hook][$priority][] = $callback;
@@ -51,19 +68,39 @@ final class HookManager
         return $value;
     }
 
-    public static function hasAction(string $hook): bool
-    {
-        return isset(self::$actions[$hook]) && self::$actions[$hook] !== [];
-    }
-
     public static function hasFilter(string $hook): bool
     {
         return isset(self::$filters[$hook]) && self::$filters[$hook] !== [];
     }
 
+    public static function removeFilter(string $hook, callable $callback, int $priority = 10): void
+    {
+        if (!isset(self::$filters[$hook][$priority])) {
+            return;
+        }
+
+        self::$filters[$hook][$priority] = array_values(array_filter(
+            self::$filters[$hook][$priority],
+            static fn (callable $registered): bool => $registered !== $callback
+        ));
+    }
+
     public static function clear(): void
+    {
+        self::reset();
+    }
+
+    public static function reset(): void
     {
         self::$actions = [];
         self::$filters = [];
+    }
+
+    public static function dump(): array
+    {
+        return [
+            'actions' => array_map(static fn (array $priorities): array => array_map('count', $priorities), self::$actions),
+            'filters' => array_map(static fn (array $priorities): array => array_map('count', $priorities), self::$filters),
+        ];
     }
 }
