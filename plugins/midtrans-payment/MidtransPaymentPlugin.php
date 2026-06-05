@@ -1,7 +1,8 @@
 <?php
 
-use App\Plugin\{PluginInterface, HookManager};
-use App\Config\Database;
+use KopiBot\Contracts\PluginInterface;
+use KopiBot\Core\DatabaseConnection;
+use KopiBot\Core\HookManager;
 use App\Models\OrderModel;
 
 /**
@@ -234,7 +235,7 @@ class MidtransPaymentPlugin implements PluginInterface
 
     private function getSetting(int $branchId, string $key): ?string
     {
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT setting_val FROM plugin_branch_settings
              WHERE plugin_slug = ? AND branch_id = ? AND setting_key = ? LIMIT 1'
         );
@@ -245,7 +246,7 @@ class MidtransPaymentPlugin implements PluginInterface
 
     private function saveSetting(int $branchId, string $key, string $value): void
     {
-        Database::getInstance()->prepare(
+        DatabaseConnection::getInstance()->prepare(
             'INSERT INTO plugin_branch_settings (plugin_slug, branch_id, setting_key, setting_val)
              VALUES (?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE setting_val = VALUES(setting_val)'
