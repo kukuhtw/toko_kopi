@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace KopiBot\Domains\Order;
 
-use KopiBot\Core\Database;
+use KopiBot\Core\DatabaseConnection;
 use PDO;
 
 class OrderRepository
 {
     private PDO $db;
 
-    public function __construct()
+    public function __construct(?PDO $db = null)
     {
-        $this->db = Database::getConnection();
+        $this->db = $db ?? DatabaseConnection::getInstance();
     }
 
     public function beginTransaction(): void
