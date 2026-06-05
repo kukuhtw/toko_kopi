@@ -41,7 +41,7 @@ class Router
 
         $result = $handler($request);
 
-        if (is_array($result)) {
+        if (is_array($result) && !headers_sent()) {
             Response::json($result);
         }
     }
@@ -59,5 +59,10 @@ class Router
         }
 
         return $user;
+    }
+
+    public function permission(array $user, string $permissionCode): bool
+    {
+        return (new PermissionMiddleware())->check($user, $permissionCode);
     }
 }
