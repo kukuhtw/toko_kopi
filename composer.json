@@ -36,6 +36,11 @@
     }
   },
   "scripts": {
+    "migrate": "php migrate.php",
+    "serve": "php -S localhost:8000 -t public",
+    "smoke:core": "php tests/smoke_core.php",
+    "smoke:auth": "php tests/smoke_auth.php",
+    "smoke:chatbot": "php tests/smoke_chatbot.php",
     "test": "phpunit",
     "analyse": "phpstan analyse src plugins",
     "cs-fix": "php-cs-fixer fix"

@@ -38,22 +38,28 @@ CREATE DATABASE kopibot CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ## 5. Run migrations
 
 ```bash
-php migrate.php
+composer migrate
 ```
 
-## 6. Run local API server
+## 6. Seed demo data
 
 ```bash
-php -S localhost:8000 -t public
+php seed.php
 ```
 
-## 7. Test health endpoint
+## 7. Run local API server
+
+```bash
+composer serve
+```
+
+## 8. Test health endpoint
 
 ```bash
 curl http://localhost:8000/api/health
 ```
 
-## 8. Register admin user
+## 9. Register admin user
 
 ```bash
 curl -X POST http://localhost:8000/api/auth/register \
@@ -61,7 +67,7 @@ curl -X POST http://localhost:8000/api/auth/register \
   -d '{"tenant_id":1,"name":"Admin","email":"admin@example.com","password":"secret123"}'
 ```
 
-## 9. Login
+## 10. Login
 
 ```bash
 curl -X POST http://localhost:8000/api/auth/login \
@@ -69,10 +75,16 @@ curl -X POST http://localhost:8000/api/auth/login \
   -d '{"tenant_id":1,"email":"admin@example.com","password":"secret123"}'
 ```
 
-## 10. Test chatbot
+## 11. Test product search
+
+```bash
+curl "http://localhost:8000/api/products?tenant_id=1&branch_id=1&q=kopi"
+```
+
+## 12. Test chatbot
 
 ```bash
 curl -X POST http://localhost:8000/api/chatbot/message \
   -H "Content-Type: application/json" \
-  -d '{"tenant_id":1,"branch_id":1,"sender_id":"guest","message":"ada promo?"}'
+  -d '{"tenant_id":1,"branch_id":1,"sender_id":"guest","message":"jam buka?"}'
 ```
