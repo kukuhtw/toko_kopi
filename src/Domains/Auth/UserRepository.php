@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace KopiBot\Domains\Auth;
 
-use KopiBot\Core\Database;
+use KopiBot\Core\DatabaseConnection;
 use PDO;
 
 class UserRepository
 {
     private PDO $db;
 
-    public function __construct()
+    public function __construct(?PDO $db = null)
     {
-        $this->db = Database::getConnection();
+        $this->db = $db ?? DatabaseConnection::getInstance();
     }
 
     public function create(UserDTO $dto, string $passwordHash): int
@@ -37,6 +37,7 @@ class UserRepository
             'tenant_id' => $tenantId,
             'email' => strtolower($email),
         ]);
+
         $row = $stmt->fetch();
 
         return $row ?: null;
