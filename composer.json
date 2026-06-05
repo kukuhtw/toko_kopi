@@ -37,10 +37,18 @@
   },
   "scripts": {
     "migrate": "php migrate.php",
+    "migrate:public-index": "php scripts/migrate-public-index-runtime.php",
     "serve": "php -S localhost:8000 -t public",
     "smoke:core": "php tests/smoke_core.php",
     "smoke:auth": "php tests/smoke_auth.php",
     "smoke:chatbot": "php tests/smoke_chatbot.php",
+    "smoke:migration": "php tests/smoke_migration_bridge.php",
+    "smoke:all": [
+      "@smoke:core",
+      "@smoke:auth",
+      "@smoke:chatbot",
+      "@smoke:migration"
+    ],
     "test": "phpunit",
     "analyse": "phpstan analyse src plugins",
     "cs-fix": "php-cs-fixer fix"
