@@ -23,6 +23,16 @@ class Router
         $this->routes[$method]['/' . trim($path, '/')] = $handler;
     }
 
+    public function hasRoute(string $method, string $path): bool
+    {
+        return isset($this->routes[strtoupper($method)]['/' . trim($path, '/')]);
+    }
+
+    public function routes(): array
+    {
+        return $this->routes;
+    }
+
     public function dispatch(Request $request): void
     {
         $method = $request->method();
