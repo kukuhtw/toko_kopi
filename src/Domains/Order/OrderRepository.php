@@ -71,6 +71,18 @@ class OrderRepository
         return $row ?: null;
     }
 
+    public function findByOrderNumber(string $orderNumber): ?array
+    {
+        $stmt = $this->db->prepare('SELECT * FROM orders WHERE order_no = :order_no OR order_number = :order_number LIMIT 1');
+        $stmt->execute([
+            'order_no' => $orderNumber,
+            'order_number' => $orderNumber,
+        ]);
+        $row = $stmt->fetch();
+
+        return $row ?: null;
+    }
+
     public function findItems(int $tenantId, int $orderId): array
     {
         $stmt = $this->db->prepare('SELECT * FROM order_items WHERE tenant_id = :tenant_id AND order_id = :order_id ORDER BY id ASC');
@@ -87,6 +99,16 @@ class OrderRepository
             'tenant_id' => $tenantId,
             'id' => $orderId,
             'status' => $status,
+        ]);
+    }
+
+    public function updatePaymentStatus(int $orderId, string $paymentStatus): bool
+    {
+        $stmt = $this->db->prepare('UPDATE orders SET payment_status = :payment_status, updated_at = NOW() WHERE id = :id');
+
+        return $stmt->execute([
+            'id' => $orderId,
+            'payment_status' => $paymentStatus,
         ]);
     }
 }
