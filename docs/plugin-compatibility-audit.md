@@ -30,6 +30,8 @@ PENDING        Belum diaudit.
 |---|---|---|---|---|
 | midtrans-payment | READY with adapter | PluginInterface, HookManager, DatabaseConnection | OrderModel, Csrf helper | Payment settings and notification flow still use legacy UI/model adapter. |
 | ipaymu-payment | READY with adapter | PluginInterface, HookManager, DatabaseConnection, BranchRepository | OrderModel, Csrf helper | Branch currency moved to BranchRepository. |
+| nicepay-payment | READY with adapter | PluginInterface, HookManager, DatabaseConnection, BranchRepository | OrderModel, Csrf helper | Branch profile and currency moved to BranchRepository. |
+| xendit-payment | READY with adapter | PluginInterface, HookManager, DatabaseConnection, BranchRepository | OrderModel, Csrf helper | Branch currency moved to BranchRepository. |
 
 ## Midtrans Payment Audit
 
@@ -91,26 +93,80 @@ Payment notification flow still updates legacy order model.
 Settings form still uses legacy CSRF helper.
 ```
 
-## Remaining Plugin Categories To Audit
+## Nicepay Payment Audit
 
-### Payment
+File:
 
 ```text
-nicepay-payment
-xendit-payment
+plugins/nicepay-payment/NicepayPaymentPlugin.php
 ```
 
-Priority:
+Migrated:
 
 ```text
-HIGH
+App PluginInterface -> KopiBot Contracts PluginInterface
+App HookManager -> KopiBot Core HookManager
+App Config Database -> KopiBot Core DatabaseConnection
+App Models BranchModel -> KopiBot Domains Branch BranchRepository
+```
+
+Remaining:
+
+```text
+App Models OrderModel
+App Helpers Csrf
 ```
 
 Reason:
 
 ```text
-Payment plugins touch checkout, order status, callback validation, and plugin settings.
+Payment notification flow still updates legacy order model.
+Settings form still uses legacy CSRF helper.
 ```
+
+## Xendit Payment Audit
+
+File:
+
+```text
+plugins/xendit-payment/XenditPaymentPlugin.php
+```
+
+Migrated:
+
+```text
+App PluginInterface -> KopiBot Contracts PluginInterface
+App HookManager -> KopiBot Core HookManager
+App Config Database -> KopiBot Core DatabaseConnection
+App Models BranchModel -> KopiBot Domains Branch BranchRepository
+```
+
+Remaining:
+
+```text
+App Models OrderModel
+App Helpers Csrf
+```
+
+Reason:
+
+```text
+Payment notification flow still updates legacy order model.
+Settings form still uses legacy CSRF helper.
+```
+
+## Payment Plugin Audit Summary
+
+```text
+midtrans-payment  READY with adapter
+ipaymu-payment    READY with adapter
+nicepay-payment   READY with adapter
+xendit-payment    READY with adapter
+```
+
+Payment plugin audit is now complete for the four payment gateways currently listed in the payment priority group.
+
+## Remaining Plugin Categories To Audit
 
 ### LLM Provider
 
@@ -234,10 +290,10 @@ Csrf helper still supports old admin form rendering.
 
 ## Recommended Next Steps
 
-1. Audit `nicepay-payment` and `xendit-payment`.
-2. Create an OrderPaymentService under Composer domain.
-3. Replace direct OrderModel payment update calls inside payment plugins.
-4. Create Composer CSRF helper or keep legacy helper explicitly documented.
+1. Create an OrderPaymentService under Composer domain.
+2. Replace direct OrderModel payment update calls inside payment plugins.
+3. Create Composer CSRF helper or keep legacy helper explicitly documented.
+4. Audit LLM provider plugins.
 5. Add plugin compatibility smoke test that loads audited plugins with Composer HookManager.
 
 ## Done Criteria For Each Plugin
@@ -254,9 +310,9 @@ Csrf helper still supports old admin form rendering.
 ## Current Audit Progress
 
 ```text
-Payment Plugin Audit      60 percent
+Payment Plugin Audit     100 percent
 Plugin Core Migration    100 percent
 Hook Registry Migration  100 percent
-Database Plugin Migration partial
+Database Plugin Migration complete for audited payment plugins
 Legacy UI Dependency     still present
 ```
