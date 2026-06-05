@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace KopiBot\Domains\Product;
 
-use KopiBot\Core\Database;
+use KopiBot\Core\DatabaseConnection;
 use PDO;
 
 class ProductRepository
 {
     private PDO $db;
 
-    public function __construct()
+    public function __construct(?PDO $db = null)
     {
-        $this->db = Database::getConnection();
+        $this->db = $db ?? DatabaseConnection::getInstance();
     }
 
     public function create(ProductDTO $dto): int
