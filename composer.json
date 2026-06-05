@@ -45,13 +45,15 @@
     "smoke:migration": "php tests/smoke_migration_bridge.php",
     "smoke:plugin": "php tests/smoke_plugin_loader.php",
     "smoke:payment": "php tests/smoke_payment_factory.php",
+    "smoke:api": "php tests/smoke_api.php",
     "smoke:all": [
       "@smoke:core",
       "@smoke:auth",
       "@smoke:chatbot",
       "@smoke:migration",
       "@smoke:plugin",
-      "@smoke:payment"
+      "@smoke:payment",
+      "@smoke:api"
     ],
     "test": "phpunit",
     "analyse": "phpstan analyse src plugins",
