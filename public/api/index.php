@@ -6,6 +6,8 @@ require_once __DIR__ . '/../../bootstrap.php';
 
 use KopiBot\Core\Request;
 use KopiBot\Core\Router;
+use KopiBot\Domains\Auth\AuthService;
+use KopiBot\Domains\Auth\UserDTO;
 use KopiBot\Domains\Cart\CartItemDTO;
 use KopiBot\Domains\Cart\CartService;
 use KopiBot\Domains\Chatbot\ChatbotService;
@@ -21,6 +23,24 @@ $router->get('/api/health', function (): array {
         'service' => 'KopiBot API',
         'status' => 'ok',
     ];
+});
+
+$router->post('/api/auth/register', function (Request $request): array {
+    return (new AuthService())->register(new UserDTO(
+        tenantId: (int) $request->input('tenant_id', 1),
+        name: (string) $request->input('name', 'Admin'),
+        email: (string) $request->input('email', ''),
+        password: (string) $request->input('password', ''),
+        role: (string) $request->input('role', 'merchant_admin')
+    ));
+});
+
+$router->post('/api/auth/login', function (Request $request): array {
+    return (new AuthService())->login(
+        tenantId: (int) $request->input('tenant_id', 1),
+        email: (string) $request->input('email', ''),
+        password: (string) $request->input('password', '')
+    );
 });
 
 $router->get('/api/products', function (Request $request): array {
