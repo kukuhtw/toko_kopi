@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Helpers\Currency;
 use App\Skills\SkillInterface;
+use KopiBot\Domains\Cart\CartRepository;
 
 class LoyaltyPointSkill implements SkillInterface
 {
@@ -54,8 +55,8 @@ class LoyaltyPointSkill implements SkillInterface
         $convCtx   = (array)($context['conv_context'] ?? []);
         $repo      = new LoyaltyPointRepository();
 
-        $cartModel = new \App\Models\CartModel();
-        $items = $cartModel->getItems((int)($cart['id'] ?? 0));
+        $cartRepository = new CartRepository();
+        $items = $cartRepository->getItemsByCartId((int)($cart['id'] ?? 0));
         if (empty($items) || empty($cart['id'])) {
             $reply = $lang === 'en'
                 ? 'Your cart is empty. Add items before redeeming points.'
@@ -100,7 +101,7 @@ class LoyaltyPointSkill implements SkillInterface
         $actualPoints = LoyaltyPointPlugin::calculateRedeemPointsForDiscount($discount, $settings['points_unit'], $settings['value_amount']);
         $repo->applyRedemptionToCart((int)$cart['id'], $actualPoints, $discount);
 
-        $updatedCart = $cartModel->getBySession((string)($cart['session_key'] ?? '')) ?: $cart;
+        $updatedCart = $cartRepository->getBySession((string)($cart['session_key'] ?? $cart['session_id'] ?? '')) ?: $cart;
         $convCtx['last_topic'] = 'cart';
 
         $reply = $lang === 'en'
@@ -177,9 +178,9 @@ class LoyaltyPointSkill implements SkillInterface
         }
 
         (new LoyaltyPointRepository())->clearRedemptionFromCart($cartId);
-        $cartModel = new \App\Models\CartModel();
-        $updatedCart = $cartModel->getBySession((string)($cart['session_key'] ?? '')) ?: $cart;
-        $items = $cartModel->getItems($cartId);
+        $cartRepository = new CartRepository();
+        $updatedCart = $cartRepository->getBySession((string)($cart['session_key'] ?? $cart['session_id'] ?? '')) ?: $cart;
+        $items = $cartRepository->getItemsByCartId($cartId);
 
         $reply = $lang === 'en'
             ? "Point redemption removed from your cart.\n\n"
