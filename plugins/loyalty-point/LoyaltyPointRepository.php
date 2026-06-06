@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Config\Database;
-use App\Plugin\HookManager;
+use KopiBot\Core\DatabaseConnection;
+use KopiBot\Core\HookManager;
 
 class LoyaltyPointRepository
 {
@@ -15,7 +15,7 @@ class LoyaltyPointRepository
             return;
         }
 
-        $db = Database::getInstance();
+        $db = DatabaseConnection::getInstance();
 
         $db->exec(
             'CREATE TABLE IF NOT EXISTS loyalty_point_accounts (
@@ -65,7 +65,7 @@ class LoyaltyPointRepository
     {
         $this->ensureSchema();
 
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT id
              FROM loyalty_point_transactions
              WHERE order_id = ? AND transaction_type = "earn"
@@ -83,7 +83,7 @@ class LoyaltyPointRepository
         }
 
         $this->ensureSchema();
-        $db = Database::getInstance();
+        $db = DatabaseConnection::getInstance();
 
         $db->beginTransaction();
 
@@ -120,7 +120,7 @@ class LoyaltyPointRepository
         }
 
         $this->ensureSchema();
-        $db = Database::getInstance();
+        $db = DatabaseConnection::getInstance();
 
         $db->beginTransaction();
 
@@ -156,7 +156,7 @@ class LoyaltyPointRepository
         }
 
         $this->ensureSchema();
-        $db = Database::getInstance();
+        $db = DatabaseConnection::getInstance();
 
         $db->beginTransaction();
 
@@ -189,7 +189,7 @@ class LoyaltyPointRepository
     {
         $this->ensureSchema();
 
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT balance_points, lifetime_points, updated_at
              FROM loyalty_point_accounts
              WHERE branch_id = ? AND customer_id = ?
@@ -209,7 +209,7 @@ class LoyaltyPointRepository
     {
         $this->ensureSchema();
 
-        $cart = Database::getInstance()->prepare(
+        $cart = DatabaseConnection::getInstance()->prepare(
             'SELECT discount_amount, loyalty_discount_amount
              FROM carts
              WHERE id = ?
@@ -222,7 +222,7 @@ class LoyaltyPointRepository
         $promoDiscount  = max(0.0, (float)($row['discount_amount'] ?? 0) - $currentLoyalty);
         $totalDiscount  = $promoDiscount + max(0.0, $discount);
 
-        Database::getInstance()->prepare(
+        DatabaseConnection::getInstance()->prepare(
             'UPDATE carts
              SET loyalty_points_redeemed = ?, loyalty_discount_amount = ?, discount_amount = ?
              WHERE id = ?'
@@ -233,7 +233,7 @@ class LoyaltyPointRepository
     {
         $this->ensureSchema();
 
-        $cart = Database::getInstance()->prepare(
+        $cart = DatabaseConnection::getInstance()->prepare(
             'SELECT discount_amount, loyalty_discount_amount
              FROM carts
              WHERE id = ?
@@ -245,7 +245,7 @@ class LoyaltyPointRepository
         $currentLoyalty = (float)($row['loyalty_discount_amount'] ?? 0);
         $promoDiscount  = max(0.0, (float)($row['discount_amount'] ?? 0) - $currentLoyalty);
 
-        Database::getInstance()->prepare(
+        DatabaseConnection::getInstance()->prepare(
             'UPDATE carts
              SET loyalty_points_redeemed = 0, loyalty_discount_amount = 0, discount_amount = ?
              WHERE id = ?'
@@ -256,7 +256,7 @@ class LoyaltyPointRepository
     {
         $this->ensureSchema();
 
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT id
              FROM loyalty_point_transactions
              WHERE order_id = ? AND transaction_type = ?
@@ -271,7 +271,7 @@ class LoyaltyPointRepository
     {
         $this->ensureSchema();
 
-        $summary = Database::getInstance()->prepare(
+        $summary = DatabaseConnection::getInstance()->prepare(
             'SELECT
                 COUNT(*) AS member_count,
                 COALESCE(SUM(balance_points), 0) AS total_balance_points,
@@ -282,7 +282,7 @@ class LoyaltyPointRepository
         $summary->execute([$branchId]);
         $row = $summary->fetch() ?: [];
 
-        $recent = Database::getInstance()->prepare(
+        $recent = DatabaseConnection::getInstance()->prepare(
             'SELECT
                 c.name,
                 c.identifier,
@@ -317,7 +317,7 @@ class LoyaltyPointRepository
         $params[] = $limit;
         $params[] = $offset;
 
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT
                 lpa.customer_id,
                 c.name,
@@ -374,7 +374,7 @@ class LoyaltyPointRepository
             array_push($params, $like, $like, $like, $like);
         }
 
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT COUNT(*)
              FROM loyalty_point_accounts
              WHERE ' . implode(' AND ', $where)
@@ -388,7 +388,7 @@ class LoyaltyPointRepository
     {
         $this->ensureSchema();
 
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT
                 lpt.*,
                 o.order_number,
@@ -409,7 +409,7 @@ class LoyaltyPointRepository
     {
         $this->ensureSchema();
 
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT *
              FROM loyalty_point_transactions
              WHERE order_id = ?
@@ -424,7 +424,7 @@ class LoyaltyPointRepository
     {
         $this->ensureSchema();
 
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT
                 lpa.customer_id,
                 c.name,
@@ -447,7 +447,7 @@ class LoyaltyPointRepository
 
     private function ensureColumn(string $table, string $column, string $definition): void
     {
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT 1
              FROM information_schema.columns
              WHERE table_schema = DATABASE()
@@ -460,7 +460,7 @@ class LoyaltyPointRepository
             return;
         }
 
-        Database::getInstance()->exec('ALTER TABLE ' . $table . ' ADD COLUMN ' . $column . ' ' . $definition);
+        DatabaseConnection::getInstance()->exec('ALTER TABLE ' . $table . ' ADD COLUMN ' . $column . ' ' . $definition);
     }
 
     private function emitPointsChanged(
