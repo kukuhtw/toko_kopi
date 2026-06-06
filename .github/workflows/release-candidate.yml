@@ -1,0 +1,41 @@
+name: Release Candidate Verification
+
+on:
+  push:
+    branches:
+      - composer-mvp-core-migration-next
+  pull_request:
+    branches:
+      - master
+      - main
+      - composer-mvp-core-migration-next
+
+jobs:
+  verify-rc:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, pdo, pdo_mysql, json, curl
+          coverage: none
+
+      - name: Validate composer.json
+        run: composer validate --no-check-publish
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Dump autoload
+        run: composer dump-autoload
+
+      - name: Audit legacy dependencies
+        run: composer audit:legacy
+
+      - name: Run release candidate verification
+        run: composer verify:rc
