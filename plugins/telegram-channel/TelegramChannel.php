@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Config\Database;
-use App\Plugin\ChannelInterface;
 use App\Services\WhatsAppSharedInboxService;
+use KopiBot\Contracts\ChannelInterface;
+use KopiBot\Core\DatabaseConnection;
 
 class TelegramChannel implements ChannelInterface
 {
@@ -118,7 +118,7 @@ class TelegramChannel implements ChannelInterface
             return null;
         }
 
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT branch_id FROM plugin_branch_settings
              WHERE plugin_slug = ? AND setting_key = ? AND setting_val = ?
              LIMIT 1'
@@ -129,7 +129,7 @@ class TelegramChannel implements ChannelInterface
             return (int) $branchId;
         }
 
-        $legacyStmt = Database::getInstance()->prepare(
+        $legacyStmt = DatabaseConnection::getInstance()->prepare(
             'SELECT branch_id FROM branch_bot_settings
              WHERE platform = ? AND webhook_token = ?
              ORDER BY id DESC
@@ -158,7 +158,7 @@ class TelegramChannel implements ChannelInterface
 
     private function getSetting(int $branchId, string $key, bool $allowLegacy = false): string
     {
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT setting_val FROM plugin_branch_settings
              WHERE plugin_slug = ? AND branch_id = ? AND setting_key = ? LIMIT 1'
         );
@@ -183,7 +183,7 @@ class TelegramChannel implements ChannelInterface
             return '';
         }
 
-        $legacyStmt = Database::getInstance()->prepare(
+        $legacyStmt = DatabaseConnection::getInstance()->prepare(
             'SELECT ' . $legacyColumn . '
              FROM branch_bot_settings
              WHERE branch_id = ? AND platform = ?
