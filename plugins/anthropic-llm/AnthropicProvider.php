@@ -2,12 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Plugin\LlmProviderInterface;
+use KopiBot\Contracts\LlmProviderInterface;
 
-/**
- * Anthropic Claude API client.
- * Supports prompt caching (ephemeral system prompt) and native tool use.
- */
 class AnthropicProvider implements LlmProviderInterface
 {
     private const API_URL    = 'https://api.anthropic.com/v1/messages';
@@ -32,81 +28,89 @@ class AnthropicProvider implements LlmProviderInterface
         $this->model = $model;
     }
 
-    public function getName(): string   { return 'anthropic'; }
-    public function getModel(): string  { return $this->model; }
+    public function getName(): string { return 'anthropic'; }
+    public function getModel(): string { return $this->model; }
     public function isAvailable(): bool { return $this->apiKey !== ''; }
 
-    /**
-     * Basic multi-turn chat (no caching, no tools).
-     * Satisfies LlmProviderInterface for generic use.
-     */
     public function chat(array $messages, array $options = []): string
     {
+        $system = null;
+        $anthropicMessages = [];
+
+        foreach ($messages as $message) {
+            $role = (string)($message['role'] ?? 'user');
+            $content = (string)($message['content'] ?? '');
+
+            if ($role === 'system') {
+                $system = $content;
+                continue;
+            }
+
+            $anthropicMessages[] = [
+                'role' => $role === 'assistant' ? 'assistant' : 'user',
+                'content' => $content,
+            ];
+        }
+
         $payload = array_merge([
-            'model'      => $this->model,
+            'model' => $this->model,
             'max_tokens' => 1024,
-            'messages'   => $messages,
+            'messages' => $anthropicMessages,
         ], $options);
 
-        $response       = $this->post($payload, false);
-        $data           = json_decode($response, true);
+        if ($system !== null && $system !== '') {
+            $payload['system'] = $system;
+        }
+
+        $response = $this->post($payload, false);
+        $data = json_decode($response, true) ?: [];
         $this->lastUsage = $this->parseUsage($data);
 
-        return $data['content'][0]['text'] ?? '';
+        return (string)($data['content'][0]['text'] ?? '');
     }
 
-    /**
-     * Single-turn completion with an ephemeral-cached system prompt.
-     * The system prompt tokens are served from cache on repeat calls, saving ~90% cost.
-     */
-    public function completeWithCache(
-        string $userMessage,
-        string $systemPrompt,
-        int    $maxTokens = 20
-    ): ?string {
+    public function completeWithSystemPrompt(string $userMessage, string $systemPrompt, int $maxTokens = 20): ?string
+    {
+        return $this->completeWithCache($userMessage, $systemPrompt, $maxTokens);
+    }
+
+    public function completeWithCache(string $userMessage, string $systemPrompt, int $maxTokens = 20): ?string
+    {
         $payload = [
-            'model'      => $this->model,
+            'model' => $this->model,
             'max_tokens' => $maxTokens,
-            'system'     => [[
-                'type'          => 'text',
-                'text'          => $systemPrompt,
+            'system' => [[
+                'type' => 'text',
+                'text' => $systemPrompt,
                 'cache_control' => ['type' => 'ephemeral'],
             ]],
-            'messages'   => [['role' => 'user', 'content' => $userMessage]],
+            'messages' => [['role' => 'user', 'content' => $userMessage]],
         ];
 
-        $response       = $this->post($payload, true);
-        $data           = json_decode($response, true);
+        $response = $this->post($payload, true);
+        $data = json_decode($response, true) ?: [];
         $this->lastUsage = $this->parseUsage($data);
 
         return $data['content'][0]['text'] ?? null;
     }
 
-    /**
-     * Structured extraction using Claude's native tool use.
-     * Returns the tool's input object, or null on failure.
-     */
-    public function completeWithTool(
-        string $userMessage,
-        string $systemPrompt,
-        array  $toolSchema,
-        int    $maxTokens = 500
-    ): ?array {
+    public function completeWithTool(string $userMessage, string $systemPrompt, array $toolSchema, int $maxTokens = 500): ?array
+    {
         $payload = [
-            'model'       => $this->model,
-            'max_tokens'  => $maxTokens,
-            'system'      => [[
-                'type'          => 'text',
-                'text'          => $systemPrompt,
+            'model' => $this->model,
+            'max_tokens' => $maxTokens,
+            'system' => [[
+                'type' => 'text',
+                'text' => $systemPrompt,
                 'cache_control' => ['type' => 'ephemeral'],
             ]],
-            'tools'       => [$toolSchema],
+            'tools' => [$toolSchema],
             'tool_choice' => ['type' => 'any'],
-            'messages'    => [['role' => 'user', 'content' => $userMessage]],
+            'messages' => [['role' => 'user', 'content' => $userMessage]],
         ];
 
-        $response       = $this->post($payload, true);
-        $data           = json_decode($response, true);
+        $response = $this->post($payload, true);
+        $data = json_decode($response, true) ?: [];
         $this->lastUsage = $this->parseUsage($data);
 
         foreach ($data['content'] ?? [] as $block) {
@@ -118,7 +122,6 @@ class AnthropicProvider implements LlmProviderInterface
         return null;
     }
 
-    /** Usage data from the most recent API call */
     public function getLastUsage(): array { return $this->lastUsage; }
 
     public function estimateCost(int $promptTokens, int $completionTokens): float
@@ -130,17 +133,21 @@ class AnthropicProvider implements LlmProviderInterface
     private function parseUsage(array $data): array
     {
         return [
-            'input_tokens'                => $data['usage']['input_tokens']                   ?? 0,
-            'output_tokens'               => $data['usage']['output_tokens']                  ?? 0,
-            'cache_creation_input_tokens' => $data['usage']['cache_creation_input_tokens']    ?? 0,
-            'cache_read_input_tokens'     => $data['usage']['cache_read_input_tokens']        ?? 0,
+            'input_tokens' => $data['usage']['input_tokens'] ?? 0,
+            'output_tokens' => $data['usage']['output_tokens'] ?? 0,
+            'cache_creation_input_tokens' => $data['usage']['cache_creation_input_tokens'] ?? 0,
+            'cache_read_input_tokens' => $data['usage']['cache_read_input_tokens'] ?? 0,
         ];
     }
 
     private function post(array $payload, bool $withCacheBeta): string
     {
+        if (!function_exists('curl_init')) {
+            throw new \UnexpectedValueException('cURL extension is required for AnthropicProvider.');
+        }
+
         $headers = [
-            'x-api-key: '         . $this->apiKey,
+            'x-api-key: ' . $this->apiKey,
             'anthropic-version: ' . self::API_VER,
             'Content-Type: application/json',
         ];
@@ -151,21 +158,21 @@ class AnthropicProvider implements LlmProviderInterface
 
         $ch = curl_init(self::API_URL);
         curl_setopt_array($ch, [
-            CURLOPT_POST              => true,
-            CURLOPT_POSTFIELDS        => json_encode($payload),
-            CURLOPT_HTTPHEADER        => $headers,
-            CURLOPT_RETURNTRANSFER    => true,
-            CURLOPT_NOSIGNAL          => 1,
-            CURLOPT_CONNECTTIMEOUT_MS => 5_000,
-            CURLOPT_TIMEOUT_MS        => 15_000,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => json_encode($payload),
+            CURLOPT_HTTPHEADER => $headers,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_NOSIGNAL => 1,
+            CURLOPT_CONNECTTIMEOUT_MS => 5000,
+            CURLOPT_TIMEOUT_MS => 15000,
         ]);
 
         $result = curl_exec($ch);
-        $err    = curl_error($ch);
+        $err = curl_error($ch);
         curl_close($ch);
 
         if ($err || $result === false) {
-            throw new \UnexpectedValueException("Anthropic cURL error: {$err}");
+            throw new \UnexpectedValueException('Anthropic cURL error: ' . $err);
         }
 
         return $result ?: '{}';
