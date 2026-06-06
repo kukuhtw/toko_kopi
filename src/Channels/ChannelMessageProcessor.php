@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace KopiBot\Channels;
 
-use KopiBot\Contracts\ChannelInterface;
+use App\Plugin\ChannelInterface as LegacyChannelInterface;
+use KopiBot\Contracts\ChannelInterface as ComposerChannelInterface;
 use KopiBot\Domains\Chatbot\ChatbotService;
 use KopiBot\Domains\Chatbot\ChatMessageDTO;
 use KopiBot\Domains\Customer\CustomerDTO;
@@ -18,7 +19,7 @@ class ChannelMessageProcessor
     ) {}
 
     public function process(
-        ChannelInterface $channel,
+        ComposerChannelInterface|LegacyChannelInterface $channel,
         string $channelName,
         int $tenantId,
         int $branchId,
@@ -56,6 +57,7 @@ class ChannelMessageProcessor
     private function resolveCustomer(string $channelName, int $tenantId, int $branchId, string $senderId): array
     {
         $isWhatsApp = str_contains($channelName, 'whatsapp') || $channelName === 'wa';
+
         return $this->customerService->findOrCreate(new CustomerDTO(
             tenantId: $tenantId,
             branchId: $branchId,
