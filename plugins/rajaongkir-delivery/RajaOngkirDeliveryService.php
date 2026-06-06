@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use KopiBot\Domains\Branch\BranchRepository;
+
 final class RajaOngkirDeliveryService
 {
     private RajaOngkirDeliveryRepository $repo;
@@ -171,8 +173,7 @@ final class RajaOngkirDeliveryService
 
     private function resolveAndPersistOriginId(int $branchId, string $apiKey): string
     {
-        $branchModel = new \App\Models\BranchModel();
-        $branch = $branchModel->find($branchId);
+        $branch = (new BranchRepository())->find($branchId);
         if (!$branch) {
             throw new \RuntimeException('Data cabang tidak ditemukan untuk sinkron origin RajaOngkir.');
         }
