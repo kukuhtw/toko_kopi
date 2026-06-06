@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-use App\Config\Database;
-use App\Helpers\Csrf;
-use App\Plugin\{HookManager, PluginInterface};
+use KopiBot\Contracts\PluginInterface;
+use KopiBot\Core\DatabaseConnection;
+use KopiBot\Core\HookManager;
+use KopiBot\Security\Csrf;
 
 class TelegramChannelPlugin implements PluginInterface
 {
@@ -152,7 +153,7 @@ class TelegramChannelPlugin implements PluginInterface
 
     private function getSetting(int $branchId, string $key): string
     {
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT setting_val FROM plugin_branch_settings
              WHERE plugin_slug = ? AND branch_id = ? AND setting_key = ? LIMIT 1'
         );
@@ -167,7 +168,7 @@ class TelegramChannelPlugin implements PluginInterface
 
     private function isUsingLegacyFallback(int $branchId): bool
     {
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT COUNT(*) FROM plugin_branch_settings
              WHERE plugin_slug = ? AND branch_id = ?'
         );
@@ -196,7 +197,7 @@ class TelegramChannelPlugin implements PluginInterface
             return '';
         }
 
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT ' . $legacyColumn . '
              FROM branch_bot_settings
              WHERE branch_id = ? AND platform = ?
