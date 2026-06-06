@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Plugin\{PluginInterface, HookManager};
-use App\Config\Database;
+use KopiBot\Contracts\PluginInterface;
+use KopiBot\Core\DatabaseConnection;
+use KopiBot\Core\HookManager;
 
 /**
  * Plugin yang mendaftarkan OpenRouter sebagai LLM provider.
@@ -94,7 +95,7 @@ class OpenRouterLlmPlugin implements PluginInterface
 
         // Prioritas 2: llm_api_key di app_settings
         try {
-            $stmt = Database::getInstance()->prepare(
+            $stmt = DatabaseConnection::getInstance()->prepare(
                 'SELECT setting_val FROM app_settings WHERE setting_key = ? LIMIT 1'
             );
             $stmt->execute(['llm_api_key']);
