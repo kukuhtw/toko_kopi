@@ -38,6 +38,7 @@
   "scripts": {
     "migrate": "php migrate.php",
     "migrate:public-index": "php scripts/migrate-public-index-runtime.php",
+    "migrate:customer-crm": "php scripts/migrate-customer-crm-composer.php",
     "serve": "php -S localhost:8000 -t public",
     "smoke:core": "php tests/smoke_core.php",
     "smoke:auth": "php tests/smoke_auth.php",
