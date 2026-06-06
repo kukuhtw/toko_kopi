@@ -39,6 +39,8 @@
     "migrate": "php migrate.php",
     "migrate:public-index": "php scripts/migrate-public-index-runtime.php",
     "migrate:customer-crm": "php scripts/migrate-customer-crm-composer.php",
+    "migrate:loyalty-point": "php scripts/migrate-loyalty-point-composer.php",
+    "audit:legacy": "php scripts/audit-legacy-dependencies.php",
     "serve": "php -S localhost:8000 -t public",
     "smoke:core": "php tests/smoke_core.php",
     "smoke:auth": "php tests/smoke_auth.php",
@@ -65,6 +67,10 @@
     "verify": [
       "@smoke:all",
       "@integration:all"
+    ],
+    "verify:rc": [
+      "@audit:legacy",
+      "@verify"
     ],
     "test": "phpunit",
     "analyse": "phpstan analyse src plugins",
