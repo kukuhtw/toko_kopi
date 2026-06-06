@@ -1,28 +1,15 @@
 <?php
 
-/**
- * Generic webhook endpoint untuk channel yang didaftarkan via plugin.
- *
- * URL: POST /api/channel/webhook.php?channel={nama}&branch={id}
- *
- * Channel yang didaftarkan plugin masuk lewat endpoint generik ini.
- * Beberapa channel legacy masih bisa punya endpoint sendiri.
- *
- * Contoh penggunaan dari plugin LINE:
- *   Webhook URL di LINE Developer Console:
- *   https://yourdomain.com/api/channel/webhook.php?channel=line&branch=1
- */
-
 declare(strict_types=1);
 
 require_once dirname(__DIR__, 3) . '/app/Config/config.php';
 
 use App\Plugin\{ChannelRouter, HookManager};
-use App\Services\{CustomerConversationService, WhatsAppSharedInboxService};
+use App\Services\WhatsAppSharedInboxService;
+use KopiBot\Channels\ChannelMessageProcessor;
 
 header('Content-Type: application/json; charset=utf-8');
 
-// Selalu kembalikan 200 agar platform tidak retry terus-menerus
 function respondAndExit(array $data, int $code = 200): never
 {
     http_response_code($code);
@@ -43,13 +30,13 @@ if (!in_array($_SERVER['REQUEST_METHOD'], ['GET', 'POST'], true)) {
 }
 
 $channelName = strtolower(trim($_GET['channel'] ?? ''));
-$branchId    = (int) ($_GET['branch'] ?? 0);
+$branchId = (int)($_GET['branch'] ?? 0);
+$tenantId = (int)($_GET['tenant_id'] ?? $_GET['tenant'] ?? 1);
 
 if ($channelName === '') {
     respondAndExit(['error' => 'channel parameter is required'], 400);
 }
 
-// ── Resolve channel dari registry plugin ─────────────────────────
 $channel = ChannelRouter::get($channelName);
 if ($channel === null) {
     respondAndExit(['status' => 'ignored', 'reason' => 'channel_not_registered']);
@@ -65,8 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     respondAndExit(['error' => 'Webhook verification failed'], 403);
 }
 
-// ── Baca request ─────────────────────────────────────────────────
-$rawBody = (string) file_get_contents('php://input');
+$rawBody = (string)file_get_contents('php://input');
 $payload = json_decode($rawBody, true) ?? [];
 $contentType = strtolower((string)($_SERVER['CONTENT_TYPE'] ?? ''));
 
@@ -75,7 +61,15 @@ if ($payload === [] && !empty($_POST)) {
 } elseif ($payload === [] && str_contains($contentType, 'application/x-www-form-urlencoded')) {
     parse_str($rawBody, $payload);
 }
+
 $headers = getallheaders() ?: [];
+
+if ($tenantId <= 0) {
+    $tenantId = (int)($payload['tenant_id'] ?? 1);
+}
+if ($tenantId <= 0) {
+    $tenantId = 1;
+}
 
 if ($branchId <= 0 && method_exists($channel, 'resolveBranchId')) {
     $resolvedBranchId = $channel->resolveBranchId($headers, $payload, $rawBody, $_GET);
@@ -92,7 +86,6 @@ if (!$channel->isAvailable($branchId)) {
     respondAndExit(['status' => 'ignored', 'reason' => 'channel_not_configured_for_branch']);
 }
 
-// ── Verifikasi webhook ───────────────────────────────────────────
 if (!$channel->verifyWebhook($headers, $rawBody)) {
     respondAndExit(['error' => 'Webhook verification failed'], 403);
 }
@@ -104,7 +97,6 @@ if (method_exists($channel, 'respondToWebhook')) {
     }
 }
 
-// ── Parse pesan ──────────────────────────────────────────────────
 $msgData = $channel->parseMessage($payload);
 if ($msgData === null) {
     if (method_exists($channel, 'respondToWebhook')) {
@@ -116,21 +108,21 @@ if ($msgData === null) {
     respondAndExit(['status' => 'ignored', 'reason' => 'no_message']);
 }
 
-$from    = (string) ($msgData['from']    ?? '');
-$message = trim((string) ($msgData['message'] ?? ''));
+$from = (string)($msgData['from'] ?? '');
+$message = trim((string)($msgData['message'] ?? ''));
 
 if ($from === '' || $message === '') {
     respondAndExit(['status' => 'ignored', 'reason' => 'empty_from_or_message']);
 }
 
-// ── Proses lewat ChatbotEngine ───────────────────────────────────
 try {
     $businessBranchId = $branchId;
+
     if (method_exists($channel, 'resolveBusinessBranch')) {
         $routing = $channel->resolveBusinessBranch($branchId, $from, $message);
 
         if (($routing['handled'] ?? false) === true) {
-            $reply = trim((string) ($routing['reply_message'] ?? ''));
+            $reply = trim((string)($routing['reply_message'] ?? ''));
             if ($reply !== '') {
                 HookManager::doAction('channel.message_sent', $from, $reply, $channelName, $branchId);
 
@@ -147,13 +139,13 @@ try {
             respondAndExit(['status' => 'processed', 'intent' => 'pilih_cabang']);
         }
 
-        $businessBranchId = (int) ($routing['branch_id'] ?? $branchId);
+        $businessBranchId = (int)($routing['branch_id'] ?? $branchId);
     } elseif (str_starts_with($channelName, 'whatsapp')) {
         $sharedInbox = new WhatsAppSharedInboxService();
         $routing = $sharedInbox->resolveBranch($channelName, $branchId, $from, $message);
 
         if (($routing['handled'] ?? false) === true) {
-            $reply = trim((string) ($routing['reply_message'] ?? ''));
+            $reply = trim((string)($routing['reply_message'] ?? ''));
             if ($reply !== '') {
                 $channel->sendMessage($from, $reply);
                 HookManager::doAction('channel.message_sent', $from, $reply, $channelName, $branchId);
@@ -162,13 +154,21 @@ try {
             respondAndExit(['status' => 'processed', 'intent' => 'pilih_cabang']);
         }
 
-        $businessBranchId = (int) ($routing['branch_id'] ?? $branchId);
+        $businessBranchId = (int)($routing['branch_id'] ?? $branchId);
     }
 
-    $service = new CustomerConversationService();
-    $result = $service->process($channelName, $businessBranchId, $from, $message);
+    $processor = new ChannelMessageProcessor();
+    $result = $processor->process(
+        channel: $channel,
+        channelName: $channelName,
+        tenantId: $tenantId,
+        branchId: $businessBranchId,
+        senderId: $from,
+        message: $message,
+        sendReply: false
+    );
 
-    $reply = trim((string) ($result['reply_message'] ?? ''));
+    $reply = trim((string)($result['reply'] ?? ''));
 
     if (method_exists($channel, 'respondToWebhook')) {
         $directResponse = $channel->respondToWebhook($payload, $reply, 'success');
@@ -181,14 +181,11 @@ try {
     }
 
     if ($reply !== '') {
-        // Action: pesan terkirim ke customer
         HookManager::doAction('channel.message_sent', $from, $reply, $channelName, $businessBranchId);
-
         $channel->sendMessage($from, $reply);
     }
 
     respondAndExit(['status' => 'processed', 'intent' => $result['intent'] ?? null]);
-
 } catch (\Throwable $e) {
     error_log("[channel/{$channelName}/webhook] " . $e->getMessage());
     respondAndExit(['status' => 'error']);
