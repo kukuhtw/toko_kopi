@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-use App\Helpers\Csrf;
-use App\Plugin\HookManager;
-use App\Plugin\PluginInterface;
+use KopiBot\Contracts\PluginInterface;
+use KopiBot\Core\HookManager;
+use KopiBot\Domains\Branch\BranchRepository;
+use KopiBot\Security\Csrf;
 
 final class RajaOngkirDeliveryPlugin implements PluginInterface
 {
@@ -85,7 +86,7 @@ final class RajaOngkirDeliveryPlugin implements PluginInterface
         $pricePreference = $this->repo->getBranchSetting($branchId, 'price_preference', 'lowest');
         $baseWeight = $this->repo->getBranchSetting($branchId, 'base_weight_grams', '250');
         $perItemWeight = $this->repo->getBranchSetting($branchId, 'per_item_weight_grams', '200');
-        $branch = (new \App\Models\BranchModel())->find($branchId) ?: [];
+        $branch = (new BranchRepository())->find($branchId) ?: [];
         $branchPostalCode = (string)($branch['postal_code'] ?? '');
         $statusTone = 'warning';
         $statusTitle = 'Menunggu sinkron origin';
