@@ -1,11 +1,11 @@
 <?php
 
-use App\Helpers\Csrf;
-use App\Models\OrderModel;
 use KopiBot\Contracts\PluginInterface;
 use KopiBot\Core\DatabaseConnection;
 use KopiBot\Core\HookManager;
 use KopiBot\Domains\Branch\BranchRepository;
+use KopiBot\Domains\Order\OrderPaymentService;
+use KopiBot\Security\Csrf;
 
 /**
  * Xendit Payment Plugin
@@ -127,20 +127,20 @@ class XenditPaymentPlugin implements PluginInterface
             return;
         }
 
-        $orderModel = new OrderModel();
-        $order = $orderModel->findByOrderNumber($orderNumber);
+        $orderPayment = new OrderPaymentService();
+        $order = $orderPayment->findByOrderNumber($orderNumber);
         if (!$order) {
             return;
         }
 
         if ($invoiceStatus === 'PAID') {
-            $orderModel->updatePayment((int)$order['id'], 'paid');
+            $orderPayment->markPaid((int)$order['id']);
             error_log('[xendit-payment] Order ' . $orderNumber . ' payment -> paid');
             return;
         }
 
         if (in_array($invoiceStatus, ['EXPIRED', 'FAILED'], true)) {
-            $orderModel->updatePayment((int)$order['id'], 'unpaid');
+            $orderPayment->markUnpaid((int)$order['id']);
             error_log('[xendit-payment] Order ' . $orderNumber . ' payment -> unpaid (' . $invoiceStatus . ')');
         }
     }
