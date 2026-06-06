@@ -2,7 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Plugin\{PluginInterface, HookManager};
+use KopiBot\Contracts\PluginInterface;
+use KopiBot\Core\HookManager;
 
 /**
  * Plugin yang mendaftarkan Anthropic Claude sebagai LLM provider.
