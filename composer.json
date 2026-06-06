@@ -40,6 +40,7 @@
     "migrate:public-index": "php scripts/migrate-public-index-runtime.php",
     "migrate:customer-crm": "php scripts/migrate-customer-crm-composer.php",
     "migrate:loyalty-point": "php scripts/migrate-loyalty-point-composer.php",
+    "migrate:gosend-delivery": "php scripts/migrate-gosend-delivery-composer.php",
     "audit:legacy": "php scripts/audit-legacy-dependencies.php",
     "serve": "php -S localhost:8000 -t public",
     "smoke:core": "php tests/smoke_core.php",
