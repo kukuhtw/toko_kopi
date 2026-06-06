@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Models\OrderModel;
+use KopiBot\Core\DatabaseConnection;
 
 final class GoSendDeliveryService
 {
@@ -196,7 +196,7 @@ final class GoSendDeliveryService
         ]);
 
         if ($newStatus !== '' && $newStatus !== $oldStatus) {
-            (new OrderModel())->updateStatus($orderId, $newStatus);
+            $this->updateOrderStatus($orderId, $newStatus);
         }
 
         return [
@@ -235,7 +235,7 @@ final class GoSendDeliveryService
         ]);
 
         if ($newStatus !== '' && $newStatus !== $oldStatus) {
-            (new OrderModel())->updateStatus($orderId, $newStatus);
+            $this->updateOrderStatus($orderId, $newStatus);
         }
 
         $this->repo->addWebhookAudit(
@@ -277,6 +277,17 @@ final class GoSendDeliveryService
     public function getDeliveryOrderStatus(int $orderId): array|false
     {
         return $this->repo->getDeliveryOrderByOrderId($orderId);
+    }
+
+    private function updateOrderStatus(int $orderId, string $status): void
+    {
+        if ($orderId <= 0 || $status === '') {
+            return;
+        }
+
+        DatabaseConnection::getInstance()->prepare(
+            'UPDATE orders SET order_status = ?, updated_at = NOW() WHERE id = ?'
+        )->execute([$status, $orderId]);
     }
 
     private function buildPayload(int $branchId, array $order): array
