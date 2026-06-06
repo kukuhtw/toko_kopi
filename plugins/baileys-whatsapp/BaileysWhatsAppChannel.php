@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Config\Database;
-use App\Plugin\ChannelInterface;
+use KopiBot\Contracts\ChannelInterface;
+use KopiBot\Core\DatabaseConnection;
 
 class BaileysWhatsAppChannel implements ChannelInterface
 {
@@ -36,14 +36,14 @@ class BaileysWhatsAppChannel implements ChannelInterface
 
     public function parseMessage(array $payload): ?array
     {
-        $from = trim((string) ($payload['from'] ?? $payload['sender'] ?? ''));
-        $message = trim((string) ($payload['message'] ?? $payload['text'] ?? ''));
+        $from = trim((string)($payload['from'] ?? $payload['sender'] ?? ''));
+        $message = trim((string)($payload['message'] ?? $payload['text'] ?? ''));
         if ($from === '' || $message === '') {
             return null;
         }
 
         return [
-            'from'    => $from,
+            'from' => $from,
             'message' => $message,
         ];
     }
@@ -62,7 +62,7 @@ class BaileysWhatsAppChannel implements ChannelInterface
 
         $bridgeToken = $this->getSetting($branchId, 'bridge_token');
         $payload = [
-            'to'      => $recipient,
+            'to' => $recipient,
             'message' => $message,
         ];
 
@@ -74,18 +74,18 @@ class BaileysWhatsAppChannel implements ChannelInterface
         $ch = curl_init($outboundUrl);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_POST           => true,
-            CURLOPT_HTTPHEADER     => $headers,
-            CURLOPT_POSTFIELDS     => json_encode($payload, JSON_UNESCAPED_UNICODE),
-            CURLOPT_TIMEOUT        => 12,
+            CURLOPT_POST => true,
+            CURLOPT_HTTPHEADER => $headers,
+            CURLOPT_POSTFIELDS => json_encode($payload, JSON_UNESCAPED_UNICODE),
+            CURLOPT_TIMEOUT => 12,
         ]);
         $response = curl_exec($ch);
-        $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error    = curl_error($ch);
+        $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
         curl_close($ch);
 
         if ($response === false || $httpCode < 200 || $httpCode >= 300) {
-            error_log('[baileys-whatsapp] send failed. HTTP ' . $httpCode . ': ' . ($error ?: (string) $response));
+            error_log('[baileys-whatsapp] send failed. HTTP ' . $httpCode . ': ' . ($error ?: (string)$response));
             return false;
         }
 
@@ -102,14 +102,14 @@ class BaileysWhatsAppChannel implements ChannelInterface
 
     private function getSetting(int $branchId, string $key): string
     {
-        $pluginStmt = Database::getInstance()->prepare(
+        $pluginStmt = DatabaseConnection::getInstance()->prepare(
             'SELECT setting_val FROM plugin_branch_settings
              WHERE plugin_slug = ? AND branch_id = ? AND setting_key = ? LIMIT 1'
         );
         $pluginStmt->execute([self::PLUGIN_SLUG, $branchId, $key]);
         $pluginValue = $pluginStmt->fetchColumn();
         if ($pluginValue !== false && $pluginValue !== null && $pluginValue !== '') {
-            return (string) $pluginValue;
+            return (string)$pluginValue;
         }
 
         return $this->getLegacySetting($branchId, $key);
@@ -117,7 +117,7 @@ class BaileysWhatsAppChannel implements ChannelInterface
 
     private function getLegacySetting(int $branchId, string $key): string
     {
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT bws.* FROM branch_whatsapp_settings bws
              JOIN whatsapp_providers wp ON bws.provider_id = wp.id
              WHERE bws.branch_id = ? AND wp.adapter_class = ? AND bws.is_active = 1
@@ -132,17 +132,17 @@ class BaileysWhatsAppChannel implements ChannelInterface
         }
 
         if ($key === 'wa_number') {
-            return (string) ($row['wa_number'] ?? '');
+            return (string)($row['wa_number'] ?? '');
         }
         if ($key === 'bridge_token') {
-            return (string) ($row['api_key'] ?? '');
+            return (string)($row['api_key'] ?? '');
         }
         if ($key === 'secret_key') {
-            return (string) ($row['api_secret'] ?? '');
+            return (string)($row['api_secret'] ?? '');
         }
         if ($key === 'outbound_url') {
-            $extra = json_decode((string) ($row['extra_config'] ?? ''), true);
-            return is_array($extra) ? (string) ($extra['outbound_url'] ?? '') : '';
+            $extra = json_decode((string)($row['extra_config'] ?? ''), true);
+            return is_array($extra) ? (string)($extra['outbound_url'] ?? '') : '';
         }
 
         return '';
@@ -151,8 +151,8 @@ class BaileysWhatsAppChannel implements ChannelInterface
     private function headerValue(array $headers, string $target): string
     {
         foreach ($headers as $name => $value) {
-            if (strcasecmp((string) $name, $target) === 0) {
-                return is_array($value) ? (string) ($value[0] ?? '') : (string) $value;
+            if (strcasecmp((string)$name, $target) === 0) {
+                return is_array($value) ? (string)($value[0] ?? '') : (string)$value;
             }
         }
 
