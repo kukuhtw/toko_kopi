@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use App\Helpers\Csrf;
-use App\Models\BranchModel;
-use App\Plugin\HookManager;
-use App\Plugin\PluginInterface;
+use KopiBot\Contracts\PluginInterface;
+use KopiBot\Core\HookManager;
+use KopiBot\Domains\Branch\BranchRepository;
+use KopiBot\Security\Csrf;
 
 final class KiriminAjaDeliveryPlugin implements PluginInterface
 {
@@ -60,8 +60,7 @@ final class KiriminAjaDeliveryPlugin implements PluginInterface
 
     private function renderSuperSettingsCard(int $branchId): string
     {
-        $branchModel = new BranchModel();
-        $selectedBranch = $branchModel->find($branchId);
+        $selectedBranch = (new BranchRepository())->find($branchId);
         $branchName = trim((string)($selectedBranch['name'] ?? 'Cabang #' . $branchId));
         $isActive = $this->service->isImplementedForBranch($branchId);
         $mode = $this->repo->getBranchSetting($branchId, 'mode', 'sandbox');
@@ -148,8 +147,7 @@ final class KiriminAjaDeliveryPlugin implements PluginInterface
         $defaultFee = $this->repo->getBranchSetting($branchId, 'default_delivery_fee', '0');
         $courierLabel = $this->repo->getBranchSetting($branchId, 'courier_label', 'KiriminAja');
         $serviceLabel = $this->repo->getBranchSetting($branchId, 'service_label', 'Delivery Fee');
-        $branchModel = new BranchModel();
-        $selectedBranch = $branchModel->find($branchId);
+        $selectedBranch = (new BranchRepository())->find($branchId);
         $branchName = trim((string)($selectedBranch['name'] ?? 'Cabang #' . $branchId));
 
         ob_start();
