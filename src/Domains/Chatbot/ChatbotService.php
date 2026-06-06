@@ -10,7 +10,7 @@ use KopiBot\Domains\AI\ConversationMemoryService;
 class ChatbotService
 {
     public function __construct(
-        private IntentDetector $intentDetector = new IntentDetector(),
+        private IntentDetector $intentDetector = new LlmIntentDetector(),
         private MessageRouter $router = new MessageRouter(),
         private ConversationMemoryService $memory = new ConversationMemoryService()
     ) {}
@@ -32,7 +32,7 @@ class ChatbotService
         $intent = $this->intentDetector->detect($message->message);
         $response = $this->router->route($intent, $message);
 
-        $this->memory->rememberAssistantMessage($context, (string) ($response['message'] ?? ''), [
+        $this->memory->rememberAssistantMessage($context, (string)($response['message'] ?? ''), [
             'intent' => $intent,
             'response_type' => $response['type'] ?? 'text',
         ]);
