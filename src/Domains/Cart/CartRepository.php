@@ -72,6 +72,42 @@ class CartRepository
         return $stmt->fetchAll();
     }
 
+    public function getItemsByCartId(int $cartId): array
+    {
+        if ($cartId <= 0) {
+            return [];
+        }
+
+        $stmt = $this->db->prepare(
+            'SELECT
+                ci.*,
+                COALESCE(ci.name, ci.menu_name, ci.product_name, ci.product_name, p.name, m.name, "Item") AS name,
+                COALESCE(ci.unit_price, ci.price, p.price, m.price, 0) AS unit_price,
+                COALESCE(ci.quantity, ci.qty, 1) AS quantity
+             FROM cart_items ci
+             LEFT JOIN products p ON p.id = ci.product_id
+             LEFT JOIN menu_items m ON m.id = ci.menu_item_id
+             WHERE ci.cart_id = ?
+             ORDER BY ci.id ASC'
+        );
+        $stmt->execute([$cartId]);
+
+        return $stmt->fetchAll();
+    }
+
+    public function getBySession(string $sessionKey): ?array
+    {
+        if ($sessionKey === '') {
+            return null;
+        }
+
+        $stmt = $this->db->prepare('SELECT * FROM carts WHERE session_key = ? OR session_id = ? LIMIT 1');
+        $stmt->execute([$sessionKey, $sessionKey]);
+        $row = $stmt->fetch();
+
+        return $row ?: null;
+    }
+
     public function markCheckedOut(int $tenantId, int $cartId, int $orderId): bool
     {
         $stmt = $this->db->prepare('UPDATE carts SET status = :status, order_id = :order_id, updated_at = NOW() WHERE tenant_id = :tenant_id AND id = :id');
