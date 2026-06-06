@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Config\Database;
+use KopiBot\Core\DatabaseConnection;
 
 final class RajaOngkirDeliveryRepository
 {
@@ -26,7 +26,7 @@ final class RajaOngkirDeliveryRepository
 
     public function getBranchSetting(int $branchId, string $key, string $default = ''): string
     {
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT setting_val FROM plugin_branch_settings
              WHERE plugin_slug = ? AND branch_id = ? AND setting_key = ?
              LIMIT 1'
@@ -39,7 +39,7 @@ final class RajaOngkirDeliveryRepository
 
     public function setBranchSetting(int $branchId, string $key, string $value): void
     {
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'INSERT INTO plugin_branch_settings (plugin_slug, branch_id, setting_key, setting_val)
              VALUES (?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE setting_val = VALUES(setting_val)'
@@ -49,7 +49,7 @@ final class RajaOngkirDeliveryRepository
 
     private function ensureColumn(string $table, string $column, string $definition): void
     {
-        $db = Database::getInstance();
+        $db = DatabaseConnection::getInstance();
         $stmt = $db->prepare(
             'SELECT 1
              FROM information_schema.columns
