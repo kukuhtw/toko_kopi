@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Models\MenuModel;
-use App\Models\OrderModel;
 use KopiBot\Core\DatabaseConnection;
 
 final class SircloConnectorService
@@ -49,9 +47,8 @@ final class SircloConnectorService
             return;
         }
 
-        $menuModel = new MenuModel();
-        $items = $menuModel->getMenuForBranch($branchId);
-        $categories = $menuModel->getCategories();
+        $items = $this->getMenuForBranch($branchId);
+        $categories = $this->getCategories();
         $status = $this->hasConnectionConfig($branchId) ? 'pending' : 'config_missing';
 
         $this->repo->logSync(
@@ -120,8 +117,7 @@ final class SircloConnectorService
             return;
         }
 
-        $orderModel = new OrderModel();
-        $orders = $orderModel->getByBranch($branchId, max(1, min(100, $limit)), 0);
+        $orders = $this->getOrdersByBranch($branchId, max(1, min(100, $limit)), 0);
         $status = $this->hasConnectionConfig($branchId) ? 'pending' : 'config_missing';
 
         $this->repo->logSync(
@@ -208,5 +204,52 @@ final class SircloConnectorService
         }
 
         return $payload;
+    }
+
+    private function getMenuForBranch(int $branchId): array
+    {
+        $stmt = DatabaseConnection::getInstance()->prepare(
+            'SELECT
+                mi.*,
+                mc.name  AS category_name,
+                mc.slug  AS category_slug,
+                COALESCE(bmo.custom_price, mi.price)        AS effective_price,
+                COALESCE(bmo.is_available, mi.is_available) AS effective_available
+             FROM menu_items mi
+             JOIN menu_categories mc ON mi.category_id = mc.id
+             LEFT JOIN branch_menu_overrides bmo
+                  ON bmo.menu_item_id = mi.id AND bmo.branch_id = ?
+             WHERE mi.is_active = 1
+               AND mc.is_active = 1
+             ORDER BY mc.sort_order, mi.sort_order'
+        );
+        $stmt->execute([$branchId]);
+
+        return $stmt->fetchAll();
+    }
+
+    private function getCategories(): array
+    {
+        return DatabaseConnection::getInstance()->query(
+            'SELECT * FROM menu_categories WHERE is_active = 1 ORDER BY sort_order'
+        )->fetchAll();
+    }
+
+    private function getOrdersByBranch(int $branchId, int $limit = 50, int $offset = 0): array
+    {
+        $stmt = DatabaseConnection::getInstance()->prepare(
+            'SELECT o.*, c.name AS customer_display_name
+             FROM orders o
+             JOIN customers c ON o.customer_id = c.id
+             WHERE o.branch_id = ?
+             ORDER BY o.created_at DESC
+             LIMIT ? OFFSET ?'
+        );
+        $stmt->bindValue(1, $branchId, \PDO::PARAM_INT);
+        $stmt->bindValue(2, $limit, \PDO::PARAM_INT);
+        $stmt->bindValue(3, $offset, \PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll();
     }
 }

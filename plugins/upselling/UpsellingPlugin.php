@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Models\MenuModel;
 use KopiBot\Contracts\PluginInterface;
 use KopiBot\Core\DatabaseConnection;
 use KopiBot\Core\HookManager;
@@ -50,20 +49,19 @@ class UpsellingPlugin implements PluginInterface
         $latestCategoryId   = (int)($latestItem['category_id'] ?? 0);
         $latestCategoryName = (string)($latestItem['category_name'] ?? '');
 
-        $menuModel          = new MenuModel();
-        $targetCategoryIds  = $this->resolveTargetCategoryIds($branchId, $latestCategoryId, $latestCategoryName, $menuModel);
+        $targetCategoryIds  = $this->resolveTargetCategoryIds($branchId, $latestCategoryId, $latestCategoryName);
         $allowFallback      = $this->getSetting($branchId, 'allow_random_fallback', '1') !== '0';
         $suggestion         = false;
 
         if (!empty($targetCategoryIds)) {
             $targetCategoryIds = array_values(array_diff($targetCategoryIds, $cartCategoryIds));
             if (!empty($targetCategoryIds)) {
-                $suggestion = $menuModel->getRandomItemInCategories($targetCategoryIds, $branchId, $cartMenuItemIds);
+                $suggestion = $this->getRandomItemInCategories($targetCategoryIds, $branchId, $cartMenuItemIds);
             }
         }
 
         if (!$suggestion && $allowFallback) {
-            $suggestion = $menuModel->getRandomItemNotInCategories($cartCategoryIds, $branchId);
+            $suggestion = $this->getRandomItemNotInCategories($cartCategoryIds, $branchId);
         }
 
         if (!$suggestion) {
@@ -88,7 +86,7 @@ class UpsellingPlugin implements PluginInterface
         $enabled       = $this->getSetting($branchId, 'enabled', '1') !== '0';
         $allowFallback = $this->getSetting($branchId, 'allow_random_fallback', '1') !== '0';
         $pairRules     = $this->getSetting($branchId, 'pair_rules', '');
-        $categories    = (new MenuModel())->getCategories();
+        $categories    = $this->getCategories();
 
         ob_start();
         ?>
@@ -141,7 +139,7 @@ class UpsellingPlugin implements PluginInterface
         return $sections;
     }
 
-    private function resolveTargetCategoryIds(int $branchId, int $sourceCategoryId, string $sourceCategoryName, MenuModel $menuModel): array
+    private function resolveTargetCategoryIds(int $branchId, int $sourceCategoryId, string $sourceCategoryName): array
     {
         if ($sourceCategoryId <= 0) {
             return [];
@@ -153,7 +151,7 @@ class UpsellingPlugin implements PluginInterface
         }
 
         $categoryMap = [];
-        foreach ($menuModel->getCategories() as $category) {
+        foreach ($this->getCategories() as $category) {
             $categoryMap[(int)$category['id']] = (string)($category['name'] ?? '');
         }
 
@@ -241,5 +239,77 @@ class UpsellingPlugin implements PluginInterface
         } catch (\Throwable $e) {
             return $default;
         }
+    }
+
+    private function getCategories(): array
+    {
+        return DatabaseConnection::getInstance()->query(
+            'SELECT * FROM menu_categories WHERE is_active = 1 ORDER BY sort_order'
+        )->fetchAll();
+    }
+
+    private function getRandomItemNotInCategories(array $excludeCategoryIds, int $branchId): array|false
+    {
+        $excludeSql = '';
+        $params = [$branchId];
+
+        if (!empty($excludeCategoryIds)) {
+            $placeholders = implode(',', array_fill(0, count($excludeCategoryIds), '?'));
+            $excludeSql = "AND mi.category_id NOT IN ({$placeholders})";
+            $params = array_merge($params, $excludeCategoryIds);
+        }
+
+        $stmt = DatabaseConnection::getInstance()->prepare(
+            "SELECT mi.name,
+                    mi.id,
+                    COALESCE(bmo.custom_price, mi.price) AS effective_price
+             FROM menu_items mi
+             LEFT JOIN branch_menu_overrides bmo
+                  ON bmo.menu_item_id = mi.id AND bmo.branch_id = ?
+             WHERE mi.is_active = 1
+               AND COALESCE(bmo.is_available, mi.is_available) = 1
+               {$excludeSql}
+             ORDER BY RAND()
+             LIMIT 1"
+        );
+        $stmt->execute($params);
+
+        return $stmt->fetch() ?: false;
+    }
+
+    private function getRandomItemInCategories(array $includeCategoryIds, int $branchId, array $excludeMenuItemIds = []): array|false
+    {
+        if ($includeCategoryIds === []) {
+            return false;
+        }
+
+        $params = [$branchId];
+        $includePlaceholders = implode(',', array_fill(0, count($includeCategoryIds), '?'));
+        $params = array_merge($params, $includeCategoryIds);
+
+        $excludeSql = '';
+        if ($excludeMenuItemIds !== []) {
+            $excludePlaceholders = implode(',', array_fill(0, count($excludeMenuItemIds), '?'));
+            $excludeSql = "AND mi.id NOT IN ({$excludePlaceholders})";
+            $params = array_merge($params, $excludeMenuItemIds);
+        }
+
+        $stmt = DatabaseConnection::getInstance()->prepare(
+            "SELECT mi.name,
+                    mi.id,
+                    COALESCE(bmo.custom_price, mi.price) AS effective_price
+             FROM menu_items mi
+             LEFT JOIN branch_menu_overrides bmo
+                  ON bmo.menu_item_id = mi.id AND bmo.branch_id = ?
+             WHERE mi.is_active = 1
+               AND COALESCE(bmo.is_available, mi.is_available) = 1
+               AND mi.category_id IN ({$includePlaceholders})
+               {$excludeSql}
+             ORDER BY RAND()
+             LIMIT 1"
+        );
+        $stmt->execute($params);
+
+        return $stmt->fetch() ?: false;
     }
 }

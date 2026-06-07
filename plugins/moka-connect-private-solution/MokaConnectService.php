@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Models\MenuModel;
-use App\Models\OrderModel;
 use KopiBot\Core\DatabaseConnection;
 
 final class MokaConnectService
@@ -89,8 +87,7 @@ final class MokaConnectService
             return;
         }
 
-        $menuModel = new MenuModel();
-        $items = $menuModel->getMenuForBranch($branchId);
+        $items = $this->getMenuForBranch($branchId);
         $request = $this->client->buildProductsPullRequest($branchId);
         $request['preview_catalog'] = array_slice(array_map(function (array $item): array {
             return $this->buildCatalogItemPayload($item);
@@ -217,7 +214,7 @@ final class MokaConnectService
             return;
         }
 
-        $orders = (new OrderModel())->getByBranch($branchId, max(1, min(100, $limit)), 0);
+        $orders = $this->getOrdersByBranch($branchId, max(1, min(100, $limit)), 0);
         $status = $this->hasConnectionConfig($branchId) ? 'pending' : 'config_missing';
         $this->repo->queueSync(
             $branchId,
@@ -331,7 +328,7 @@ final class MokaConnectService
             return ['success' => false, 'message' => 'Queue order tidak memiliki order_id valid.'];
         }
 
-        $order = (new OrderModel())->getWithItems($orderId);
+        $order = $this->getOrderWithItems($orderId);
         if (!$order) {
             return ['success' => false, 'message' => 'Data order tidak ditemukan.'];
         }
@@ -482,7 +479,6 @@ final class MokaConnectService
         /** @var array<string,mixed> $order */
         $order = $resolved['order'];
         $orderId = (int)($order['id'] ?? 0);
-        $orderModel = new OrderModel();
         $oldOrderStatus = (string)($order['order_status'] ?? '');
         $oldPaymentStatus = (string)($order['payment_status'] ?? '');
         $changedFields = [];
@@ -490,12 +486,12 @@ final class MokaConnectService
         self::$suppressedOrderIds[$orderId] = true;
         try {
             if ($resolved['internal_order_status'] !== null && $resolved['internal_order_status'] !== (string)($order['order_status'] ?? '')) {
-                $orderModel->updateStatus($orderId, $resolved['internal_order_status']);
+                $this->updateOrderStatus($orderId, $resolved['internal_order_status']);
                 $order['order_status'] = $resolved['internal_order_status'];
                 $changedFields[] = 'order_status';
             }
             if ($resolved['internal_payment_status'] !== null && $resolved['internal_payment_status'] !== (string)($order['payment_status'] ?? '')) {
-                $orderModel->updatePayment($orderId, $resolved['internal_payment_status']);
+                $this->updateOrderPayment($orderId, $resolved['internal_payment_status']);
                 $order['payment_status'] = $resolved['internal_payment_status'];
                 $changedFields[] = 'payment_status';
             }
@@ -783,7 +779,7 @@ final class MokaConnectService
             return $order;
         }
 
-        $fullOrder = (new OrderModel())->getWithItems((int)$order['id']);
+        $fullOrder = $this->getOrderWithItems((int)$order['id']);
         return $fullOrder ?: $order;
     }
 
@@ -849,15 +845,14 @@ final class MokaConnectService
         $remoteOrderStatus = $this->extractByPathCandidates($payload, $orderStatusPath);
         $remotePaymentStatus = $this->extractByPathCandidates($payload, $paymentStatusPath);
 
-        $orderModel = new OrderModel();
         $order = $orderNumber !== null && $orderNumber !== ''
-            ? $orderModel->findByOrderNumber($orderNumber)
+            ? $this->findOrderByNumber($orderNumber)
             : false;
 
         if (!$order && $externalRef !== null && $externalRef !== '') {
             $syncStatus = $this->repo->getOrderSyncStatusByExternalRef($branchId, $externalRef);
             if ($syncStatus) {
-                $order = $orderModel->getWithItems((int)($syncStatus['order_id'] ?? 0));
+                $order = $this->getOrderWithItems((int)($syncStatus['order_id'] ?? 0));
                 $orderNumber = (string)($syncStatus['order_number'] ?? $orderNumber);
             }
         }
@@ -927,5 +922,94 @@ final class MokaConnectService
         }
 
         return $type === 'payment' ? 'unpaid' : 'pending';
+    }
+
+    private function getMenuForBranch(int $branchId): array
+    {
+        $items = DatabaseConnection::getInstance()->prepare(
+            'SELECT
+                mi.*,
+                mc.name  AS category_name,
+                mc.slug  AS category_slug,
+                COALESCE(bmo.custom_price, mi.price)        AS effective_price,
+                COALESCE(bmo.is_available, mi.is_available) AS effective_available
+             FROM menu_items mi
+             JOIN menu_categories mc ON mi.category_id = mc.id
+             LEFT JOIN branch_menu_overrides bmo
+                  ON bmo.menu_item_id = mi.id AND bmo.branch_id = ?
+             WHERE mi.is_active = 1
+               AND mc.is_active = 1
+             ORDER BY mc.sort_order, mi.sort_order'
+        );
+        $items->execute([$branchId]);
+
+        return $items->fetchAll();
+    }
+
+    private function getOrdersByBranch(int $branchId, int $limit = 50, int $offset = 0): array
+    {
+        $stmt = DatabaseConnection::getInstance()->prepare(
+            'SELECT o.*, c.name AS customer_display_name
+             FROM orders o
+             JOIN customers c ON o.customer_id = c.id
+             WHERE o.branch_id = ?
+             ORDER BY o.created_at DESC
+             LIMIT ? OFFSET ?'
+        );
+        $stmt->bindValue(1, $branchId, \PDO::PARAM_INT);
+        $stmt->bindValue(2, $limit, \PDO::PARAM_INT);
+        $stmt->bindValue(3, $offset, \PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll();
+    }
+
+    private function getOrderWithItems(int $orderId): array|false
+    {
+        $stmt = DatabaseConnection::getInstance()->prepare(
+            'SELECT * FROM orders WHERE id = ? LIMIT 1'
+        );
+        $stmt->execute([$orderId]);
+        $order = $stmt->fetch();
+        if (!$order) {
+            return false;
+        }
+
+        $itemStmt = DatabaseConnection::getInstance()->prepare(
+            'SELECT * FROM order_items WHERE order_id = ?'
+        );
+        $itemStmt->execute([$orderId]);
+        $order['items'] = $itemStmt->fetchAll();
+
+        return $order;
+    }
+
+    private function findOrderByNumber(string $orderNumber): array|false
+    {
+        $stmt = DatabaseConnection::getInstance()->prepare(
+            'SELECT * FROM orders WHERE order_number = ? LIMIT 1'
+        );
+        $stmt->execute([$orderNumber]);
+
+        return $stmt->fetch() ?: false;
+    }
+
+    private function updateOrderStatus(int $orderId, string $status): void
+    {
+        DatabaseConnection::getInstance()->prepare(
+            'UPDATE orders SET order_status = ?, updated_at = NOW() WHERE id = ?'
+        )->execute([$status, $orderId]);
+    }
+
+    private function updateOrderPayment(int $orderId, string $paymentStatus): void
+    {
+        $data = ['payment_status' => $paymentStatus, 'id' => $orderId];
+        $sql = 'UPDATE orders SET payment_status = :payment_status, updated_at = NOW()';
+        if ($paymentStatus === 'paid') {
+            $sql .= ', paid_at = NOW()';
+        }
+        $sql .= ' WHERE id = :id';
+
+        DatabaseConnection::getInstance()->prepare($sql)->execute($data);
     }
 }

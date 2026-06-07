@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Models\PromoModel;
 use KopiBot\Contracts\PluginInterface;
 use KopiBot\Core\DatabaseConnection;
 use KopiBot\Core\HookManager;
@@ -31,7 +30,7 @@ class RekomendasiPromoPlugin implements PluginInterface
             return $reply;
         }
 
-        $promos = (new PromoModel())->getActiveForBranch($branchId, $ctx['now_local'] ?? '');
+        $promos = $this->getActivePromosForBranch($branchId, (string)($ctx['now_local'] ?? ''));
         $lang   = $ctx['language'] ?? 'id';
         $hints  = $this->buildHints(
             $promos,
@@ -194,5 +193,46 @@ class RekomendasiPromoPlugin implements PluginInterface
         $stmt->execute([self::SLUG, $branchId, $key]);
         $row = $stmt->fetch();
         return $row ? (string)$row['setting_val'] : null;
+    }
+
+    private function getActivePromosForBranch(int $branchId, string $nowLocal = ''): array
+    {
+        $now = $nowLocal !== '' ? $nowLocal : date('Y-m-d H:i:s');
+        $overrideIds = $this->getOverriddenPromoIds($branchId);
+        $excludeSql = $overrideIds === []
+            ? ''
+            : 'AND id NOT IN (' . implode(',', array_fill(0, count($overrideIds), '?')) . ')';
+
+        $globalStmt = DatabaseConnection::getInstance()->prepare(
+            "SELECT *, 'global' AS promo_source FROM promos
+             WHERE is_active = 1 {$excludeSql}
+               AND (start_date IS NULL OR start_date <= ?)
+               AND (end_date IS NULL OR end_date >= ?)
+             ORDER BY discount_value DESC"
+        );
+        $globalStmt->execute(array_merge($overrideIds, [$now, $now]));
+        $global = $globalStmt->fetchAll();
+
+        $branchStmt = DatabaseConnection::getInstance()->prepare(
+            "SELECT *, 'branch' AS promo_source FROM branch_promos
+             WHERE branch_id = ? AND is_active = 1
+               AND (start_date IS NULL OR start_date <= ?)
+               AND (end_date IS NULL OR end_date >= ?)
+             ORDER BY discount_value DESC"
+        );
+        $branchStmt->execute([$branchId, $now, $now]);
+        $branch = $branchStmt->fetchAll();
+
+        return array_merge($global, $branch);
+    }
+
+    private function getOverriddenPromoIds(int $branchId): array
+    {
+        $stmt = DatabaseConnection::getInstance()->prepare(
+            'SELECT promo_id FROM branch_promos WHERE branch_id = ? AND promo_id IS NOT NULL'
+        );
+        $stmt->execute([$branchId]);
+
+        return $stmt->fetchAll(\PDO::FETCH_COLUMN);
     }
 }

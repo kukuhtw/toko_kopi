@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Services\IntentDetectorInterface;
+use KopiBot\Contracts\IntentDetectorInterface;
 use KopiBot\Core\DatabaseConnection;
+use KopiBot\Domains\Chatbot\LegacyIntentDetectorAdapter;
 
 /**
  * Intent detector powered by Anthropic Claude.
@@ -15,7 +16,7 @@ use KopiBot\Core\DatabaseConnection;
  */
 class AnthropicIntentDetector implements IntentDetectorInterface
 {
-    private \App\Services\IntentDetector $fallback;
+    private IntentDetectorInterface $fallback;
     private AnthropicProvider $provider;
     private ?int $branchId = null;
     private ?int $convId   = null;
@@ -132,7 +133,7 @@ SYS;
     public function __construct(AnthropicProvider $provider)
     {
         $this->provider = $provider;
-        $this->fallback = new \App\Services\IntentDetector();
+        $this->fallback = new LegacyIntentDetectorAdapter();
     }
 
     public function detectAll(string $message, array $context = []): array
