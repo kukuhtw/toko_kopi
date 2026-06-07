@@ -1,4 +1,6 @@
 # KopiBot - AI Chatbot Order System
+> ## Juni 2026 sedang dalam masa migrasi ke composer. July 2026 akan selesai
+
 
 > ## AI Agent Commerce Platform
 > Platform AI commerce untuk otomatisasi order, customer service, loyalty customer, Customer CRM, Customer Portal, integrasi channel chat, payment gateway, delivery connector, POS connector, dan manajemen multi cabang untuk berbagai jenis bisnis.
