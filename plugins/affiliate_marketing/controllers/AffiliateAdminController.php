@@ -1,13 +1,16 @@
 <?php
 require_once __DIR__ . '/../affiliate_marketing.php';
 
+use KopiBot\Domains\Auth\RolePermissionService;
+use KopiBot\Security\Csrf;
+
 function affiliate_admin_require_login()
 {
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }
 
-    if (empty($_SESSION['admin_id'])) {
+    if (empty($_SESSION['admin_id']) && empty($_SESSION['user_id'])) {
         http_response_code(403);
         echo 'Forbidden. Admin login required.';
         exit;
@@ -19,15 +22,80 @@ function affiliate_admin_current_branch_id()
     return $_SESSION['branch_id'] ?? null;
 }
 
+function affiliate_admin_current_user_id()
+{
+    return (int) ($_SESSION['user_id'] ?? $_SESSION['admin_id'] ?? 0);
+}
+
 function affiliate_admin_is_super_admin()
 {
-    $role = $_SESSION['admin_role'] ?? '';
+    $role = $_SESSION['admin_role'] ?? $_SESSION['user_role'] ?? '';
     return in_array($role, ['super_admin', 'admin_pusat', 'owner'], true);
+}
+
+function affiliate_admin_permission_codes()
+{
+    $rawPermissions = $_SESSION['permission_codes']
+        ?? $_SESSION['permissions']
+        ?? $_SESSION['admin_permissions']
+        ?? [];
+
+    if (is_string($rawPermissions)) {
+        $rawPermissions = preg_split('/[\s,]+/', $rawPermissions, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+    }
+
+    if (!is_array($rawPermissions)) {
+        return [];
+    }
+
+    return array_values(array_unique(array_filter(array_map(static function ($permission) {
+        return is_string($permission) ? trim($permission) : '';
+    }, $rawPermissions))));
+}
+
+function affiliate_admin_has_permission($permissionCode)
+{
+    if (affiliate_admin_is_super_admin()) {
+        return true;
+    }
+
+    $permissions = affiliate_admin_permission_codes();
+    if (in_array($permissionCode, $permissions, true)) {
+        return true;
+    }
+
+    $tenantId = (int) ($_SESSION['tenant_id'] ?? 0);
+    $userId = affiliate_admin_current_user_id();
+
+    if ($tenantId > 0 && $userId > 0) {
+        try {
+            return (new RolePermissionService())->userHasPermission($tenantId, $userId, $permissionCode);
+        } catch (Throwable $exception) {
+        }
+    }
+
+    return $userId > 0
+        && !empty($_SESSION['admin_id'])
+        && $tenantId <= 0
+        && $permissions === [];
+}
+
+function affiliate_admin_require_permission($permissionCode)
+{
+    affiliate_admin_require_login();
+
+    if (affiliate_admin_has_permission($permissionCode)) {
+        return;
+    }
+
+    http_response_code(403);
+    echo 'Forbidden. Missing permission: ' . $permissionCode;
+    exit;
 }
 
 function affiliate_admin_list_users($filters = [])
 {
-    affiliate_admin_require_login();
+    affiliate_admin_require_permission('affiliate.manage_users');
 
     $db = affiliate_get_pdo();
     $where = [];
@@ -65,7 +133,8 @@ function affiliate_admin_list_users($filters = [])
 
 function affiliate_admin_save_user_from_post()
 {
-    affiliate_admin_require_login();
+    affiliate_admin_require_permission('affiliate.manage_users');
+    Csrf::requireValid();
 
     $data = [
         'branch_id' => affiliate_admin_is_super_admin() ? ($_POST['branch_id'] ?? null) : affiliate_admin_current_branch_id(),
@@ -77,7 +146,7 @@ function affiliate_admin_save_user_from_post()
         'status' => $_POST['status'] ?? 'active',
         'commission_type' => $_POST['commission_type'] ?? 'percent',
         'commission_value' => $_POST['commission_value'] ?? 0,
-        'created_by_admin_id' => $_SESSION['admin_id'] ?? null,
+        'created_by_admin_id' => affiliate_admin_current_user_id() ?: null,
     ];
 
     if ($data['name'] === '') {
@@ -89,7 +158,8 @@ function affiliate_admin_save_user_from_post()
 
 function affiliate_admin_ban_user_from_post()
 {
-    affiliate_admin_require_login();
+    affiliate_admin_require_permission('affiliate.manage_users');
+    Csrf::requireValid();
 
     $affiliateUserId = (int) ($_POST['affiliate_user_id'] ?? 0);
     $reason = trim($_POST['reason'] ?? 'Banned by admin');
@@ -121,7 +191,7 @@ function affiliate_admin_can_access_affiliate($affiliateUserId)
 
 function affiliate_admin_list_campaigns($filters = [])
 {
-    affiliate_admin_require_login();
+    affiliate_admin_require_permission('affiliate.manage_campaigns');
 
     $db = affiliate_get_pdo();
     $where = [];
@@ -153,7 +223,8 @@ function affiliate_admin_list_campaigns($filters = [])
 
 function affiliate_admin_save_campaign_from_post()
 {
-    affiliate_admin_require_login();
+    affiliate_admin_require_permission('affiliate.manage_campaigns');
+    Csrf::requireValid();
 
     $data = [
         'branch_id' => affiliate_admin_is_super_admin() ? ($_POST['branch_id'] ?? null) : affiliate_admin_current_branch_id(),
@@ -175,7 +246,7 @@ function affiliate_admin_save_campaign_from_post()
 
 function affiliate_admin_commission_report($filters = [])
 {
-    affiliate_admin_require_login();
+    affiliate_admin_require_permission('affiliate.commission');
 
     $db = affiliate_get_pdo();
     $where = [];
@@ -222,7 +293,7 @@ function affiliate_admin_commission_report($filters = [])
 
 function affiliate_admin_traffic_report($filters = [])
 {
-    affiliate_admin_require_login();
+    affiliate_admin_require_permission('affiliate.report');
 
     $db = affiliate_get_pdo();
     $where = [];
@@ -264,7 +335,7 @@ function affiliate_admin_traffic_report($filters = [])
 
 function affiliate_admin_dashboard_summary($filters = [])
 {
-    affiliate_admin_require_login();
+    affiliate_admin_require_permission('affiliate.view');
 
     $db = affiliate_get_pdo();
     $branchWhere = '';
@@ -296,7 +367,8 @@ function affiliate_admin_dashboard_summary($filters = [])
 
 function affiliate_admin_mark_commission_paid_from_post()
 {
-    affiliate_admin_require_login();
+    affiliate_admin_require_permission('affiliate.commission');
+    Csrf::requireValid();
 
     $affiliateOrderId = (int) ($_POST['affiliate_order_id'] ?? 0);
     if ($affiliateOrderId <= 0) {

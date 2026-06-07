@@ -48,6 +48,17 @@ function affiliate_now()
     return date('Y-m-d H:i:s');
 }
 
+function affiliate_cookie_options($expires)
+{
+    return [
+        'expires' => $expires,
+        'path' => '/',
+        'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ];
+}
+
 function affiliate_generate_code($prefix = 'AFF')
 {
     return strtoupper($prefix . '-' . bin2hex(random_bytes(4)));
@@ -94,9 +105,9 @@ function affiliate_track_visit_from_request()
     $trackingCode = $affiliateCode . ($campaignCode ? '-' . $campaignCode : '');
 
     $cookieExpires = time() + (AFFILIATE_COOKIE_DAYS * 24 * 60 * 60);
-    setcookie('affiliate_code', $affiliateCode, $cookieExpires, '/');
-    setcookie('affiliate_campaign', (string) $campaignCode, $cookieExpires, '/');
-    setcookie('affiliate_tracking_code', $trackingCode, $cookieExpires, '/');
+    setcookie('affiliate_code', $affiliateCode, affiliate_cookie_options($cookieExpires));
+    setcookie('affiliate_campaign', (string) $campaignCode, affiliate_cookie_options($cookieExpires));
+    setcookie('affiliate_tracking_code', $trackingCode, affiliate_cookie_options($cookieExpires));
 
     if (session_status() === PHP_SESSION_NONE) {
         @session_start();
