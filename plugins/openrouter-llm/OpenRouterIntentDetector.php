@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Services\IntentDetectorInterface;
-use App\Config\Database;
+use KopiBot\Core\DatabaseConnection;
 
 /**
  * Intent detector powered by OpenRouter.
@@ -243,7 +243,7 @@ SYS;
         $cost = $this->provider->estimateCost($input, $output);
 
         try {
-            Database::getInstance()->prepare(
+            DatabaseConnection::getInstance()->prepare(
                 'INSERT INTO token_usage_logs
                  (branch_id, conversation_id, provider, model, prompt_tokens, completion_tokens, total_tokens, cost_estimate)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
@@ -290,5 +290,4 @@ SYS;
         ) === 1;
     }
 }
-
 

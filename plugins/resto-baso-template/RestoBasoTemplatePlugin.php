@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Plugin\{PluginInterface, HookManager};
-use App\Config\Database;
+use KopiBot\Contracts\PluginInterface;
+use KopiBot\Core\DatabaseConnection;
+use KopiBot\Core\HookManager;
 
 class RestoBasoTemplatePlugin implements PluginInterface
 {
@@ -50,7 +51,7 @@ class RestoBasoTemplatePlugin implements PluginInterface
 
     public function resetAndSeed(): array
     {
-        $pdo = Database::getInstance();
+        $pdo = DatabaseConnection::getInstance();
         $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
         $pdo->exec('SET FOREIGN_KEY_CHECKS = 0');
         $pdo->beginTransaction();

@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Plugin\{PluginInterface, HookManager};
-use App\Config\Database;
+use KopiBot\Contracts\PluginInterface;
+use KopiBot\Core\DatabaseConnection;
+use KopiBot\Core\HookManager;
 
 class FruitTemplatePlugin implements PluginInterface
 {
@@ -624,7 +625,7 @@ class FruitTemplatePlugin implements PluginInterface
 
     public function resetAndSeed(): array
     {
-        $pdo = Database::getInstance();
+        $pdo = DatabaseConnection::getInstance();
         $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
 
         $branchRows = $pdo->query(

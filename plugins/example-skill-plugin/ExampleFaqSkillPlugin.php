@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-use App\Plugin\{HookManager, PluginInterface};
-use App\Services\IntentPatternRegistry;
-use App\Skills\SkillRegistry;
+use KopiBot\Contracts\PluginInterface;
+use KopiBot\Core\HookManager;
+use KopiBot\Core\SkillRegistry;
+use KopiBot\Intent\IntentPatternRegistry;
 
 class ExampleFaqSkillPlugin implements PluginInterface
 {

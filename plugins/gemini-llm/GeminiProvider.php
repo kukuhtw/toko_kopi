@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Plugin\LlmProviderInterface;
+use KopiBot\Contracts\LlmProviderInterface;
 
 /**
  * Google Gemini API client via Generative Language REST API.
