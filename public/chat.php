@@ -5,14 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chat Demo — Toko Kopi</title>
   <?php
-  require_once dirname(__DIR__) . '/app/Config/config.php';
-  use App\Models\BranchModel;
+  require_once dirname(__DIR__) . '/config/runtime.php';
+
+  use App\Helpers\MenuImage;
   use App\Models\MenuModel;
-  use App\Helpers\Auth;
-  use App\Plugin\HookManager;
-  Auth::startSession();
-  $branchModel = new BranchModel();
-  $branches    = $branchModel->getActive();
+  use KopiBot\Core\HookManager;
+  use KopiBot\Domains\Branch\BranchRepository;
+
+  if (session_status() !== PHP_SESSION_ACTIVE) {
+      session_name(SESSION_NAME);
+      session_set_cookie_params([
+          'lifetime' => SESSION_LIFETIME,
+          'path' => '/',
+          'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+          'httponly' => true,
+          'samesite' => 'Lax',
+      ]);
+      session_start();
+  }
+
+  $branchRepo = new BranchRepository();
+  $branches = $branchRepo->getActive();
   $currency = 'IDR';
   $language = 'id';
   $publicAppName = trim((string) HookManager::applyFilters('site.app_name', APP_NAME));
@@ -24,11 +37,19 @@
   // Start session for chat identification
   $sessionId   = session_id();
   $selectedBranchId = (int)($_GET['branch'] ?? ($_SESSION['chat_branch_id'] ?? 0));
+  $selectedBranch = null;
   if ($selectedBranchId) {
       $_SESSION['chat_branch_id'] = $selectedBranchId;
-      $selectedBranch = $branchModel->find($selectedBranchId);
-      $currency = $branchModel->getCurrency($selectedBranchId);
-      $language = $branchModel->getLanguage($selectedBranchId);
+      foreach ($branches as $branch) {
+          if ((int)($branch['id'] ?? 0) === $selectedBranchId) {
+              $selectedBranch = $branch;
+              break;
+          }
+      }
+      if (is_array($selectedBranch)) {
+          $currency = $branchRepo->getCurrency($selectedBranchId);
+          $language = $branchRepo->getLanguage($selectedBranchId);
+      }
   }
   $menuModel = new MenuModel();
   $chatMenuItems = [];
@@ -51,7 +72,7 @@
               'name' => (string)($item['name'] ?? ''),
               'description' => (string)($item['description'] ?? ''),
               'price' => (float)($item['effective_price'] ?? 0),
-              'image_url' => \App\Helpers\MenuImage::publicUrl($item['image_path'] ?? null),
+              'image_url' => MenuImage::publicUrl($item['image_path'] ?? null),
               'variants' => array_map(static fn(array $variant): array => [
                   'id' => (int)($variant['id'] ?? 0),
                   'label' => (string)($variant['label'] ?? ''),
