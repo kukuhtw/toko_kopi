@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Config\Database;
+use KopiBot\Core\DatabaseConnection;
 
 class OpenAiImageGenerator
 {
@@ -13,7 +13,7 @@ class OpenAiImageGenerator
 
     public function __construct()
     {
-        $this->db = Database::getInstance();
+        $this->db = DatabaseConnection::getInstance();
     }
 
     public function generate(array $input): array

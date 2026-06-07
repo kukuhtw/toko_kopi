@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Services\WhatsAppSharedInboxService;
 use KopiBot\Contracts\ChannelInterface;
 use KopiBot\Core\DatabaseConnection;
+use KopiBot\Services\SharedInboxService;
 
 class DiscordChannel implements ChannelInterface
 {
@@ -155,7 +155,7 @@ class DiscordChannel implements ChannelInterface
 
     public function resolveBusinessBranch(int $transportBranchId, string $customerIdentifier, string $message): array
     {
-        $sharedInbox = new WhatsAppSharedInboxService();
+        $sharedInbox = new SharedInboxService();
         return $sharedInbox->resolveBranch(
             'discord',
             $transportBranchId,

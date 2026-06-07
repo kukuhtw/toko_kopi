@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Config\Database;
+use KopiBot\Core\DatabaseConnection;
 
 class OpenAiArticleGenerator
 {
@@ -12,7 +12,7 @@ class OpenAiArticleGenerator
 
     public function __construct()
     {
-        $this->db = Database::getInstance();
+        $this->db = DatabaseConnection::getInstance();
     }
 
     public function generate(array $brief): array

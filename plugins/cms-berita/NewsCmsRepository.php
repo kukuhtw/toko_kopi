@@ -2,8 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Config\Database;
-use App\Helpers\Sanitize;
+use KopiBot\Core\DatabaseConnection;
 
 class NewsCmsRepository
 {
@@ -11,7 +10,7 @@ class NewsCmsRepository
 
     public function __construct()
     {
-        $this->db = Database::getInstance();
+        $this->db = DatabaseConnection::getInstance();
     }
 
     public function getBranches(): array
@@ -130,7 +129,7 @@ class NewsCmsRepository
             $publishedAt = null;
         }
 
-        $baseSlug = Sanitize::slug($title);
+        $baseSlug = $this->slugify($title);
         if ($baseSlug === '') {
             $baseSlug = 'berita-' . date('YmdHis');
         }
@@ -267,5 +266,13 @@ class NewsCmsRepository
 
         $ts = strtotime($value);
         return $ts ? date('Y-m-d H:i:s', $ts) : null;
+    }
+
+    private function slugify(string $value): string
+    {
+        $value = strtolower(trim($value));
+        $value = preg_replace('/[^a-z0-9\s-]/', '', $value) ?? '';
+        $value = preg_replace('/[\s-]+/', '-', $value) ?? '';
+        return trim($value, '-');
     }
 }
