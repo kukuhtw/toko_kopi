@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Config\Database;
+use KopiBot\Core\DatabaseConnection;
 
 final class FaqRepository
 {
@@ -22,7 +22,7 @@ final class FaqRepository
 
         $sql = trim((string)file_get_contents(__DIR__ . '/schema.sql'));
         foreach ($this->splitSqlStatements($sql) as $statement) {
-            Database::getInstance()->exec($statement);
+            DatabaseConnection::getInstance()->exec($statement);
         }
         $this->ensureColumn('faq_entries', 'parent_global_id', 'INT UNSIGNED NULL AFTER branch_id');
         $this->ensureIndex('faq_entries', 'idx_faq_parent_global', 'CREATE INDEX idx_faq_parent_global ON faq_entries (parent_global_id)');
@@ -37,7 +37,7 @@ final class FaqRepository
     {
         $this->ensureSchema();
 
-        $db = Database::getInstance();
+        $db = DatabaseConnection::getInstance();
         $stmt = $db->prepare(
             'INSERT INTO faq_entries (scope, branch_id, parent_global_id, question, answer, tags, is_active)
              VALUES (?, ?, ?, ?, ?, ?, ?)'
@@ -64,7 +64,7 @@ final class FaqRepository
     {
         $this->ensureSchema();
 
-        Database::getInstance()->prepare(
+        DatabaseConnection::getInstance()->prepare(
             'UPDATE faq_entries
              SET parent_global_id = ?, question = ?, answer = ?, tags = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP
              WHERE id = ?'
@@ -83,7 +83,7 @@ final class FaqRepository
     public function toggleActive(int $id, bool $active): void
     {
         $this->ensureSchema();
-        Database::getInstance()->prepare(
+        DatabaseConnection::getInstance()->prepare(
             'UPDATE faq_entries SET is_active = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
         )->execute([$active ? 1 : 0, $id]);
     }
@@ -91,7 +91,7 @@ final class FaqRepository
     public function findById(int $id): array|false
     {
         $this->ensureSchema();
-        $stmt = Database::getInstance()->prepare('SELECT * FROM faq_entries WHERE id = ? LIMIT 1');
+        $stmt = DatabaseConnection::getInstance()->prepare('SELECT * FROM faq_entries WHERE id = ? LIMIT 1');
         $stmt->execute([$id]);
         return $stmt->fetch() ?: false;
     }
@@ -116,13 +116,13 @@ final class FaqRepository
             $sql .= ' AND is_active = 1';
         }
         $sql .= ' ORDER BY is_active DESC, updated_at DESC, id DESC';
-        return Database::getInstance()->query($sql)->fetchAll() ?: [];
+        return DatabaseConnection::getInstance()->query($sql)->fetchAll() ?: [];
     }
 
     public function countGlobalFaqs(): int
     {
         $this->ensureSchema();
-        return (int)Database::getInstance()->query(
+        return (int)DatabaseConnection::getInstance()->query(
             'SELECT COUNT(*) FROM faq_entries WHERE scope = "global" AND parent_global_id IS NULL'
         )->fetchColumn();
     }
@@ -135,7 +135,7 @@ final class FaqRepository
             $sql .= ' AND is_active = 1';
         }
         $sql .= ' ORDER BY is_active DESC, updated_at DESC, id DESC';
-        $stmt = Database::getInstance()->prepare($sql);
+        $stmt = DatabaseConnection::getInstance()->prepare($sql);
         $stmt->execute([$branchId]);
         return $stmt->fetchAll() ?: [];
     }
@@ -148,7 +148,7 @@ final class FaqRepository
     public function getGlobalFaqsWithBranchOverrideStatus(int $branchId): array
     {
         $this->ensureSchema();
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT g.*,
                     bo.id AS branch_override_id,
                     bo.answer AS branch_override_answer,
@@ -170,7 +170,7 @@ final class FaqRepository
     public function countBranchCustomFaqs(int $branchId): int
     {
         $this->ensureSchema();
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT COUNT(*) FROM faq_entries WHERE scope = "branch" AND branch_id = ?'
         );
         $stmt->execute([$branchId]);
@@ -180,7 +180,7 @@ final class FaqRepository
     public function getCombinedFaqs(int $branchId): array
     {
         $this->ensureSchema();
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT e.*, v.vector_json, v.normalized_text
              FROM faq_entries e
              JOIN faq_vectors v ON v.faq_id = e.id
@@ -256,7 +256,7 @@ final class FaqRepository
         $vector = $this->vectors->embed($source);
         $checksum = $this->vectors->checksum($source);
 
-        Database::getInstance()->prepare(
+        DatabaseConnection::getInstance()->prepare(
             'INSERT INTO faq_vectors (faq_id, vector_dim, vector_json, normalized_text, checksum)
              VALUES (?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE
@@ -277,7 +277,7 @@ final class FaqRepository
     public function rebuildAllVectors(): int
     {
         $this->ensureSchema();
-        $rows = Database::getInstance()->query('SELECT id FROM faq_entries')->fetchAll() ?: [];
+        $rows = DatabaseConnection::getInstance()->query('SELECT id FROM faq_entries')->fetchAll() ?: [];
         foreach ($rows as $row) {
             $this->refreshVector((int)$row['id']);
         }
@@ -294,7 +294,7 @@ final class FaqRepository
         ?string $matchedScope
     ): void {
         $this->ensureSchema();
-        Database::getInstance()->prepare(
+        DatabaseConnection::getInstance()->prepare(
             'INSERT INTO faq_query_logs
              (branch_id, customer_id, conversation_id, faq_id, query_text, matched_score, matched_scope)
              VALUES (?, ?, ?, ?, ?, ?, ?)'
@@ -312,7 +312,7 @@ final class FaqRepository
     public function getAnalyticsSummary(int $branchId, int $days = 30): array
     {
         $this->ensureSchema();
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT
                 COUNT(*) AS total_questions,
                 COUNT(DISTINCT conversation_id) AS unique_conversations,
@@ -328,7 +328,7 @@ final class FaqRepository
     public function getTopAskedFaqs(int $branchId, int $days = 30, int $limit = 10): array
     {
         $this->ensureSchema();
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT l.faq_id, e.question, e.scope, COUNT(*) AS total_asked, MAX(l.created_at) AS last_asked_at, AVG(l.matched_score) AS avg_score
              FROM faq_query_logs l
              LEFT JOIN faq_entries e ON e.id = l.faq_id
@@ -346,7 +346,7 @@ final class FaqRepository
     public function getTopUnmatchedQueries(int $branchId, int $days = 30, int $limit = 10): array
     {
         $this->ensureSchema();
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT query_text, COUNT(*) AS total_asked, MAX(created_at) AS last_asked_at
              FROM faq_query_logs
              WHERE branch_id = ?
@@ -431,7 +431,7 @@ final class FaqRepository
     public function findBranchOverrideForGlobal(int $branchId, int $globalFaqId): array|false
     {
         $this->ensureSchema();
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT * FROM faq_entries
              WHERE scope = "branch" AND branch_id = ? AND parent_global_id = ?
              LIMIT 1'
@@ -466,7 +466,7 @@ final class FaqRepository
 
     private function ensureColumn(string $table, string $column, string $definition): void
     {
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT COUNT(*)
              FROM information_schema.COLUMNS
              WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?'
@@ -476,12 +476,12 @@ final class FaqRepository
             return;
         }
 
-        Database::getInstance()->exec(sprintf('ALTER TABLE %s ADD COLUMN %s %s', $table, $column, $definition));
+        DatabaseConnection::getInstance()->exec(sprintf('ALTER TABLE %s ADD COLUMN %s %s', $table, $column, $definition));
     }
 
     private function ensureIndex(string $table, string $indexName, string $createSql): void
     {
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT COUNT(*)
              FROM information_schema.STATISTICS
              WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND INDEX_NAME = ?'
@@ -490,13 +490,13 @@ final class FaqRepository
         if ((int)$stmt->fetchColumn() > 0) {
             return;
         }
-        Database::getInstance()->exec($createSql);
+        DatabaseConnection::getInstance()->exec($createSql);
     }
 
     private function ensureTableForeignKey(): void
     {
         try {
-            Database::getInstance()->exec(
+            DatabaseConnection::getInstance()->exec(
                 'ALTER TABLE faq_entries
                  ADD CONSTRAINT fk_faq_parent_global
                  FOREIGN KEY (parent_global_id) REFERENCES faq_entries(id) ON DELETE SET NULL'

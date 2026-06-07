@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Skills\SkillInterface;
+use KopiBot\Contracts\SkillInterface;
 
 final class FaqSkill implements SkillInterface
 {

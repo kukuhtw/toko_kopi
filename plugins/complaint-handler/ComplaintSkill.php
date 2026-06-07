@@ -2,23 +2,23 @@
 
 declare(strict_types=1);
 
-use App\Models\OrderModel;
-use App\Skills\SkillInterface;
+use KopiBot\Contracts\SkillInterface;
+use KopiBot\Domains\Order\OrderRepository;
 
 final class ComplaintSkill implements SkillInterface
 {
     private ComplaintTicketRepository $tickets;
     private ComplaintAnalyzer $analyzer;
-    private OrderModel $orders;
+    private OrderRepository $orders;
 
     public function __construct(
         ?ComplaintTicketRepository $tickets = null,
         ?ComplaintAnalyzer $analyzer = null,
-        ?OrderModel $orders = null
+        ?OrderRepository $orders = null
     ) {
         $this->tickets = $tickets ?? new ComplaintTicketRepository();
         $this->analyzer = $analyzer ?? new ComplaintAnalyzer();
-        $this->orders = $orders ?? new OrderModel();
+        $this->orders = $orders ?? new OrderRepository();
     }
 
     public function canHandle(string $intent): bool
@@ -95,7 +95,7 @@ final class ComplaintSkill implements SkillInterface
             return false;
         }
 
-        $recent = $this->orders->getCustomerOrders($customerId, 1);
+        $recent = $this->orders->findRecentByCustomer($customerId, 1);
         return $recent[0] ?? false;
     }
 

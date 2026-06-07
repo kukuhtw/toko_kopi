@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Config\Database;
+use KopiBot\Core\DatabaseConnection;
 
 final class FaqRagResponder
 {
@@ -107,7 +107,7 @@ final class FaqRagResponder
 
     private function loadConfig(): void
     {
-        $rows = Database::getInstance()->query(
+        $rows = DatabaseConnection::getInstance()->query(
             'SELECT setting_key, setting_val FROM app_settings
              WHERE setting_key IN ("llm_provider","llm_api_key","llm_model")'
         )->fetchAll();

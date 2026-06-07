@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Config\Database;
+use KopiBot\Core\DatabaseConnection;
 
 final class ComplaintTicketRepository
 {
@@ -26,7 +26,7 @@ final class ComplaintTicketRepository
         }
 
         foreach ($this->splitSqlStatements($sql) as $statement) {
-            Database::getInstance()->exec($statement);
+            DatabaseConnection::getInstance()->exec($statement);
         }
 
         self::$schemaReady = true;
@@ -39,7 +39,7 @@ final class ComplaintTicketRepository
     {
         $this->ensureSchema();
 
-        $db = Database::getInstance();
+        $db = DatabaseConnection::getInstance();
         $stmt = $db->prepare(
             'INSERT INTO complaint_tickets
             (branch_id, customer_id, conversation_id, order_id, source_channel, status, handling_mode, priority, category, subject, customer_message, ai_reply, internal_note, follow_up_reason)
@@ -70,7 +70,7 @@ final class ComplaintTicketRepository
         $this->ensureSchema();
 
         $resolvedAt = in_array($status, ['resolved', 'closed'], true) ? date('Y-m-d H:i:s') : null;
-        Database::getInstance()->prepare(
+        DatabaseConnection::getInstance()->prepare(
             'UPDATE complaint_tickets
              SET status = ?, internal_note = ?, resolved_at = ?, updated_at = CURRENT_TIMESTAMP
              WHERE id = ?'
@@ -89,7 +89,7 @@ final class ComplaintTicketRepository
         }
         $params[] = $limit;
 
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             "SELECT t.*, c.name AS customer_name, c.identifier AS customer_identifier, o.order_number
              FROM complaint_tickets t
              JOIN customers c ON c.id = t.customer_id
@@ -109,7 +109,7 @@ final class ComplaintTicketRepository
     {
         $this->ensureSchema();
 
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT * FROM complaint_tickets WHERE id = ? AND branch_id = ? LIMIT 1'
         );
         $stmt->execute([$ticketId, $branchId]);
@@ -121,7 +121,7 @@ final class ComplaintTicketRepository
     {
         $this->ensureSchema();
 
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT COUNT(*)
              FROM complaint_tickets
              WHERE branch_id = ? AND customer_id = ?
@@ -136,7 +136,7 @@ final class ComplaintTicketRepository
     {
         $this->ensureSchema();
 
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT
                 SUM(CASE WHEN status IN ("open", "in_progress") AND handling_mode = "human" THEN 1 ELSE 0 END) AS human_open,
                 SUM(CASE WHEN handling_mode = "ai" THEN 1 ELSE 0 END) AS ai_total,

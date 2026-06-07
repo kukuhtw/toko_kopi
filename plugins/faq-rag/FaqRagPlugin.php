@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use App\Plugin\HookManager;
-use App\Plugin\PluginInterface;
-use App\Services\IntentPatternRegistry;
-use App\Skills\SkillRegistry;
+use KopiBot\Contracts\PluginInterface;
+use KopiBot\Core\HookManager;
+use KopiBot\Core\SkillRegistry;
+use KopiBot\Intent\IntentPatternRegistry;
 
 final class FaqRagPlugin implements PluginInterface
 {

@@ -83,6 +83,18 @@ class OrderRepository
         return $row ?: null;
     }
 
+    public function findRecentByCustomer(int $customerId, int $limit = 10): array
+    {
+        $stmt = $this->db->prepare(
+            'SELECT * FROM orders WHERE customer_id = :customer_id ORDER BY created_at DESC LIMIT :limit'
+        );
+        $stmt->bindValue(':customer_id', $customerId, PDO::PARAM_INT);
+        $stmt->bindValue(':limit', max(1, $limit), PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll() ?: [];
+    }
+
     public function findItems(int $tenantId, int $orderId): array
     {
         $stmt = $this->db->prepare('SELECT * FROM order_items WHERE tenant_id = :tenant_id AND order_id = :order_id ORDER BY id ASC');
