@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Models\CustomerModel;
 use App\Models\MenuModel;
 use App\Models\OrderModel;
+use KopiBot\Core\DatabaseConnection;
 
 final class SircloConnectorService
 {
@@ -84,7 +84,7 @@ final class SircloConnectorService
         }
 
         $limit = max(1, min(200, $limit));
-        $rows = \App\Config\Database::getInstance()->prepare(
+        $rows = DatabaseConnection::getInstance()->prepare(
             'SELECT c.id, c.name, c.email, c.whatsapp, c.channel, MAX(o.created_at) AS last_order_at
              FROM customers c
              JOIN orders o ON o.customer_id = c.id

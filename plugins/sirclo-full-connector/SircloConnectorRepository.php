@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Config\Database;
+use KopiBot\Core\DatabaseConnection;
 
 final class SircloConnectorRepository
 {
@@ -12,7 +12,7 @@ final class SircloConnectorRepository
 
     public function __construct()
     {
-        $this->db = Database::getInstance();
+        $this->db = DatabaseConnection::getInstance();
     }
 
     public function ensureSchema(): void
