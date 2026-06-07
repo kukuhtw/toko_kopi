@@ -160,6 +160,12 @@ Jalankan demo seed:
 php seed.php
 ```
 
+Untuk validasi jalur instalasi web (`public/install.php`) setelah instalasi selesai, gunakan checklist:
+
+```text
+tests/smoke_web_installer.md
+```
+
 ## Menjalankan Server
 
 ```bash

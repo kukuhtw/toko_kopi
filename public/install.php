@@ -207,22 +207,9 @@ function runInstallation(): array
         return ['success' => false, 'errors' => ['Koneksi ke database gagal: ' . $e->getMessage()]];
     }
 
-    $schemaFile = DB_DIR . '/schema.sql';
-    if (!file_exists($schemaFile)) {
-        return ['success' => false, 'errors' => ['File database/schema.sql tidak ditemukan.']];
-    }
-
-    $schemaErrors = executeSqlFile($pdo, $schemaFile);
-    if ($schemaErrors) {
-        $errors = array_merge($errors, array_map(fn($e) => "[schema] $e", $schemaErrors));
-    }
-
-    $seedFile = DB_DIR . '/seed.sql';
-    if (file_exists($seedFile)) {
-        $seedErrors = executeSqlFile($pdo, $seedFile);
-        if ($seedErrors) {
-            $errors = array_merge($errors, array_map(fn($e) => "[seed] $e", $seedErrors));
-        }
+    $databaseBootstrapErrors = runInstallerDatabaseBootstrap($pdo);
+    if ($databaseBootstrapErrors) {
+        $errors = array_merge($errors, $databaseBootstrapErrors);
     }
 
     try {
@@ -354,24 +341,140 @@ function bootstrapInstallerTemplateRuntime(array $db): ?string
         }
     }
 
-    spl_autoload_register(static function (string $class): void {
-        $prefix = 'App\\';
+    $bootstrapFile = ROOT . '/bootstrap.php';
+    if (file_exists($bootstrapFile)) {
+        require_once $bootstrapFile;
+    } else {
+        spl_autoload_register(static function (string $class): void {
+            $prefix = 'App\\';
 
-        if (strncmp($prefix, $class, strlen($prefix)) !== 0) {
-            return;
-        }
+            if (strncmp($prefix, $class, strlen($prefix)) !== 0) {
+                return;
+            }
 
-        $relativeClass = substr($class, strlen($prefix));
-        $file = ROOT . '/app/' . str_replace('\\', '/', $relativeClass) . '.php';
+            $relativeClass = substr($class, strlen($prefix));
+            $file = ROOT . '/app/' . str_replace('\\', '/', $relativeClass) . '.php';
 
-        if (file_exists($file)) {
-            require_once $file;
-        }
-    });
+            if (file_exists($file)) {
+                require_once $file;
+            }
+        });
+    }
 
     $bootstrapped = true;
 
     return null;
+}
+
+function bootstrapInstallerComposerAutoload(): bool
+{
+    static $autoloaded = false;
+
+    if ($autoloaded) {
+        return true;
+    }
+
+    $autoloadFile = ROOT . '/vendor/autoload.php';
+    if (!file_exists($autoloadFile)) {
+        return false;
+    }
+
+    require_once $autoloadFile;
+    $autoloaded = true;
+
+    return true;
+}
+
+function runInstallerDatabaseBootstrap(PDO $pdo): array
+{
+    $migrationDir = DB_DIR . '/migrations';
+    $seederDir = DB_DIR . '/seeders';
+
+    if (is_dir($migrationDir) && bootstrapInstallerComposerAutoload() && class_exists(\KopiBot\Core\MigrationRunner::class)) {
+        $runner = new \KopiBot\Core\MigrationRunner($pdo);
+        $results = $runner->run($migrationDir);
+        $errors = collectMigrationErrors($results, 'migration');
+
+        if ($errors !== []) {
+            return $errors;
+        }
+
+        if (is_dir($seederDir)) {
+            $seedErrors = executeSqlFilesInDirectory($pdo, $seederDir, 'seeder');
+            if ($seedErrors !== []) {
+                return $seedErrors;
+            }
+        } elseif (file_exists(DB_DIR . '/seed.sql')) {
+            $seedErrors = executeSqlFile($pdo, DB_DIR . '/seed.sql');
+            if ($seedErrors !== []) {
+                return array_map(fn($e) => "[seed] $e", $seedErrors);
+            }
+        }
+
+        return [];
+    }
+
+    $schemaFile = DB_DIR . '/schema.sql';
+    if (!file_exists($schemaFile)) {
+        return ['File database/schema.sql tidak ditemukan dan migration runner Composer tidak tersedia.'];
+    }
+
+    $errors = [];
+    $schemaErrors = executeSqlFile($pdo, $schemaFile);
+    if ($schemaErrors) {
+        $errors = array_merge($errors, array_map(fn($e) => "[schema] $e", $schemaErrors));
+    }
+
+    $seedFile = DB_DIR . '/seed.sql';
+    if (file_exists($seedFile)) {
+        $seedErrors = executeSqlFile($pdo, $seedFile);
+        if ($seedErrors) {
+            $errors = array_merge($errors, array_map(fn($e) => "[seed] $e", $seedErrors));
+        }
+    }
+
+    return $errors;
+}
+
+function collectMigrationErrors(array $results, string $label): array
+{
+    $errors = [];
+
+    foreach ($results as $result) {
+        if (($result['status'] ?? '') === 'failed') {
+            $errors[] = sprintf(
+                '[%s:%s] %s',
+                $label,
+                (string) ($result['migration'] ?? 'unknown'),
+                (string) ($result['error'] ?? 'unknown error')
+            );
+        }
+    }
+
+    return $errors;
+}
+
+function executeSqlFilesInDirectory(PDO $pdo, string $directory, string $label): array
+{
+    $files = glob(rtrim($directory, '/\\') . '/*.sql') ?: [];
+    sort($files);
+
+    $errors = [];
+    foreach ($files as $file) {
+        $fileErrors = executeSqlFile($pdo, $file);
+        if ($fileErrors !== []) {
+            $errors = array_merge(
+                $errors,
+                array_map(
+                    fn($e) => sprintf('[%s:%s] %s', $label, basename($file), $e),
+                    $fileErrors
+                )
+            );
+            break;
+        }
+    }
+
+    return $errors;
 }
 
 function persistInstalledAppSettings(PDO $pdo, array $app, string $catalogTemplate): ?string
@@ -797,6 +900,9 @@ function discoverPlugins(): array
     if (!is_dir($pluginsDir)) {
         return [];
     }
+
+    bootstrapInstallerComposerAutoload();
+
     $defaults = array_flip(getDefaultPluginSelection());
     $dirs = array_filter(scandir($pluginsDir) ?: [], static function (string $name) use ($pluginsDir): bool {
         return $name !== '.' && $name !== '..' && is_dir($pluginsDir . '/' . $name);
@@ -814,11 +920,51 @@ function discoverPlugins(): array
             if (preg_match("/'description'\s*=>\s*'([^']*)'/u", $content, $m) && $m[1] !== '') {
                 $description = $m[1];
             }
+
+            if ($name === ucwords(str_replace('-', ' ', $slug)) || $description === 'Plugin tambahan untuk fitur aplikasi.') {
+                $metadata = extractPluginMetadataFromDirectory($pluginsDir . '/' . $slug);
+                if (!empty($metadata['name'])) {
+                    $name = $metadata['name'];
+                }
+                if (!empty($metadata['description'])) {
+                    $description = $metadata['description'];
+                }
+            }
         }
         $plugins[] = ['slug' => $slug, 'name' => $name, 'description' => $description, 'active' => isset($defaults[$slug])];
     }
     usort($plugins, static fn(array $a, array $b): int => strcmp($a['name'], $b['name']));
     return $plugins;
+}
+
+function extractPluginMetadataFromDirectory(string $pluginDir): array
+{
+    $metadata = [
+        'name' => null,
+        'description' => null,
+    ];
+
+    foreach (glob($pluginDir . '/*.php') ?: [] as $file) {
+        $content = (string)file_get_contents($file);
+
+        if ($metadata['name'] === null
+            && preg_match('/function\s+getName\s*\(\)\s*:\s*string\s*\{[^\}]*return\s+[\'"]([^\'"]+)[\'"]/su', $content, $match)
+        ) {
+            $metadata['name'] = $match[1];
+        }
+
+        if ($metadata['description'] === null
+            && preg_match('/function\s+getDescription\s*\(\)\s*:\s*string\s*\{[^\}]*return\s+[\'"]([^\'"]+)[\'"]/su', $content, $match)
+        ) {
+            $metadata['description'] = $match[1];
+        }
+
+        if ($metadata['name'] !== null && $metadata['description'] !== null) {
+            break;
+        }
+    }
+
+    return $metadata;
 }
 
 function getDefaultPluginSelection(): array
