@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Plugin\ChannelRouter;
+use KopiBot\Contracts\ChannelInterface;
 use KopiBot\Contracts\PluginInterface;
 use KopiBot\Core\DatabaseConnection;
 use KopiBot\Core\HookManager;
@@ -562,7 +562,7 @@ class CustomerCrmPlugin implements PluginInterface
      */
     private function resolveWhatsAppChannels(): array
     {
-        $registered = ChannelRouter::all();
+        $registered = $this->registeredChannels();
         $preferredNames = [
             'whatsapp',
             'whatsapp_baileys',
@@ -594,6 +594,28 @@ class CustomerCrmPlugin implements PluginInterface
             }
 
             $channels[] = $channel;
+        }
+
+        return $channels;
+    }
+
+    /**
+     * @return array<string, object>
+     */
+    private function registeredChannels(): array
+    {
+        $raw = HookManager::applyFilters('channel.registered', []);
+        $channels = [];
+
+        foreach ((array) $raw as $name => $channel) {
+            if ($channel instanceof ChannelInterface) {
+                $channels[(string) $name] = $channel;
+                continue;
+            }
+
+            if (is_object($channel) && method_exists($channel, 'sendMessage') && method_exists($channel, 'isAvailable')) {
+                $channels[(string) $name] = $channel;
+            }
         }
 
         return $channels;
