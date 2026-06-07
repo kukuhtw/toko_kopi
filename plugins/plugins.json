@@ -119,6 +119,9 @@
     "tiktokshop-integration": {
         "active": false
     },
+    "shopee-integration": {
+        "active": false
+    },
     "about-us-ai": {
         "active": false
     }

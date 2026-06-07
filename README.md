@@ -1,24 +1,211 @@
-# KopiBot MVP Core
+# KopiBot AI Agent Commerce Platform
 
-KopiBot adalah fondasi **AI Agent Commerce Platform** berbasis PHP native yang sedang dimigrasikan ke arsitektur Composer secara bertahap. Branch `composer-mvp-core` berisi versi MVP core terbaru dengan autoload Composer, konfigurasi `.env`, migration runner, seed demo, REST API, JWT auth, domain service modular, WhatsApp webhook, smoke test, dan plugin payment sederhana.
+KopiBot adalah platform commerce modular berbasis PHP yang menggabungkan katalog produk, cart, order, CRM, loyalty, promo, chatbot, payment, delivery, dan plugin bisnis ke dalam satu fondasi aplikasi.
 
-Repo ini masih mempertahankan arah awal sebagai sistem order coffee shop, tetapi struktur terbaru sudah diperluas menjadi fondasi commerce modular untuk produk, cart, order, customer, CRM, loyalty, promo, FAQ, chatbot, payment, tenant, branch, dan integrasi channel.
+Repo ini sudah bergerak ke arsitektur Composer dengan namespace `KopiBot\...`, bootstrap terpusat, migration runner, seeder, plugin modern, dan kumpulan smoke test untuk verifikasi runtime.
 
-## Status Branch
+Dokumen gambaran arsitektur yang lebih detail tersedia di:
 
-Branch aktif: `composer-mvp-core`
+```text
+docs/architecture-overview.md
+```
 
-Status utama branch ini:
+## Ringkasan
 
-- Composer foundation sudah tersedia.
-- Bootstrap utama sudah tersedia melalui `bootstrap.php`.
-- `.env.example` sudah tersedia.
-- REST API tersedia di `public/api/index.php`.
-- Database migration tersedia di `database/migrations/`.
-- Demo seed tersedia di `database/seeders/`.
-- Smoke test tersedia di `tests/`.
-- Dokumentasi OpenAPI tersedia di `docs/openapi.yaml`.
-- Webhook WhatsApp tersedia di `public/webhooks/whatsapp.php`.
+- Fokus utama aplikasi:
+  - penjualan produk dan checkout
+  - order via dashboard, API, dan channel chat
+  - CRM, loyalty, promo, FAQ, dan memory chatbot
+  - payment gateway, delivery, channel messaging, dan connector eksternal lewat plugin
+- Cocok untuk:
+  - coffee shop
+  - restoran
+  - bakery
+  - minimarket
+  - apotek
+  - fresh market
+  - retail dan bisnis layanan yang butuh alur order + chatbot + plugin
+
+## Arsitektur Baru
+
+Arsitektur baru memakai Composer sebagai fondasi runtime utama:
+
+- `bootstrap.php`
+  Memuat `vendor/autoload.php` dan menjalankan boot aplikasi.
+- `src/`
+  Berisi core application, domain services, repository, channel, auth, payment, dan state AI.
+- `config/runtime.php`
+  Menetapkan constant runtime, load `.env`, path penting, dan konfigurasi global.
+- `database/migrations/`
+  Sumber utama schema inti aplikasi.
+- `database/seeders/`
+  Seed demo untuk baseline data awal.
+- `plugins/`
+  Plugin bisnis, payment, delivery, CRM, content, connector, dan channel.
+
+Struktur namespace utama:
+
+- `KopiBot\App`
+- `KopiBot\Core\...`
+- `KopiBot\Domains\...`
+- `KopiBot\Contracts\...`
+- `KopiBot\Services\...`
+
+Kompatibilitas legacy masih ada di beberapa titik transisi, tetapi baseline repo sekarang diarahkan ke runtime Composer.
+
+## Cara Kerja Sistem
+
+Secara sederhana, alurnya seperti ini:
+
+1. Produk, promo, FAQ, dan pengaturan bisnis disimpan di database.
+2. Customer masuk lewat web, API, atau channel seperti WhatsApp/Telegram.
+3. Chatbot atau UI membantu customer memilih produk, membuat cart, lalu checkout.
+4. Order diproses ke payment, delivery, CRM, loyalty, dan plugin terkait.
+5. Dashboard dipakai admin untuk operasional, monitoring, konten, dan konfigurasi plugin.
+
+Komponen penting di balik alur ini:
+
+- katalog dan pencarian produk
+- cart dan checkout
+- order dan payment
+- customer profile dan CRM event
+- loyalty dan promo
+- FAQ dan response engine
+- channel messaging
+- plugin integration layer
+
+## Apps / Modul Bisnis
+
+Di repo ini, "apps" lebih tepat dibaca sebagai modul aplikasi atau kapabilitas bisnis yang bisa dipakai bersama-sama.
+
+Modul inti:
+
+- `Catalog`
+  Mengelola produk, kategori, varian, topping, harga, dan pencarian.
+- `Cart & Checkout`
+  Menangani add-to-cart, session cart, checkout, dan pembentukan order.
+- `Order`
+  Menyimpan order, item order, status order, dan alur pasca-checkout.
+- `Payment`
+  Menangani provider payment dan plugin gateway seperti Midtrans, Xendit, iPaymu, Nicepay.
+- `Customer & CRM`
+  Menyimpan customer, histori interaksi, dan event CRM.
+- `Loyalty`
+  Menangani poin, transaksi loyalty, dan reward.
+- `Promo`
+  Menangani promo, validasi promo, dan personalisasi rekomendasi promo.
+- `FAQ & Chatbot`
+  Menjawab pertanyaan umum, intent routing, dan percakapan berbasis AI/rule.
+- `Channel Messaging`
+  Menghubungkan WhatsApp, Telegram, Discord, Instagram DM, dan channel lain.
+- `Delivery & Connector`
+  Menghubungkan GoSend, RajaOngkir, KiriminAja, Moka, SIRCLO, dan connector lain.
+- `Content & CMS`
+  Modul seperti CMS berita, About Us AI, promo CMS, dan content generator.
+
+## Bisnis Proses
+
+### 1. Discovery dan Konversi
+
+- Customer menemukan brand lewat web, chat, referral, atau campaign.
+- Customer melihat produk, promo, FAQ, atau rekomendasi chatbot.
+- Customer membuat cart dan checkout.
+
+### 2. Pembayaran dan Fulfillment
+
+- Order dibentuk.
+- Payment provider memproses pembayaran.
+- Status order diperbarui.
+- Jika perlu, plugin delivery atau connector eksternal ikut memproses order.
+
+### 3. Retention
+
+- CRM mencatat aktivitas customer.
+- Loyalty memberi poin atau reward.
+- Promo engine dan chatbot membantu repeat order.
+
+### 4. Operasional Admin
+
+- Admin mengatur produk, promo, konten, channel, dan plugin.
+- Admin memantau order, payment, delivery, CRM, dan AI activity.
+
+## Dashboard dan Login
+
+### Siapa yang Login
+
+Peran utama yang umum di repo ini:
+
+- `super_admin`
+  Mengelola aplikasi secara global: konfigurasi sistem, plugin, integrasi, branch, dan runtime.
+- `branch_admin`
+  Mengelola operasional per cabang: produk, order, promo, channel, konten, dan monitoring cabang.
+- `customer`
+  Tidak memakai dashboard admin, tetapi berinteraksi lewat storefront, API, atau channel chat.
+- `affiliate` atau role/plugin khusus
+  Beberapa plugin menambah portal atau flow login sendiri, misalnya affiliate.
+
+### Dashboard Dipakai Untuk Apa
+
+- `Super Admin Dashboard`
+  Untuk owner, admin pusat, atau tim implementasi.
+  Fokus:
+  - aktivasi plugin
+  - pengaturan global
+  - branch dan tenant
+  - connector dan payment runtime
+  - audit dan monitoring
+
+- `Branch Admin Dashboard`
+  Untuk operator toko/cabang.
+  Fokus:
+  - produk dan katalog
+  - order harian
+  - promo dan loyalty
+  - CRM dan customer
+  - chatbot, FAQ, konten, dan integrasi cabang
+
+### Entry Login
+
+Entry login dapat berbeda tergantung flow lama vs runtime baru, tetapi secara praktik:
+
+- login admin dipakai untuk masuk dashboard
+- API login dipakai untuk token JWT
+- beberapa plugin punya login atau portal sendiri
+
+Contoh endpoint API login:
+
+```text
+POST /api/auth/login
+```
+
+## Struktur Folder
+
+```text
+.
+├── bootstrap.php
+├── composer.json
+├── config/
+│   ├── helpers.php
+│   └── runtime.php
+├── database/
+│   ├── migrations/
+│   ├── seeders/
+│   └── *.sql
+├── docs/
+├── plugins/
+├── public/
+│   ├── api/
+│   ├── dashboard/
+│   ├── install.php
+│   └── webhooks/
+├── src/
+│   ├── Contracts/
+│   ├── Core/
+│   ├── Domains/
+│   ├── Channels/
+│   └── Services/
+└── tests/
+```
 
 ## Tech Stack
 
@@ -26,99 +213,24 @@ Status utama branch ini:
 - Composer
 - MySQL
 - PDO
-- Dotenv `vlucas/phpdotenv`
-- Guzzle HTTP
+- `vlucas/phpdotenv`
+- Guzzle
 - Monolog
-- Firebase PHP JWT
+- Firebase JWT
 - PHPUnit
 - PHPStan
 - PHP CS Fixer
-
-## Struktur Folder Utama
-
-```text
-.
-├── bootstrap.php
-├── composer.json
-├── config/
-│   └── helpers.php
-├── database/
-│   ├── migrations/
-│   └── seeders/
-├── docs/
-│   ├── openapi.yaml
-│   └── whatsapp-webhook.md
-├── plugins/
-│   └── Payment/
-├── public/
-│   ├── api/
-│   │   └── index.php
-│   └── webhooks/
-│       └── whatsapp.php
-├── src/
-│   ├── Channels/
-│   ├── Core/
-│   └── Domains/
-└── tests/
-```
-
-## Fitur Utama MVP
-
-| Area | Fitur |
-|---|---|
-| Core | Router, Request, Response, Config, Database, Logger, Exception Handler |
-| Auth | Register, login, JWT service, password hashing, role permission service |
-| Tenant & Branch | Tenant context, branch context, branch repository, branch service |
-| Product | Product repository, product service, product search |
-| Cart | Add item, cart service, cart repository, checkout flow |
-| Order | Order DTO, order repository, order service, order status |
-| Payment | Payment DTO, payment service, payment repository, payment provider interface, mock payment provider |
-| Customer | Customer DTO, customer repository, customer service |
-| CRM | CRM event DTO, repository, service |
-| Loyalty | Loyalty rule, loyalty service, transaction DTO, transaction type |
-| Promo | Promo DTO, validator, result, service, repository |
-| FAQ | FAQ repository, FAQ service, keyword search |
-| Chatbot | Intent detector, message router, cart intent parser, response builder, rule based chatbot |
-| AI Commerce | Commerce agent, intent extractor, product resolver, recommendation engine, conversation memory/state |
-| Channel | WhatsApp gateway interface, Fonnte gateway, incoming/outgoing DTO, webhook service |
-| Migration | Migration runner dan SQL migration berurutan |
-| Testing | Smoke test untuk core, auth, product, cart, order, payment, promo, loyalty, CRM, FAQ, chatbot, conversation state |
-
-## Composer Autoload
-
-`composer.json` memakai PSR-4:
-
-```json
-{
-  "autoload": {
-    "psr-4": {
-      "KopiBot\\": "src/",
-      "KopiBot\\Plugins\\": "plugins/"
-    },
-    "files": [
-      "config/helpers.php"
-    ]
-  }
-}
-```
-
-Setelah mengubah autoload, jalankan:
-
-```bash
-composer dump-autoload
-```
 
 ## Instalasi Lokal
 
 ```bash
 git clone https://github.com/kukuhtw/toko_kopi.git
 cd toko_kopi
-git checkout composer-mvp-core
 composer install
 cp .env.example .env
 ```
 
-Edit `.env` sesuai database lokal:
+Isi `.env` minimal:
 
 ```env
 APP_NAME=KopiBot
@@ -126,7 +238,6 @@ APP_ENV=local
 APP_DEBUG=true
 APP_URL=http://localhost:8000
 
-DB_DRIVER=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_DATABASE=kopibot
@@ -135,44 +246,58 @@ DB_PASSWORD=
 
 JWT_SECRET=change-this-secret-in-production
 JWT_TTL_SECONDS=86400
-
-FONNTE_TOKEN=
-FONNTE_SEND_URL=https://api.fonnte.com/send
 ```
 
-## Migration dan Seeder
+## Database
 
-Jalankan migration:
+### Jalur Utama
+
+Gunakan migration runner:
 
 ```bash
 composer migrate
 ```
 
-Atau langsung:
+atau:
 
 ```bash
 php migrate.php
 ```
 
-Jalankan demo seed:
+Jika ingin seed baseline demo:
 
 ```bash
 php seed.php
 ```
 
-Untuk validasi jalur instalasi web (`public/install.php`) setelah instalasi selesai, gunakan checklist:
+### Jalur Web Installer
+
+Installer tersedia di:
+
+```text
+public/install.php
+```
+
+Installer web sekarang sudah:
+
+- memakai runtime Composer untuk template/plugin modern
+- memakai `database/migrations/` bila tersedia
+- melanjutkan ke `database/seeders/` bila tersedia
+- fallback ke `schema.sql` dan `seed.sql` hanya jika migration runner tidak tersedia
+
+Checklist validasi installer:
 
 ```text
 tests/smoke_web_installer.md
 ```
 
-## Menjalankan Server
+## Menjalankan Aplikasi
 
 ```bash
 composer serve
 ```
 
-Atau:
+atau:
 
 ```bash
 php -S localhost:8000 -t public
@@ -184,136 +309,33 @@ Health check:
 curl http://localhost:8000/api/health
 ```
 
-Response:
+## REST API
 
-```json
-{
-  "success": true,
-  "service": "KopiBot API",
-  "status": "ok"
-}
-```
-
-## Endpoint REST API MVP
-
-Entry point API ada di:
+Entry point API:
 
 ```text
 public/api/index.php
 ```
 
-Endpoint utama:
+Endpoint inti:
 
 | Method | Endpoint | Fungsi |
 |---|---|---|
-| GET | `/api/health` | Cek status API |
-| POST | `/api/auth/register` | Register user |
-| POST | `/api/auth/login` | Login dan mendapatkan token |
-| GET | `/api/products` | Ambil produk atau cari produk |
-| POST | `/api/cart/add` | Tambah item ke cart, butuh JWT |
-| POST | `/api/cart/checkout` | Checkout cart, butuh JWT |
-| POST | `/api/chatbot/message` | Proses pesan chatbot |
+| `GET` | `/api/health` | Cek status API |
+| `POST` | `/api/auth/register` | Register user |
+| `POST` | `/api/auth/login` | Login dan token JWT |
+| `GET` | `/api/products` | List / search produk |
+| `POST` | `/api/cart/add` | Tambah item ke cart |
+| `POST` | `/api/cart/checkout` | Checkout cart |
+| `POST` | `/api/chatbot/message` | Kirim pesan ke chatbot |
 
-Dokumentasi kontrak API tersedia di:
+Dokumentasi kontrak API:
 
 ```text
 docs/openapi.yaml
 ```
 
-## Contoh API
-
-### Health Check
-
-```bash
-curl http://localhost:8000/api/health
-```
-
-### Register
-
-```bash
-curl -X POST http://localhost:8000/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "tenant_id": 1,
-    "name": "Admin",
-    "email": "admin@example.com",
-    "password": "secret123",
-    "role": "merchant_admin"
-  }'
-```
-
-### Login
-
-```bash
-curl -X POST http://localhost:8000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "tenant_id": 1,
-    "email": "admin@example.com",
-    "password": "secret123"
-  }'
-```
-
-### Product List
-
-```bash
-curl "http://localhost:8000/api/products?tenant_id=1&branch_id=1"
-```
-
-### Product Search
-
-```bash
-curl "http://localhost:8000/api/products?tenant_id=1&branch_id=1&q=kopi"
-```
-
-### Add Cart Item
-
-```bash
-curl -X POST http://localhost:8000/api/cart/add \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
-  -d '{
-    "branch_id": 1,
-    "customer_id": 1,
-    "session_id": "api-session",
-    "product_id": 1,
-    "product_name": "Cappuccino",
-    "qty": 2,
-    "price": 25000
-  }'
-```
-
-### Checkout
-
-```bash
-curl -X POST http://localhost:8000/api/cart/checkout \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
-  -d '{
-    "branch_id": 1,
-    "customer_id": 1,
-    "session_id": "api-session",
-    "customer_name": "Budi",
-    "customer_email": "budi@example.com",
-    "customer_phone": "628129893706"
-  }'
-```
-
-### Chatbot Message
-
-```bash
-curl -X POST http://localhost:8000/api/chatbot/message \
-  -H "Content-Type: application/json" \
-  -d '{
-    "tenant_id": 1,
-    "branch_id": 1,
-    "channel": "api",
-    "sender_id": "guest-1",
-    "message": "Saya mau pesan cappuccino 2"
-  }'
-```
-
-## WhatsApp Webhook
+## Webhook dan Channel
 
 Webhook WhatsApp tersedia di:
 
@@ -321,124 +343,94 @@ Webhook WhatsApp tersedia di:
 public/webhooks/whatsapp.php
 ```
 
-Service yang terkait:
+Komponen terkait:
 
 ```text
 src/Channels/WhatsApp/FonnteGateway.php
 src/Channels/WhatsApp/WhatsAppWebhookService.php
 src/Channels/WhatsApp/WhatsAppGatewayInterface.php
-src/Channels/WhatsApp/IncomingMessageDTO.php
-src/Channels/WhatsApp/OutgoingMessageDTO.php
 ```
 
-Dokumentasi webhook:
+## Plugin System
+
+Plugin aktif disimpan di:
 
 ```text
-docs/whatsapp-webhook.md
+plugins/plugins.json
 ```
 
-## Docker Quick Start
+Plugin modern di repo ini umumnya:
 
-```bash
-docker compose up -d
-```
+- mengimplementasikan `KopiBot\Contracts\PluginInterface`
+- memakai `KopiBot\Core\HookManager`
+- memakai `KopiBot\Core\DatabaseConnection`
+- menambahkan nav/settings/action lewat hook
 
-Setelah container database aktif, tetap jalankan Composer install, migration, dan seeder di environment PHP yang dipakai:
+Contoh kategori plugin:
 
-```bash
-composer install
-composer migrate
-php seed.php
-```
+- payment gateway
+- delivery
+- connector marketplace / POS
+- CRM / loyalty / promo
+- channel messaging
+- content / AI tools
 
-## Smoke Test
+## Testing dan Verifikasi
 
-Composer script yang tersedia:
+Smoke test tersedia di folder `tests/`.
+
+Contoh:
 
 ```bash
 composer smoke:core
 composer smoke:auth
 composer smoke:chatbot
+composer smoke:migration
+composer smoke:plugin
+composer smoke:payment
+composer smoke:api
 ```
 
-Smoke test lain tersedia di folder `tests/`, misalnya:
+Atau jalankan semuanya:
 
 ```bash
-php tests/smoke_product.php
-php tests/smoke_cart.php
-php tests/smoke_order.php
-php tests/smoke_payment.php
-php tests/smoke_promo.php
-php tests/smoke_loyalty.php
-php tests/smoke_crm.php
-php tests/smoke_faq.php
-php tests/smoke_conversation_state.php
+composer smoke:all
 ```
+
+Checklist manual tambahan:
+
+- `tests/smoke_web_installer.md`
+- `tests/smoke_affiliate_marketing.md`
+- `tests/smoke_about_us_ai.md`
 
 ## Quality Tools
 
-Jalankan PHPUnit:
-
 ```bash
 composer test
-```
-
-Jalankan PHPStan:
-
-```bash
 composer analyse
-```
-
-Jalankan PHP CS Fixer:
-
-```bash
 composer cs-fix
 ```
 
-Catatan: `phpunit.xml` belum tersedia pada status issue terakhir. Jika `composer test` belum berjalan, tambahkan `phpunit.xml` lebih dulu.
+## Status Saat Ini
 
-## Plugin dan Compatibility
+Secara praktis, baseline repo sekarang adalah:
 
-Branch ini memakai Composer namespace baru `KopiBot\Plugins\` untuk plugin di folder `plugins/`.
+- arsitektur Composer sudah aktif
+- installer web sudah lebih selaras dengan runtime baru
+- plugin penting banyak yang sudah dimigrasikan ke kontrak baru
+- beberapa plugin masih berupa scaffold atau placeholder dan belum integrasi real end-to-end
 
-Sistem plugin lama berbasis:
+Area yang biasanya masih perlu verifikasi manual:
 
-```text
-app/Plugin/PluginLoader.php
-app/Plugin/HookManager.php
-app/Plugin/PluginInterface.php
-plugins/plugins.json
-```
-
-masih dapat dipertahankan selama file lama tersebut tetap ada dan bootstrap lama masih memanggilnya.
-
-Untuk backward compatibility jangka panjang, disarankan menambahkan mapping berikut ke Composer autoload jika kode lama `App\...` masih dipakai:
-
-```json
-{
-  "autoload": {
-    "psr-4": {
-      "App\\": "app/"
-    }
-  }
-}
-```
-
-## Catatan Issue #8
-
-Sesuai Issue #8, beberapa item Composer foundation sudah selesai, tetapi masih ada beberapa pekerjaan lanjutan yang perlu dirapikan:
-
-- Review `.gitignore` agar `.env` dan `/vendor/` tidak ikut commit.
-- Buat `src/App.php` jika ingin entry point aplikasi formal.
-- Pastikan semua entry point memakai `vendor/autoload.php` melalui `bootstrap.php`.
-- Pastikan `.env` sepenuhnya dimuat melalui `vlucas/phpdotenv`.
-- Tambahkan `phpunit.xml`.
-- Tambahkan unit test sederhana untuk App atau Database config.
+- parity install web vs CLI migration
+- plugin scaffold seperti content AI atau connector baru
+- flow admin dashboard dan plugin settings
+- integrasi provider eksternal nyata
 
 ## Maintainer
 
 Dibuat dan dikembangkan oleh Kukuh TW.
 
-- Email: kukuhtw@gmail.com
-- WhatsApp: https://wa.me/628129893706
-- GitHub: https://github.com/kukuhtw/toko_kopi
+- Email: `kukuhtw@gmail.com`
+- WhatsApp: `https://wa.me/628129893706`
+- GitHub: `https://github.com/kukuhtw/toko_kopi`
