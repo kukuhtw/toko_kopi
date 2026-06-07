@@ -70,6 +70,7 @@ Entry point publik menerima request dari luar:
 
 - `public/api/index.php`
 - `public/install.php`
+- `public/api/channel/webhook.php`
 - `public/webhooks/*`
 - halaman dashboard lama atau transisi di `public/dashboard/*`
 
@@ -78,6 +79,12 @@ Peran entry point idealnya tipis:
 - validasi request
 - panggil service/domain
 - kembalikan response
+
+Catatan transisi:
+
+- beberapa endpoint lama masih dipertahankan sebagai compatibility dispatcher
+- contoh paling jelas adalah `public/api/whatsapp/webhook.php`
+- untuk channel modern, webhook utama diarahkan ke `public/api/channel/webhook.php`
 
 ### 4. Plugin Layer
 

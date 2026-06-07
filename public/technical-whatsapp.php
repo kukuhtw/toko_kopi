@@ -78,7 +78,7 @@ require_once dirname(__DIR__) . '/app/Config/config.php';
     <div class="doc-grid">
       <div class="doc-card">
         <h2 data-t-id="1. Endpoint Utama" data-t-en="1. Main Endpoint">1. Endpoint Utama</h2>
-        <p data-t-id="Provider WhatsApp legacy masuk lewat satu endpoint yang sama:" data-t-en="Legacy WhatsApp providers enter through the same endpoint:">Provider WhatsApp legacy masuk lewat satu endpoint yang sama:</p>
+        <p data-t-id="Provider WhatsApp legacy masuk lewat satu endpoint kompatibilitas yang sama:" data-t-en="Legacy WhatsApp providers enter through the same compatibility endpoint:">Provider WhatsApp legacy masuk lewat satu endpoint kompatibilitas yang sama:</p>
         <code><?= BASE_URL ?>/api/whatsapp/webhook.php</code>
         <p data-t-id="Untuk konfigurasi per cabang, sistem juga mendukung URL khusus cabang:" data-t-en="For per-branch configuration, the system also supports a branch-specific URL:">Untuk konfigurasi per cabang, sistem juga mendukung URL khusus cabang:</p>
         <code><?= BASE_URL ?>/api/whatsapp/webhook.php?branch=&lt;BRANCH_ID&gt;</code>
@@ -88,16 +88,17 @@ require_once dirname(__DIR__) . '/app/Config/config.php';
           URL khusus cabang paling aman dipakai untuk provider legacy seperti Wablas karena branch bisa diikat langsung dari query string.
         </p>
         <p class="mini-note"
-           data-t-id="Fonnte, Twilio, dan Vonage sekarang memakai endpoint plugin channel per cabang di /api/channel/webhook.php."
-           data-t-en="Fonnte, Twilio, and Vonage now use per-branch plugin channel endpoints under /api/channel/webhook.php.">
-          Fonnte, Twilio, dan Vonage sekarang memakai endpoint plugin channel per cabang di /api/channel/webhook.php.
+           data-t-id="Endpoint /api/whatsapp/webhook.php sekarang berfungsi terutama sebagai compatibility dispatcher. Setup baru disarankan langsung memakai /api/channel/webhook.php sesuai channel masing-masing."
+           data-t-en="The /api/whatsapp/webhook.php endpoint now mainly acts as a compatibility dispatcher. New setups should directly use /api/channel/webhook.php for the relevant channel.">
+          Endpoint <code>/api/whatsapp/webhook.php</code> sekarang berfungsi terutama sebagai compatibility dispatcher. Setup baru disarankan langsung memakai <code>/api/channel/webhook.php</code> sesuai channel masing-masing.
         </p>
       </div>
 
       <div class="doc-card">
         <h2 data-t-id="2. File Teknis yang Terlibat" data-t-en="2. Technical Files Involved">2. File Teknis yang Terlibat</h2>
         <ul>
-          <li><strong data-t-id="Endpoint webhook:" data-t-en="Webhook endpoint:">Endpoint webhook:</strong> <code>public/api/whatsapp/webhook.php</code></li>
+          <li><strong data-t-id="Endpoint kompatibilitas:" data-t-en="Compatibility endpoint:">Endpoint kompatibilitas:</strong> <code>public/api/whatsapp/webhook.php</code></li>
+          <li><strong data-t-id="Endpoint channel resmi:" data-t-en="Official channel endpoint:">Endpoint channel resmi:</strong> <code>public/api/channel/webhook.php</code></li>
           <li><strong data-t-id="Factory provider:" data-t-en="Provider factory:">Factory provider:</strong> <code>app/WhatsAppProviders/ProviderFactory.php</code></li>
           <li><strong data-t-id="Adapter Meta Cloud API:" data-t-en="Meta Cloud API adapter:">Adapter Meta Cloud API:</strong> <code>app/WhatsAppProviders/MetaCloudApiProvider.php</code></li>
           <li><strong data-t-id="Plugin channel Fonnte:" data-t-en="Fonnte plugin channel:">Plugin channel Fonnte:</strong> <code>plugins/fonnte-whatsapp/FonnteWhatsAppChannel.php</code></li>
