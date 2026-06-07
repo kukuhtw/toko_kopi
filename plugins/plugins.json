@@ -115,5 +115,8 @@
     },
     "indonesian-resto-template": {
         "active": true
+    },
+    "tiktokshop-integration": {
+        "active": false
     }
 }
