@@ -96,6 +96,7 @@ CREATE TABLE IF NOT EXISTS affiliate_orders (
     paid_at DATETIME NULL,
     rejection_reason TEXT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_order_id (order_id),
     INDEX idx_order_id (order_id),
     INDEX idx_affiliate_user_id (affiliate_user_id),
     INDEX idx_status (status),

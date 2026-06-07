@@ -1,4 +1,6 @@
 <?php
+
+use KopiBot\Core\DatabaseConnection;
 /**
  * Affiliate Marketing Plugin Core Service
  * KopiBot / AI Agent Commerce Platform
@@ -20,6 +22,11 @@ if (!defined('AFFILIATE_CLEARANCE_DAYS')) {
 function affiliate_get_pdo()
 {
     global $pdo, $conn, $mysqli;
+
+    try {
+        return DatabaseConnection::getInstance();
+    } catch (Throwable $exception) {
+    }
 
     if ($pdo instanceof PDO) {
         return $pdo;
@@ -144,6 +151,12 @@ function affiliate_increment_link_click($affiliateUserId, $campaignId, $tracking
 
 function affiliate_create_order_record($orderId, $orderTotal)
 {
+    $orderId = (int) $orderId;
+
+    if ($orderId <= 0) {
+        return false;
+    }
+
     $affiliateCode = $_SESSION['affiliate_code'] ?? $_COOKIE['affiliate_code'] ?? null;
     $campaignCode = $_SESSION['affiliate_campaign'] ?? $_COOKIE['affiliate_campaign'] ?? null;
     $trackingCode = $_SESSION['affiliate_tracking_code'] ?? $_COOKIE['affiliate_tracking_code'] ?? null;
@@ -164,6 +177,12 @@ function affiliate_create_order_record($orderId, $orderTotal)
     $commissionAmount = affiliate_calculate_commission($orderTotal, $commissionType, $commissionValue);
 
     $db = affiliate_get_pdo();
+
+    $existingStmt = $db->prepare('SELECT id FROM affiliate_orders WHERE order_id = ? LIMIT 1');
+    $existingStmt->execute([$orderId]);
+    if ($existingStmt->fetch(PDO::FETCH_ASSOC)) {
+        return false;
+    }
 
     $sql = "INSERT INTO affiliate_orders
         (order_id, affiliate_user_id, campaign_id, tracking_code, order_total, order_payment_status,

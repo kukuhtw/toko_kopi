@@ -73,23 +73,39 @@ function affiliate_portal_summary()
     $db = affiliate_get_pdo();
     $affiliateUserId = affiliate_portal_current_user_id();
 
-    $sql = "SELECT
-                COUNT(DISTINCT c.id) AS total_clicks,
-                COUNT(DISTINCT o.order_id) AS total_orders,
-                COALESCE(SUM(o.order_total), 0) AS total_sales,
-                COALESCE(SUM(CASE WHEN o.status = 'pending' THEN o.commission_amount ELSE 0 END), 0) AS pending_commission,
-                COALESCE(SUM(CASE WHEN o.status = 'waiting_clearance' THEN o.commission_amount ELSE 0 END), 0) AS waiting_commission,
-                COALESCE(SUM(CASE WHEN o.status = 'approved' THEN o.commission_amount ELSE 0 END), 0) AS approved_commission,
-                COALESCE(SUM(CASE WHEN o.status = 'paid' THEN o.commission_amount ELSE 0 END), 0) AS paid_commission,
-                COALESCE(SUM(CASE WHEN o.status IN ('rejected','disputed','cancelled') THEN o.commission_amount ELSE 0 END), 0) AS rejected_commission
-            FROM affiliate_users u
-            LEFT JOIN affiliate_clicks c ON c.affiliate_user_id = u.id
-            LEFT JOIN affiliate_orders o ON o.affiliate_user_id = u.id
-            WHERE u.id = ?";
+    $clickStmt = $db->prepare('SELECT COUNT(*) AS total_clicks FROM affiliate_clicks WHERE affiliate_user_id = ?');
+    $clickStmt->execute([$affiliateUserId]);
+    $clickSummary = $clickStmt->fetch(PDO::FETCH_ASSOC) ?: [];
 
-    $stmt = $db->prepare($sql);
-    $stmt->execute([$affiliateUserId]);
-    $summary = $stmt->fetch(PDO::FETCH_ASSOC);
+    $orderStmt = $db->prepare(
+        "SELECT
+            COUNT(DISTINCT order_id) AS total_orders,
+            COALESCE(SUM(order_total), 0) AS total_sales,
+            COALESCE(SUM(CASE WHEN status = 'pending' THEN commission_amount ELSE 0 END), 0) AS pending_commission,
+            COALESCE(SUM(CASE WHEN status = 'waiting_clearance' THEN commission_amount ELSE 0 END), 0) AS waiting_commission,
+            COALESCE(SUM(CASE WHEN status = 'approved' THEN commission_amount ELSE 0 END), 0) AS approved_commission,
+            COALESCE(SUM(CASE WHEN status = 'paid' THEN commission_amount ELSE 0 END), 0) AS paid_commission,
+            COALESCE(SUM(CASE WHEN status IN ('rejected','disputed','cancelled') THEN commission_amount ELSE 0 END), 0) AS rejected_commission
+        FROM affiliate_orders
+        WHERE affiliate_user_id = ?"
+    );
+    $orderStmt->execute([$affiliateUserId]);
+    $orderSummary = $orderStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+    $summary = array_merge(
+        [
+            'total_clicks' => 0,
+            'total_orders' => 0,
+            'total_sales' => 0,
+            'pending_commission' => 0,
+            'waiting_commission' => 0,
+            'approved_commission' => 0,
+            'paid_commission' => 0,
+            'rejected_commission' => 0,
+        ],
+        $orderSummary,
+        ['total_clicks' => (int) ($clickSummary['total_clicks'] ?? 0)]
+    );
 
     $clicks = (int) ($summary['total_clicks'] ?? 0);
     $orders = (int) ($summary['total_orders'] ?? 0);
