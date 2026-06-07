@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\WhatsAppProviders\ProviderFactory;
+use App\Plugin\ChannelRouter;
 use KopiBot\Contracts\PluginInterface;
 use KopiBot\Core\DatabaseConnection;
 use KopiBot\Core\HookManager;
@@ -411,12 +411,29 @@ class CustomerCrmPlugin implements PluginInterface
             return false;
         }
 
-        $provider = ProviderFactory::forBranchAny($branchId);
-        if ($provider === null) {
-            return false;
+        foreach ($this->resolveWhatsAppChannels() as $channel) {
+            if (!is_object($channel) || !method_exists($channel, 'isAvailable') || !method_exists($channel, 'sendMessage')) {
+                continue;
+            }
+
+            try {
+                if (!$channel->isAvailable($branchId)) {
+                    continue;
+                }
+            } catch (\Throwable) {
+                continue;
+            }
+
+            try {
+                if ($channel->sendMessage($normalized, $message)) {
+                    return true;
+                }
+            } catch (\Throwable) {
+                continue;
+            }
         }
 
-        return $provider->sendMessage($normalized, $message);
+        return false;
     }
 
     private function sendEmail(string $recipient, string $subject, string $message): bool
@@ -538,5 +555,47 @@ class CustomerCrmPlugin implements PluginInterface
     private function buildSettingKey(string $key): string
     {
         return 'plugin_' . str_replace('-', '_', self::SLUG) . '_' . $key;
+    }
+
+    /**
+     * @return list<object>
+     */
+    private function resolveWhatsAppChannels(): array
+    {
+        $registered = ChannelRouter::all();
+        $preferredNames = [
+            'whatsapp',
+            'whatsapp_baileys',
+            'whatsapp_twilio',
+            'whatsapp_vonage',
+            'whatsapp_messagebird',
+        ];
+
+        $channels = [];
+        $seen = [];
+
+        foreach ($preferredNames as $name) {
+            if (!isset($registered[$name])) {
+                continue;
+            }
+
+            $channels[] = $registered[$name];
+            $seen[$name] = true;
+        }
+
+        foreach ($registered as $name => $channel) {
+            $channelName = (string) $name;
+            if (isset($seen[$channelName])) {
+                continue;
+            }
+
+            if (!str_contains($channelName, 'whatsapp')) {
+                continue;
+            }
+
+            $channels[] = $channel;
+        }
+
+        return $channels;
     }
 }

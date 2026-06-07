@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Config\Database;
-use App\Plugin\ChannelInterface;
+use KopiBot\Contracts\ChannelInterface;
+use KopiBot\Core\DatabaseConnection;
 
 class TwilioWhatsAppChannel implements ChannelInterface
 {
@@ -134,7 +134,7 @@ class TwilioWhatsAppChannel implements ChannelInterface
 
     private function getSetting(int $branchId, string $key): string
     {
-        $pluginStmt = Database::getInstance()->prepare(
+        $pluginStmt = DatabaseConnection::getInstance()->prepare(
             'SELECT setting_val FROM plugin_branch_settings
              WHERE plugin_slug = ? AND branch_id = ? AND setting_key = ? LIMIT 1'
         );
@@ -155,7 +155,7 @@ class TwilioWhatsAppChannel implements ChannelInterface
             return '';
         }
 
-        $legacyStmt = Database::getInstance()->prepare(
+        $legacyStmt = DatabaseConnection::getInstance()->prepare(
             'SELECT bws.' . $legacyColumn . '
              FROM branch_whatsapp_settings bws
              JOIN whatsapp_providers wp ON bws.provider_id = wp.id

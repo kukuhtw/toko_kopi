@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-use App\Config\Database;
-use App\Helpers\Csrf;
-use App\Plugin\{HookManager, PluginInterface};
+use KopiBot\Contracts\PluginInterface;
+use KopiBot\Core\DatabaseConnection;
+use KopiBot\Core\HookManager;
+use KopiBot\Security\Csrf;
 
 class VonageWhatsAppPlugin implements PluginInterface
 {
@@ -104,7 +105,7 @@ class VonageWhatsAppPlugin implements PluginInterface
 
     private function getSetting(int $branchId, string $key): string
     {
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT setting_val FROM plugin_branch_settings
              WHERE plugin_slug = ? AND branch_id = ? AND setting_key = ? LIMIT 1'
         );
@@ -119,7 +120,7 @@ class VonageWhatsAppPlugin implements PluginInterface
 
     private function isUsingLegacyFallback(int $branchId): bool
     {
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT COUNT(*) FROM plugin_branch_settings
              WHERE plugin_slug = ? AND branch_id = ?'
         );
@@ -147,7 +148,7 @@ class VonageWhatsAppPlugin implements PluginInterface
             return '';
         }
 
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT bws.' . $legacyColumn . '
              FROM branch_whatsapp_settings bws
              JOIN whatsapp_providers wp ON bws.provider_id = wp.id
@@ -170,7 +171,7 @@ class VonageWhatsAppPlugin implements PluginInterface
             return;
         }
 
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'DELETE bws FROM branch_whatsapp_settings bws
              JOIN whatsapp_providers wp ON bws.provider_id = wp.id
              WHERE bws.branch_id = ? AND wp.adapter_class = ?'
