@@ -118,5 +118,8 @@
     },
     "tiktokshop-integration": {
         "active": false
+    },
+    "about-us-ai": {
+        "active": false
     }
 }

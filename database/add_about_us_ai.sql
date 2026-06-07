@@ -19,3 +19,19 @@ CREATE TABLE IF NOT EXISTS about_us_contents (
     KEY idx_about_us_branch (branch_id),
     KEY idx_about_us_status (content_status)
 );
+
+CREATE TABLE IF NOT EXISTS about_us_generation_logs (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    branch_id INT UNSIGNED NULL,
+    content_id INT UNSIGNED NULL,
+    event_name VARCHAR(80) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    prompt_preview MEDIUMTEXT NULL,
+    response_preview MEDIUMTEXT NULL,
+    model VARCHAR(255) NULL,
+    last_error TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_about_us_logs_branch_created (branch_id, created_at),
+    KEY idx_about_us_logs_status (status),
+    KEY idx_about_us_logs_content (content_id)
+);
