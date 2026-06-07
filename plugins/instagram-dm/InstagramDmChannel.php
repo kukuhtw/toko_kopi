@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Plugin\ChannelInterface;
-use App\Config\Database;
+use KopiBot\Contracts\ChannelInterface;
+use KopiBot\Core\DatabaseConnection;
 
 class InstagramDmChannel implements ChannelInterface
 {
@@ -143,7 +143,7 @@ class InstagramDmChannel implements ChannelInterface
 
     private function getSetting(int $branchId, string $key): string
     {
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT setting_val FROM plugin_branch_settings
              WHERE plugin_slug = ? AND branch_id = ? AND setting_key = ? LIMIT 1'
         );
