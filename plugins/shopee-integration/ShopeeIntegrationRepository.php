@@ -55,6 +55,43 @@ final class ShopeeIntegrationRepository
                 INDEX idx_shopee_webhook_event (event_id)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
         );
+
+        $this->db->exec(
+            'CREATE TABLE IF NOT EXISTS shopee_product_mapping (
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                branch_id INT UNSIGNED NULL,
+                menu_item_id INT UNSIGNED NOT NULL,
+                local_sku VARCHAR(120) DEFAULT NULL,
+                local_barcode VARCHAR(120) DEFAULT NULL,
+                shopee_item_id VARCHAR(120) DEFAULT NULL,
+                shopee_model_id VARCHAR(120) DEFAULT NULL,
+                sync_status VARCHAR(40) NOT NULL DEFAULT "mapped",
+                last_sync_at DATETIME NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                UNIQUE KEY uq_shopee_mapping_menu_branch (menu_item_id, branch_id),
+                INDEX idx_shopee_mapping_item (shopee_item_id),
+                INDEX idx_shopee_mapping_branch (branch_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+        );
+
+        $this->db->exec(
+            'CREATE TABLE IF NOT EXISTS shopee_orders_sync (
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                branch_id INT UNSIGNED NULL,
+                order_sn VARCHAR(120) NOT NULL,
+                order_status VARCHAR(80) DEFAULT NULL,
+                customer_name VARCHAR(190) DEFAULT NULL,
+                total_amount DECIMAL(16,2) DEFAULT NULL,
+                raw_payload MEDIUMTEXT NULL,
+                synced_at DATETIME NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                UNIQUE KEY uq_shopee_order_sn (order_sn),
+                INDEX idx_shopee_orders_branch (branch_id),
+                INDEX idx_shopee_orders_status (order_status)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+        );
     }
 
     public function getBranchSetting(int $branchId, string $key, string $default = ''): string
@@ -177,6 +214,122 @@ final class ShopeeIntegrationRepository
             $payload !== [] ? json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null,
             $note,
         ]);
+    }
+
+    public function saveBranchTokens(int $branchId, array $payload): void
+    {
+        $pairs = [
+            'shop_id' => (string) ($payload['shop_id'] ?? ''),
+            'merchant_name' => (string) ($payload['merchant_name'] ?? ''),
+            'access_token' => (string) ($payload['access_token'] ?? ''),
+            'refresh_token' => (string) ($payload['refresh_token'] ?? ''),
+            'expire_in' => (string) ($payload['expire_in'] ?? ''),
+            'refresh_token_expire_in' => (string) ($payload['refresh_token_expire_in'] ?? ''),
+            'token_updated_at' => date('c'),
+        ];
+
+        foreach ($pairs as $key => $value) {
+            if ($value !== '') {
+                $this->setBranchSetting($branchId, $key, $value);
+            }
+        }
+    }
+
+    public function saveGlobalTokens(array $payload): void
+    {
+        $pairs = [
+            'shop_id' => (string) ($payload['shop_id'] ?? ''),
+            'merchant_name' => (string) ($payload['merchant_name'] ?? ''),
+            'access_token' => (string) ($payload['access_token'] ?? ''),
+            'refresh_token' => (string) ($payload['refresh_token'] ?? ''),
+            'expire_in' => (string) ($payload['expire_in'] ?? ''),
+            'refresh_token_expire_in' => (string) ($payload['refresh_token_expire_in'] ?? ''),
+            'token_updated_at' => date('c'),
+        ];
+
+        foreach ($pairs as $key => $value) {
+            if ($value !== '') {
+                $this->setGlobalSetting($key, $value);
+            }
+        }
+    }
+
+    public function upsertProductMapping(int $branchId, array $payload): void
+    {
+        $stmt = $this->db->prepare(
+            'INSERT INTO shopee_product_mapping
+             (branch_id, menu_item_id, local_sku, local_barcode, shopee_item_id, shopee_model_id, sync_status, last_sync_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+             ON DUPLICATE KEY UPDATE
+                local_sku = VALUES(local_sku),
+                local_barcode = VALUES(local_barcode),
+                shopee_item_id = VALUES(shopee_item_id),
+                shopee_model_id = VALUES(shopee_model_id),
+                sync_status = VALUES(sync_status),
+                last_sync_at = NOW()'
+        );
+        $stmt->execute([
+            $branchId > 0 ? $branchId : null,
+            (int) ($payload['menu_item_id'] ?? 0),
+            $payload['local_sku'] ?? null,
+            $payload['local_barcode'] ?? null,
+            $payload['shopee_item_id'] ?? null,
+            $payload['shopee_model_id'] ?? null,
+            $payload['sync_status'] ?? 'mapped',
+        ]);
+    }
+
+    public function saveOrderSnapshot(int $branchId, array $payload): void
+    {
+        $stmt = $this->db->prepare(
+            'INSERT INTO shopee_orders_sync
+             (branch_id, order_sn, order_status, customer_name, total_amount, raw_payload, synced_at)
+             VALUES (?, ?, ?, ?, ?, ?, NOW())
+             ON DUPLICATE KEY UPDATE
+                branch_id = VALUES(branch_id),
+                order_status = VALUES(order_status),
+                customer_name = VALUES(customer_name),
+                total_amount = VALUES(total_amount),
+                raw_payload = VALUES(raw_payload),
+                synced_at = NOW()'
+        );
+        $stmt->execute([
+            $branchId > 0 ? $branchId : null,
+            (string) ($payload['order_sn'] ?? ''),
+            $payload['order_status'] ?? null,
+            $payload['customer_name'] ?? null,
+            isset($payload['total_amount']) ? (float) $payload['total_amount'] : null,
+            json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+        ]);
+    }
+
+    public function getStockPayload(int $menuItemId): ?array
+    {
+        $stmt = $this->db->prepare(
+            'SELECT mi.id,
+                    mi.name,
+                    spm.shopee_item_id,
+                    spm.shopee_model_id,
+                    COALESCE(SUM(ms.qty), 0) AS total_stock
+             FROM menu_items mi
+             JOIN shopee_product_mapping spm ON spm.menu_item_id = mi.id
+             LEFT JOIN minimarket_inventory_stock ms ON ms.menu_item_id = mi.id
+             WHERE mi.id = ?
+             GROUP BY mi.id, mi.name, spm.shopee_item_id, spm.shopee_model_id
+             LIMIT 1'
+        );
+        $stmt->execute([$menuItemId]);
+        $row = $stmt->fetch();
+
+        if (!$row) {
+            return null;
+        }
+
+        return [
+            'item_id' => $row['shopee_item_id'],
+            'model_id' => $row['shopee_model_id'],
+            'normal_stock' => (int) ($row['total_stock'] ?? 0),
+        ];
     }
 
     public function getRecentLogs(?int $branchId = null, int $limit = 20): array

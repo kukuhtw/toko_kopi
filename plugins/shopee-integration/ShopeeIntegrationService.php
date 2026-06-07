@@ -55,6 +55,151 @@ final class ShopeeIntegrationService
         return $response;
     }
 
+    public function generateAuthUrl(?int $branchId = null): array
+    {
+        $partnerId = $branchId !== null && $branchId > 0
+            ? $this->repo->getBranchSetting($branchId, 'partner_id', '')
+            : '';
+        $partnerId = $partnerId !== '' ? $partnerId : (string) env_value('SHOPEE_PARTNER_ID', '');
+
+        $redirect = $branchId !== null && $branchId > 0
+            ? BASE_URL . '/api/plugins/shopee/callback.php?branch=' . $branchId
+            : (string) env_value('SHOPEE_REDIRECT_URL', BASE_URL . '/api/plugins/shopee/callback.php');
+
+        if ($partnerId === '') {
+            return [
+                'success' => false,
+                'message' => 'Shopee partner_id belum dikonfigurasi.',
+            ];
+        }
+
+        $baseUrl = rtrim((string) env_value('SHOPEE_BASE_URL', 'https://partner.shopeemobile.com'), '/');
+        $timestamp = time();
+        $authUrl = $baseUrl
+            . '/api/v2/shop/auth_partner?partner_id=' . urlencode($partnerId)
+            . '&timestamp=' . $timestamp
+            . '&redirect=' . urlencode($redirect);
+
+        return [
+            'success' => true,
+            'auth_url' => $authUrl,
+            'partner_id' => $partnerId,
+            'redirect' => $redirect,
+            'mode' => 'scaffold',
+        ];
+    }
+
+    public function handleCallback(int $branchId, array $payload): array
+    {
+        if (empty($payload['shop_id'])) {
+            return [
+                'success' => false,
+                'message' => 'shop_id missing.',
+            ];
+        }
+
+        if ($branchId > 0) {
+            $this->repo->saveBranchTokens($branchId, $payload);
+        } else {
+            $this->repo->saveGlobalTokens($payload);
+        }
+
+        $logId = $this->repo->queueLog(
+            $branchId > 0 ? $branchId : 0,
+            null,
+            'oauth.callback',
+            'auth',
+            'queued',
+            $payload,
+            'callback:' . (string) $payload['shop_id']
+        );
+        $response = [
+            'success' => true,
+            'shop_id' => (string) $payload['shop_id'],
+            'mode' => 'scaffold',
+            'message' => 'Shopee callback scaffold processed.',
+        ];
+        $this->repo->markLogProcessed($logId, 'success', $response, 200, (string) $payload['shop_id']);
+
+        return $response;
+    }
+
+    public function mapProduct(int $branchId, array $payload): array
+    {
+        if (empty($payload['menu_item_id'])) {
+            return [
+                'success' => false,
+                'message' => 'menu_item_id required.',
+            ];
+        }
+
+        $this->repo->upsertProductMapping($branchId, $payload);
+        $logId = $this->repo->queueLog(
+            $branchId > 0 ? $branchId : 0,
+            null,
+            'product.map',
+            'product',
+            'queued',
+            $payload,
+            'product-map:' . (string) $payload['menu_item_id']
+        );
+        $response = [
+            'success' => true,
+            'message' => 'Shopee product mapping saved.',
+            'mode' => 'plugin_adapter',
+        ];
+        $this->repo->markLogProcessed($logId, 'success', $response, 200, (string) ($payload['shopee_item_id'] ?? ''));
+
+        return $response;
+    }
+
+    public function ingestOrder(int $branchId, array $payload): array
+    {
+        if (empty($payload['order_sn'])) {
+            return [
+                'success' => false,
+                'message' => 'order_sn required.',
+            ];
+        }
+
+        $this->repo->saveOrderSnapshot($branchId, $payload);
+        $logId = $this->repo->queueLog(
+            $branchId > 0 ? $branchId : 0,
+            null,
+            'order.sync',
+            'order',
+            'queued',
+            $payload,
+            'order:' . (string) $payload['order_sn']
+        );
+        $response = [
+            'success' => true,
+            'order_sn' => (string) $payload['order_sn'],
+            'mode' => 'plugin_adapter',
+            'message' => 'Shopee order snapshot saved.',
+        ];
+        $this->repo->markLogProcessed($logId, 'success', $response, 200, (string) $payload['order_sn']);
+
+        return $response;
+    }
+
+    public function buildStockPayload(int $menuItemId): array
+    {
+        $payload = $this->repo->getStockPayload($menuItemId);
+        if ($payload === null) {
+            return [
+                'success' => false,
+                'message' => 'Shopee mapping not found.',
+            ];
+        }
+
+        return [
+            'success' => true,
+            'payload' => $payload,
+            'mode' => 'plugin_adapter',
+        ];
+    }
+
     public function handleWebhook(int $branchId, array|string|null $payload): array
     {
         $data = is_array($payload) ? $payload : ['raw' => (string) $payload];

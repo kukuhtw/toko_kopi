@@ -25,6 +25,11 @@ final class BranchRepository
         return $row ?: null;
     }
 
+    public function find(int $branchId): array|false
+    {
+        return $this->query('SELECT * FROM branches WHERE id = ? LIMIT 1', [$branchId])->fetch();
+    }
+
     public function findBySlug(string $slug): array|false
     {
         return $this->query('SELECT * FROM branches WHERE slug = ? AND is_active = 1 LIMIT 1', [$slug])->fetch();

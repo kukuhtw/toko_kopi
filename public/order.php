@@ -1,22 +1,38 @@
 <?php
 declare(strict_types=1);
-require_once dirname(__DIR__) . '/app/Config/config.php';
-use App\Models\{BranchModel, MenuModel};
-use App\Helpers\{Auth, Currency, MenuImage};
-use App\Plugin\HookManager;
-Auth::startSession();
 
-$slug        = $_GET['branch'] ?? '';
-$branchModel = new BranchModel();
-$branch      = $slug ? $branchModel->findBySlug($slug) : null;
+require_once dirname(__DIR__) . '/config/runtime.php';
+
+use App\Helpers\MenuImage;
+use App\Models\MenuModel;
+use KopiBot\Core\HookManager;
+use KopiBot\Core\PluginLoader;
+use KopiBot\Domains\Branch\BranchRepository;
+use KopiBot\Support\Currency;
+
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_name(SESSION_NAME);
+    session_set_cookie_params([
+        'lifetime' => SESSION_LIFETIME,
+        'path' => '/',
+        'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
+    session_start();
+}
+
+$slug       = $_GET['branch'] ?? '';
+$branchRepo = new BranchRepository();
+$branch     = $slug ? $branchRepo->findBySlug($slug) : null;
 if (!$branch) { header('Location: ' . BASE_URL . '/'); exit; }
 
 $menuModel = new MenuModel();
-$currency  = $branchModel->getCurrency((int)$branch['id']);
-$language  = $branchModel->getLanguage((int)$branch['id']);
-$ppnRate   = $branchModel->getPpnRate((int)$branch['id']);
+$currency  = $branchRepo->getCurrency((int)$branch['id']);
+$language  = $branchRepo->getLanguage((int)$branch['id']);
+$ppnRate   = $branchRepo->getPpnRate((int)$branch['id']);
 $sessionId = session_id();
-$rajaOngkirEnabled = \App\Plugin\PluginLoader::isLoaded('rajaongkir-delivery');
+$rajaOngkirEnabled = PluginLoader::isLoaded('rajaongkir-delivery');
 
 $isEnglish = $language === 'en';
 $publicAppName = HookManager::applyFilters('site.app_name', APP_NAME);
