@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 
-use App\Plugin\{PluginInterface, HookManager};
 use App\Models\MenuModel;
-use App\Helpers\Currency;
-use App\Config\Database;
+use KopiBot\Contracts\PluginInterface;
+use KopiBot\Core\DatabaseConnection;
+use KopiBot\Core\HookManager;
+use KopiBot\Security\Csrf;
+use KopiBot\Support\Currency;
 
 class UpsellingPlugin implements PluginInterface
 {
@@ -94,7 +96,7 @@ class UpsellingPlugin implements PluginInterface
           <div class="card-title">🛍️ Upselling Cerdas</div>
 
           <form method="POST">
-            <?= \App\Helpers\Csrf::field() ?>
+            <?= Csrf::field() ?>
             <input type="hidden" name="action" value="save_plugin_settings">
             <input type="hidden" name="plugin_slug" value="<?= self::PLUGIN_SLUG ?>">
 
@@ -229,7 +231,7 @@ class UpsellingPlugin implements PluginInterface
     private function getSetting(int $branchId, string $key, string $default = ''): string
     {
         try {
-            $stmt = Database::getInstance()->prepare(
+            $stmt = DatabaseConnection::getInstance()->prepare(
                 'SELECT setting_val FROM plugin_branch_settings
                  WHERE plugin_slug = ? AND branch_id = ? AND setting_key = ? LIMIT 1'
             );
