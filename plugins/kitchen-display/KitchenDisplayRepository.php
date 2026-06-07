@@ -2,13 +2,15 @@
 
 declare(strict_types=1);
 
+use KopiBot\Core\DatabaseConnection;
+
 class KitchenDisplayRepository
 {
     private \PDO $db;
 
     public function __construct()
     {
-        $this->db = \App\Config\Database::getInstance();
+        $this->db = DatabaseConnection::getInstance();
     }
 
     /** Semua order pending + processing yang SUDAH DIBAYAR untuk cabang ini, urut dari terlama */

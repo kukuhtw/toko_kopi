@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Helpers\Csrf;
-use App\Plugin\HookManager;
-use App\Plugin\PluginInterface;
+use KopiBot\Contracts\PluginInterface;
+use KopiBot\Core\HookManager;
+use KopiBot\Security\Csrf;
 
 final class MokaConnectPrivateSolutionPlugin implements PluginInterface
 {

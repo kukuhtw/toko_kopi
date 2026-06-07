@@ -2,7 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Plugin\{PluginInterface, HookManager};
+use KopiBot\Contracts\PluginInterface;
+use KopiBot\Core\HookManager;
 
 class KitchenDisplayPlugin implements PluginInterface
 {

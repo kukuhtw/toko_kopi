@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Config\Database;
+use KopiBot\Core\DatabaseConnection;
 
 final class MokaConnectRepository
 {
@@ -30,7 +30,7 @@ final class MokaConnectRepository
 
     public function __construct()
     {
-        $this->db = Database::getInstance();
+        $this->db = DatabaseConnection::getInstance();
     }
 
     public function ensureSchema(): void
