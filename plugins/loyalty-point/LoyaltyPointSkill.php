@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Helpers\Currency;
-use App\Skills\SkillInterface;
+use KopiBot\Contracts\SkillInterface;
 use KopiBot\Domains\Cart\CartRepository;
+use KopiBot\Support\Currency;
 
 class LoyaltyPointSkill implements SkillInterface
 {

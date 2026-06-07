@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-use App\Config\Database;
-use App\Helpers\Csrf;
-use App\Helpers\Currency;
-use App\Plugin\HookManager;
-use App\Plugin\PluginInterface;
-use App\Services\IntentPatternRegistry;
-use App\Skills\SkillRegistry;
+use KopiBot\Contracts\PluginInterface;
+use KopiBot\Core\DatabaseConnection;
+use KopiBot\Core\HookManager;
+use KopiBot\Core\SkillRegistry;
+use KopiBot\Intent\IntentPatternRegistry;
+use KopiBot\Security\Csrf;
+use KopiBot\Support\Currency;
 
 class LoyaltyPointPlugin implements PluginInterface
 {
@@ -567,7 +567,7 @@ class LoyaltyPointPlugin implements PluginInterface
         }
 
         try {
-            $stmt = Database::getInstance()->prepare(
+            $stmt = DatabaseConnection::getInstance()->prepare(
                 'SELECT setting_val
                  FROM plugin_branch_settings
                  WHERE plugin_slug = ? AND branch_id = ? AND setting_key = ?
@@ -591,7 +591,7 @@ class LoyaltyPointPlugin implements PluginInterface
     private function getGlobalSetting(string $key, string $default = ''): string
     {
         try {
-            $stmt = Database::getInstance()->prepare(
+            $stmt = DatabaseConnection::getInstance()->prepare(
                 'SELECT setting_val
                  FROM app_settings
                  WHERE setting_key = ?
@@ -613,7 +613,7 @@ class LoyaltyPointPlugin implements PluginInterface
 
     private function getBranchCurrency(int $branchId): string
     {
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT setting_val
              FROM branch_settings
              WHERE branch_id = ? AND setting_key = "currency"

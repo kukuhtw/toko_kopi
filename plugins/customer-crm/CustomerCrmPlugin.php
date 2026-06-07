@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-use App\Config\Database;
-use App\Helpers\Csrf;
-use App\Models\CustomerModel;
-use App\Plugin\PluginInterface;
-use App\Plugin\HookManager;
 use App\WhatsAppProviders\ProviderFactory;
+use KopiBot\Contracts\PluginInterface;
+use KopiBot\Core\DatabaseConnection;
+use KopiBot\Core\HookManager;
+use KopiBot\Domains\Customer\CustomerRepository;
+use KopiBot\Security\Csrf;
 
 class CustomerCrmPlugin implements PluginInterface
 {
@@ -185,7 +185,7 @@ class CustomerCrmPlugin implements PluginInterface
             return;
         }
 
-        $customer = (new CustomerModel())->find($customerId);
+        $customer = (new CustomerRepository())->find($customerId);
         if (!$customer) {
             return;
         }
@@ -205,7 +205,7 @@ class CustomerCrmPlugin implements PluginInterface
         }
 
         if ($this->getSetting('notify_loyalty_email', '0') === '1') {
-            $email = CustomerModel::normalizeEmail((string)($customer['email'] ?? ''));
+            $email = CustomerRepository::normalizeEmail((string)($customer['email'] ?? ''));
             $sent = $this->sendEmail($email, $subject, $message);
             $this->logNotification($branchId, $customerId, (int)($event['order_id'] ?? 0), 'email', $type, $email, $message, $sent);
         }
@@ -229,7 +229,7 @@ class CustomerCrmPlugin implements PluginInterface
         }
 
         foreach ($this->splitSqlStatements($sql) as $statement) {
-            Database::getInstance()->exec($statement);
+            DatabaseConnection::getInstance()->exec($statement);
         }
 
         self::$schemaReady = true;
@@ -325,7 +325,7 @@ class CustomerCrmPlugin implements PluginInterface
                 return;
             }
 
-            $stmt = Database::getInstance()->query(
+            $stmt = DatabaseConnection::getInstance()->query(
                 'SELECT
                     lpt.id,
                     lpt.branch_id,
@@ -343,12 +343,12 @@ class CustomerCrmPlugin implements PluginInterface
             foreach ($stmt->fetchAll() as $row) {
                 $channel = 'history';
                 $eventHash = sha1('crm-backfill-loyalty-tx|' . (string)($row['id'] ?? '0'));
-                $recipient = CustomerModel::normalizeEmail((string)($row['email'] ?? ''));
+                $recipient = CustomerRepository::normalizeEmail((string)($row['email'] ?? ''));
                 if ($recipient === '') {
-                    $recipient = (new CustomerModel())->normalizeWhatsApp((string)($row['whatsapp'] ?? ''), $this->getSetting('default_country_code', '+62'));
+                    $recipient = (new CustomerRepository())->normalizeWhatsApp((string)($row['whatsapp'] ?? ''), $this->getSetting('default_country_code', '+62'));
                 }
 
-                Database::getInstance()->prepare(
+                DatabaseConnection::getInstance()->prepare(
                     'INSERT INTO crm_notification_logs
                         (branch_id, customer_id, order_id, event_hash, channel, event_type, recipient, message_preview, status)
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -406,7 +406,7 @@ class CustomerCrmPlugin implements PluginInterface
 
     private function sendWhatsApp(int $branchId, string $recipient, string $message): bool
     {
-        $normalized = (new CustomerModel())->normalizeWhatsApp($recipient, $this->getSetting('default_country_code', '+62'));
+        $normalized = (new CustomerRepository())->normalizeWhatsApp($recipient, $this->getSetting('default_country_code', '+62'));
         if ($normalized === '') {
             return false;
         }
@@ -470,7 +470,7 @@ class CustomerCrmPlugin implements PluginInterface
 
         $hash = sha1(implode('|', [$branchId, $customerId, $orderId, $eventType, $recipient, trim($message)]));
 
-        Database::getInstance()->prepare(
+        DatabaseConnection::getInstance()->prepare(
             'INSERT INTO crm_notification_logs
                 (branch_id, customer_id, order_id, event_hash, channel, event_type, recipient, message_preview, status)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -494,7 +494,7 @@ class CustomerCrmPlugin implements PluginInterface
             return '';
         }
 
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT order_number FROM orders WHERE id = ? LIMIT 1'
         );
         $stmt->execute([$orderId]);
@@ -510,7 +510,7 @@ class CustomerCrmPlugin implements PluginInterface
 
     private function getAppSetting(string $key, string $default = ''): string
     {
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT setting_val FROM app_settings WHERE setting_key = ? LIMIT 1'
         );
         $stmt->execute([$key]);
@@ -521,7 +521,7 @@ class CustomerCrmPlugin implements PluginInterface
 
     private function setAppSetting(string $key, string $value): void
     {
-        Database::getInstance()->prepare(
+        DatabaseConnection::getInstance()->prepare(
             'INSERT INTO app_settings (setting_key, setting_val)
              VALUES (?, ?)
              ON DUPLICATE KEY UPDATE setting_val = VALUES(setting_val)'
@@ -530,7 +530,7 @@ class CustomerCrmPlugin implements PluginInterface
 
     private function tableExists(string $table): bool
     {
-        $stmt = Database::getInstance()->prepare('SHOW TABLES LIKE ?');
+        $stmt = DatabaseConnection::getInstance()->prepare('SHOW TABLES LIKE ?');
         $stmt->execute([$table]);
         return (bool) $stmt->fetchColumn();
     }
