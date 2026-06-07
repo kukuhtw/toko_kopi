@@ -101,6 +101,9 @@ ob_start();
     Fonnte, Twilio, Baileys, MessageBird, dan Vonage sekarang dikelola lewat plugin per cabang di halaman Pengaturan cabang, bukan dari daftar provider legacy ini.
   </p>
   <p style="font-size:.82rem;color:var(--text-mid);margin-top:6px">
+    Meta Cloud API sekarang juga sudah punya plugin/channel sendiri. Untuk setup baru per cabang, arahkan tim cabang memakai <strong>Meta WhatsApp Gateway</strong> agar field <code>phone_number_id</code> ikut terkelola.
+  </p>
+  <p style="font-size:.82rem;color:var(--text-mid);margin-top:6px">
     Cabang yang mengaktifkan WhatsApp Shared Inbox akan memakai nomor host itu untuk menerima chat semua cabang aktif, lalu customer diminta memilih cabang di awal.
   </p>
 </div>

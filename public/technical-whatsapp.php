@@ -272,11 +272,16 @@ AccountSid=ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</div>
       <div class="two-col">
         <div class="doc-card">
           <h2 data-t-id="10. Verifikasi Meta Cloud API" data-t-en="10. Meta Cloud API Verification">10. Verifikasi Meta Cloud API</h2>
-          <p data-t-id="Meta membutuhkan verifikasi webhook lewat request GET dengan parameter challenge:" data-t-en="Meta requires webhook verification through a GET request with challenge parameters:">Meta membutuhkan verifikasi webhook lewat request GET dengan parameter challenge:</p>
-          <div class="code-block">GET /api/whatsapp/webhook.php?hub_mode=subscribe&amp;hub_verify_token=TOKEN&amp;hub_challenge=12345</div>
+          <p data-t-id="Meta membutuhkan verifikasi webhook lewat request GET dengan parameter challenge. Jalur baru yang direkomendasikan adalah channel webhook Meta per cabang:" data-t-en="Meta requires webhook verification through a GET request with challenge parameters. The recommended new path is the per-branch Meta channel webhook:">Meta membutuhkan verifikasi webhook lewat request GET dengan parameter challenge. Jalur baru yang direkomendasikan adalah channel webhook Meta per cabang:</p>
+          <div class="code-block">GET /api/channel/webhook.php?channel=whatsapp_meta&amp;branch=12&amp;hub_mode=subscribe&amp;hub_verify_token=TOKEN&amp;hub_challenge=12345</div>
+          <p class="mini-note"
+             data-t-id="URL lama /api/whatsapp/webhook.php masih dipertahankan sebagai compatibility gateway, tetapi setup baru sebaiknya memakai channel whatsapp_meta."
+             data-t-en="The old /api/whatsapp/webhook.php URL is still kept as a compatibility gateway, but new setups should use the whatsapp_meta channel.">
+            URL lama <code>/api/whatsapp/webhook.php</code> masih dipertahankan sebagai compatibility gateway, tetapi setup baru sebaiknya memakai channel <code>whatsapp_meta</code>.
+          </p>
           <p data-t-id="Sistem akan:" data-t-en="The system will:">Sistem akan:</p>
           <ul>
-            <li data-t-id="mencari webhook_token yang cocok di branch_whatsapp_settings" data-t-en="look up a matching webhook_token in branch_whatsapp_settings">mencari webhook_token yang cocok di branch_whatsapp_settings</li>
+            <li data-t-id="mencari branch berdasarkan query branch atau webhook_token yang cocok" data-t-en="look up the branch from the branch query or a matching webhook_token">mencari branch berdasarkan query <code>branch</code> atau <code>webhook_token</code> yang cocok</li>
             <li data-t-id="mengembalikan hub_challenge bila token valid" data-t-en="return hub_challenge when the token is valid">mengembalikan hub_challenge bila token valid</li>
             <li data-t-id="mengembalikan HTTP 403 bila token salah" data-t-en="return HTTP 403 when the token is invalid">mengembalikan HTTP 403 bila token salah</li>
           </ul>
@@ -315,9 +320,9 @@ AccountSid=ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</div>
       <div class="doc-card">
         <h2 data-t-id="13. Kaitan dengan Dashboard" data-t-en="13. Relation to the Dashboard">13. Kaitan dengan Dashboard</h2>
         <ul>
-          <li data-t-id="Branch admin: atur provider, nomor WA, API key, secret, dan verify token dari halaman pengaturan WhatsApp cabang."
-              data-t-en="Branch admin: manage provider, WA number, API key, secret, and verify token from the branch WhatsApp settings page.">
-            Branch admin: atur provider, nomor WA, API key, secret, dan verify token dari halaman pengaturan WhatsApp cabang.
+          <li data-t-id="Branch admin: atur provider, nomor WA, API key, secret, verify token, dan untuk Meta plugin baru isi juga phone_number_id."
+              data-t-en="Branch admin: manage provider, WA number, API key, secret, verify token, and for the new Meta plugin also fill in phone_number_id.">
+            Branch admin: atur provider, nomor WA, API key, secret, verify token, dan untuk Meta plugin baru isi juga <code>phone_number_id</code>.
           </li>
           <li data-t-id="Super admin: bisa melihat dan mengatur semua provider di seluruh cabang."
               data-t-en="Super admin: can view and manage all providers across all branches.">
@@ -341,7 +346,7 @@ AccountSid=ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</div>
           <li data-t-id="Pilih provider WhatsApp yang benar di dashboard." data-t-en="Choose the correct WhatsApp provider in the dashboard.">Pilih provider WhatsApp yang benar di dashboard.</li>
           <li data-t-id="Isi nomor WhatsApp branch." data-t-en="Fill in the branch WhatsApp number.">Isi nomor WhatsApp branch.</li>
           <li data-t-id="Isi api_key sesuai provider." data-t-en="Fill in api_key according to the provider.">Isi api_key sesuai provider.</li>
-          <li data-t-id="Untuk Meta, isi juga api_secret dan webhook_token." data-t-en="For Meta, also fill in api_secret and webhook_token.">Untuk Meta, isi juga api_secret dan webhook_token.</li>
+          <li data-t-id="Untuk Meta, isi api_key, api_secret, webhook_token, dan phone_number_id di plugin Meta WhatsApp." data-t-en="For Meta, fill in api_key, api_secret, webhook_token, and phone_number_id in the Meta WhatsApp plugin.">Untuk Meta, isi <code>api_key</code>, <code>api_secret</code>, <code>webhook_token</code>, dan <code>phone_number_id</code> di plugin Meta WhatsApp.</li>
           <li data-t-id="Untuk MessageBird, isi api_key (Access Key), api_secret (Signing Key), dan Channel ID di section plugin MessageBird." data-t-en="For MessageBird, fill in api_key (Access Key), api_secret (Signing Key), and the Channel ID in the MessageBird plugin section.">Untuk MessageBird, isi api_key (Access Key), api_secret (Signing Key), dan Channel ID di section plugin MessageBird.</li>
           <li data-t-id="Untuk Vonage, isi api_key dan api_secret dari dashboard Vonage." data-t-en="For Vonage, fill in api_key and api_secret from the Vonage dashboard.">Untuk Vonage, isi api_key dan api_secret dari dashboard Vonage.</li>
           <li data-t-id="Daftarkan URL webhook ke provider." data-t-en="Register the webhook URL with the provider.">Daftarkan URL webhook ke provider.</li>

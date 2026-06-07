@@ -87,6 +87,9 @@ ob_start();
     Untuk Fonnte, Twilio, Baileys, MessageBird, dan Vonage, gunakan section plugin masing-masing di halaman Pengaturan cabang.
   </p>
   <p style="font-size:.82rem;color:var(--text-mid);margin-top:6px">
+    Untuk Meta Cloud API yang baru, sebaiknya gunakan section plugin <strong>Meta WhatsApp Gateway</strong> di halaman Pengaturan cabang karena di sana ada field tambahan <code>phone_number_id</code>.
+  </p>
+  <p style="font-size:.82rem;color:var(--text-mid);margin-top:6px">
     Kalau satu cabang ingin membuka WhatsApp, Telegram, dan Discord sekaligus,
     <a href="<?= BASE_URL ?>/technical-multichannel.php" style="font-weight:600">lihat arsitektur multi-channel</a>.
   </p>
@@ -110,6 +113,9 @@ function copyWebhook() {
   <div class="card-title">⚙️ Konfigurasi WhatsApp Bot</div>
   <p style="font-size:.82rem;color:var(--text-mid);margin-bottom:12px">
     Provider legacy di halaman ini tidak lagi menampilkan Fonnte, Twilio, Baileys, MessageBird, dan Vonage karena semuanya sudah dipindah ke plugin.
+  </p>
+  <p style="font-size:.82rem;color:#8a5a12;background:#fff7e6;border:1px solid #f2d19a;border-radius:8px;padding:10px 12px;margin-bottom:12px;line-height:1.6">
+    Meta Cloud API juga sudah punya jalur plugin/channel baru. Form legacy ini masih bisa dipakai untuk kompatibilitas, tetapi setup baru disarankan memakai plugin <strong>Meta WhatsApp Gateway</strong> agar <code>phone_number_id</code> ikut tersimpan.
   </p>
   <?php if ($sharedInboxEnabled): ?>
   <p style="font-size:.82rem;color:#8a5a12;background:#fff7e6;border:1px solid #f2d19a;border-radius:8px;padding:10px 12px;margin-bottom:12px;line-height:1.6">
