@@ -2,11 +2,12 @@
 
 declare(strict_types=1);
 
-use App\Plugin\{PluginInterface, HookManager};
-use App\Helpers\Currency;
-use App\Helpers\Csrf;
-use App\Config\Database;
-use App\Models\BranchModel;
+use KopiBot\Contracts\PluginInterface;
+use KopiBot\Core\DatabaseConnection;
+use KopiBot\Core\HookManager;
+use KopiBot\Domains\Branch\BranchRepository;
+use KopiBot\Security\Csrf;
+use KopiBot\Support\Currency;
 
 class NotifikasiAdminPlugin implements PluginInterface
 {
@@ -32,7 +33,7 @@ class NotifikasiAdminPlugin implements PluginInterface
         $orderId  = (int)($order['id']             ?? 0);
         $orderNum = (string)($order['order_number'] ?? '-');
         $customer = (string)($order['customer_name'] ?? '-');
-        $currency = (new BranchModel())->getCurrency($branchId);
+        $currency = (new BranchRepository())->getCurrency($branchId);
         $total    = Currency::format((float)($order['total_amount'] ?? 0), $currency);
         $channel  = strtoupper((string)($order['channel'] ?? ''));
 
@@ -306,7 +307,7 @@ class NotifikasiAdminPlugin implements PluginInterface
 
     private function getGlobalSetting(string $key): ?string
     {
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT setting_val FROM app_settings
              WHERE setting_key = ? LIMIT 1'
         );
@@ -322,7 +323,7 @@ class NotifikasiAdminPlugin implements PluginInterface
 
     private function getSetting(int $branchId, string $key): ?string
     {
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT setting_val FROM plugin_branch_settings
              WHERE plugin_slug = ? AND branch_id = ? AND setting_key = ? LIMIT 1'
         );
@@ -333,7 +334,7 @@ class NotifikasiAdminPlugin implements PluginInterface
 
     private function countUnread(int $branchId): int
     {
-        $stmt = Database::getInstance()->prepare(
+        $stmt = DatabaseConnection::getInstance()->prepare(
             'SELECT COUNT(*) FROM notification_logs
              WHERE branch_id = ? AND channel = ? AND status = ?'
         );
@@ -350,7 +351,7 @@ class NotifikasiAdminPlugin implements PluginInterface
         string $status,
         string $payload = ''
     ): void {
-        Database::getInstance()->prepare(
+        DatabaseConnection::getInstance()->prepare(
             'INSERT INTO notification_logs
                 (branch_id, order_id, type, channel, recipient, status, payload, sent_at)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
