@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require_once dirname(__DIR__, 3) . '/app/Config/config.php';
+require_once dirname(__DIR__, 3) . '/config/runtime.php';
 
 use App\WhatsAppProviders\{ProviderFactory, MetaCloudApiProvider};
 use App\Services\{CustomerConversationService, WhatsAppSharedInboxService};
@@ -10,6 +10,35 @@ use App\Config\Database;
 use App\Plugin\HookManager;
 
 header('Content-Type: application/json');
+
+function whatsappMovedChannelForAdapter(string $adapterClass): ?string
+{
+    return match ($adapterClass) {
+        'VonageProvider' => 'whatsapp_vonage',
+        'TwilioProvider' => 'whatsapp_twilio',
+        'BaileysBridgeProvider' => 'whatsapp_baileys',
+        'MessageBirdProvider' => 'whatsapp_messagebird',
+        'FonnteProvider' => 'whatsapp',
+        default => null,
+    };
+}
+
+function delegateToChannelWebhook(string $channelName, int $branchId): never
+{
+    $_GET['channel'] = $channelName;
+    $_GET['branch'] = (string) $branchId;
+    require dirname(__DIR__) . '/channel/webhook.php';
+    exit;
+}
+
+function delegateToMetaWebhook(?int $branchId = null): never
+{
+    if ($branchId !== null && $branchId > 0) {
+        $_GET['branch'] = (string) $branchId;
+    }
+    require dirname(__DIR__) . '/plugins/whatsapp-meta/webhook.php';
+    exit;
+}
 
 // ── Meta verification challenge ───────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['hub_mode'])) {
@@ -23,6 +52,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['hub_mode'])) {
     );
     $stmt->execute([$token]);
     $setting = $stmt->fetch();
+
+    if ($setting) {
+        $movedChannel = whatsappMovedChannelForAdapter((string)($setting['adapter_class'] ?? ''));
+        if ($movedChannel !== null) {
+            delegateToChannelWebhook($movedChannel, (int)($setting['branch_id'] ?? 0));
+        }
+        delegateToMetaWebhook((int)($setting['branch_id'] ?? 0));
+    }
 
     if ($setting && $_GET['hub_mode'] === 'subscribe') {
         echo $_GET['hub_challenge'] ?? '';
@@ -67,39 +104,18 @@ if ($branchIdParam > 0) {
     $stmt->execute([$branchIdParam]);
     $row = $stmt->fetch();
     if ($row) {
-        if (in_array(($row['adapter_class'] ?? ''), ['FonnteProvider', 'VonageProvider', 'TwilioProvider', 'BaileysBridgeProvider', 'MessageBirdProvider'], true)) {
-            $movedChannel = match ($row['adapter_class'] ?? '') {
-                'VonageProvider' => 'whatsapp_vonage',
-                'TwilioProvider' => 'whatsapp_twilio',
-                'BaileysBridgeProvider' => 'whatsapp_baileys',
-                'MessageBirdProvider' => 'whatsapp_messagebird',
-                default => 'whatsapp',
-            };
-            http_response_code(200);
-            echo json_encode([
-                'status'  => 'ignored',
-                'reason'  => strtolower((string)$row['adapter_class']) . '_moved_to_plugin',
-                'webhook' => BASE_URL . '/api/channel/webhook.php?channel=' . $movedChannel . '&branch=' . $branchIdParam,
-            ]);
-            exit;
+        $movedChannel = whatsappMovedChannelForAdapter((string)($row['adapter_class'] ?? ''));
+        if ($movedChannel !== null) {
+            delegateToChannelWebhook($movedChannel, $branchIdParam);
         }
-        $branchSetting = $row;
-        $adapterClass  = $row['adapter_class'];
+        delegateToMetaWebhook($branchIdParam);
     }
 }
 
 // ── Fallback: auto-detect from payload structure ──────────────────────────────
 if (!$branchSetting) {
     if (!empty($payload['entry'][0]['changes'])) {
-        $adapterClass = 'MetaCloudApiProvider';
-        $db   = Database::getInstance();
-        $stmt = $db->prepare(
-            'SELECT bws.* FROM branch_whatsapp_settings bws
-             JOIN whatsapp_providers wp ON bws.provider_id = wp.id
-             WHERE wp.adapter_class = ? AND bws.is_active = 1 LIMIT 1'
-        );
-        $stmt->execute(['MetaCloudApiProvider']);
-        $branchSetting = $stmt->fetch() ?: null;
+        delegateToMetaWebhook($branchIdParam > 0 ? $branchIdParam : null);
     } elseif (!empty($payload['data']['phone'])) {
         $adapterClass = 'WablasProvider';
         $waNumber     = $payload['device'] ?? $payload['data']['device'] ?? '';

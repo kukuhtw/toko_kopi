@@ -43,6 +43,12 @@ if ($channel === null) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    if ($branchId <= 0 && method_exists($channel, 'resolveBranchId')) {
+        $resolvedBranchId = $channel->resolveBranchId(getallheaders() ?: [], [], '', $_GET);
+        if (is_int($resolvedBranchId) && $resolvedBranchId > 0) {
+            $branchId = $resolvedBranchId;
+        }
+    }
     if (method_exists($channel, 'handleVerification')) {
         $challenge = $channel->handleVerification($_GET, $branchId);
         if ($challenge !== null) {

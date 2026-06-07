@@ -32,6 +32,9 @@
     "messagebird-whatsapp": {
         "active": true
     },
+    "meta-whatsapp": {
+        "active": true
+    },
     "notifikasi-admin": {
         "active": true
     },
